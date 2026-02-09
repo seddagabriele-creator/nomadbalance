@@ -124,7 +124,7 @@ export default function Fuel() {
                 </button>
               ))}
             </div>
-            {selectedPreset < 3 && (
+            {selectedPreset < 3 && PRESETS[selectedPreset] && (
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
                 <p className="text-emerald-300 text-sm">
                   <strong>{PRESETS[selectedPreset].fasting} hours</strong> fasting,{" "}
