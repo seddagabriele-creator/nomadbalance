@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sun, Moon, Zap, Users } from "lucide-react";
+import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "./utils";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -10,38 +12,44 @@ import BodyCard from "../components/dashboard/BodyCard";
 import JournalCard from "../components/dashboard/JournalCard";
 import StartDayWizard from "../components/wizard/StartDayWizard";
 import BreathingCircle from "../components/decompression/BreathingCircle";
-
-const MOTIVATIONAL = [
-  "Sei vivo! Fai qualcosa di grande oggi.",
-  "Ogni respiro è una nuova opportunità.",
-  "La disciplina è libertà.",
-  "Il focus è il tuo superpotere.",
-  "Piccoli passi, grandi risultati.",
-  "La costanza batte il talento.",
-  "Oggi è il giorno perfetto.",
-];
+import MotivationalQuote from "../components/MotivationalQuote";
+import CurrentTaskOverlay from "../components/CurrentTaskOverlay";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Dashboard() {
   const [showWizard, setShowWizard] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
+  const [showQuote, setShowQuote] = useState(false);
+  const [showFirstQuote, setShowFirstQuote] = useState(true);
   const [userName, setUserName] = useState("");
   const [greeting, setGreeting] = useState("");
-  const [motivation, setMotivation] = useState("");
 
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
 
+  const { data: settings = [] } = useQuery({
+    queryKey: ["userSettings"],
+    queryFn: () => base44.entities.UserSettings.list(),
+  });
+
+  const userSettings = settings[0] || {};
+
   useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting("Buongiorno");
-    else if (hour < 18) setGreeting("Buon pomeriggio");
-    else setGreeting("Buonasera");
-    setMotivation(MOTIVATIONAL[Math.floor(Math.random() * MOTIVATIONAL.length)]);
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
 
     base44.auth.me().then((user) => {
-      setUserName(user?.full_name?.split(" ")[0] || "");
+      setUserName(userSettings.display_name || user?.full_name?.split(" ")[0] || "");
     }).catch(() => {});
-  }, []);
+  }, [userSettings]);
 
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ["daySession", today],
@@ -49,6 +57,27 @@ export default function Dashboard() {
   });
 
   const session = sessions[0] || null;
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["tasks", session?.id],
+    queryFn: () => {
+      if (!session?.id) return [];
+      return base44.entities.Task.filter({ session_id: session.id });
+    },
+    enabled: !!session?.id,
+  });
+
+  const topTask = tasks.sort((a, b) => a.order - b.order).find((t) => !t.completed) || null;
+
+  // Show motivational quote every hour
+  useEffect(() => {
+    if (!session || session.status !== "active") return;
+    const interval = setInterval(() => {
+      setShowQuote(true);
+      setTimeout(() => setShowQuote(false), 10000);
+    }, 3600000); // Every hour
+    return () => clearInterval(interval);
+  }, [session]);
 
   const createSession = useMutation({
     mutationFn: (data) => base44.entities.DaySession.create({ ...data, date: today, status: "active", started_at: new Date().toTimeString().slice(0, 5) }),
@@ -63,6 +92,19 @@ export default function Dashboard() {
   const handleStartDay = (wizardData) => {
     createSession.mutate(wizardData);
     setShowWizard(false);
+    setShowFirstQuote(false);
+  };
+
+  const handleShowWizard = () => {
+    if (showFirstQuote) {
+      setShowQuote(true);
+      setTimeout(() => {
+        setShowQuote(false);
+        setShowWizard(true);
+      }, 3000);
+    } else {
+      setShowWizard(true);
+    }
   };
 
   const handleEndDay = () => {
@@ -85,6 +127,19 @@ export default function Dashboard() {
     }
   };
 
+  const handleToggleTask = () => {
+    if (topTask) {
+      const taskUpdateMutation = useMutation({
+        mutationFn: () => base44.entities.Task.update(topTask.id, {
+          completed: !topTask.completed,
+          completed_at: !topTask.completed ? new Date().toISOString() : null,
+        }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+      });
+      taskUpdateMutation.mutate();
+    }
+  };
+
   const toggleMeetingMode = () => {
     if (session) {
       updateSession.mutate({ meeting_mode: !session.meeting_mode });
@@ -102,6 +157,9 @@ export default function Dashboard() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
 
       <div className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-28">
+        {/* Current Task Overlay */}
+        <CurrentTaskOverlay task={topTask} onToggle={handleToggleTask} />
+
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center justify-between mb-1">
@@ -109,21 +167,37 @@ export default function Dashboard() {
               <h1 className="text-2xl font-bold">
                 {greeting}{userName ? `, ${userName}` : ""} 👋
               </h1>
-              <p className="text-white/40 text-sm mt-1">{motivation}</p>
             </div>
-            {isActive && session?.meeting_mode && (
-              <div className="flex items-center gap-1.5 bg-amber-500/20 border border-amber-500/30 rounded-full px-3 py-1">
-                <Users className="w-3 h-3 text-amber-400" />
-                <span className="text-amber-300 text-xs font-medium">Meeting</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {isActive && session?.meeting_mode && (
+                <div className="flex items-center gap-1.5 bg-amber-500/20 border border-amber-500/30 rounded-full px-3 py-1">
+                  <Users className="w-3 h-3 text-amber-400" />
+                  <span className="text-amber-300 text-xs font-medium">Meeting</span>
+                </div>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-white/60 hover:text-white">
+                    <MoreVertical className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-slate-900 border-white/10">
+                  <Link to={createPageUrl("Settings")}>
+                    <DropdownMenuItem className="text-white hover:bg-white/10 cursor-pointer">
+                      <SettingsIcon className="w-4 h-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
+                  </Link>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {isActive && (
             <div className="flex items-center gap-2 mt-3">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-emerald-400/70 text-xs font-medium">
-                Giornata attiva dalle {session.started_at}
+                Day active since {session.started_at}
               </span>
             </div>
           )}
@@ -131,18 +205,31 @@ export default function Dashboard() {
             <div className="flex items-center gap-2 mt-3">
               <Moon className="w-4 h-4 text-indigo-400" />
               <span className="text-indigo-400/70 text-xs font-medium">
-                Giornata completata. Riposa bene!
+                Day completed. Rest well!
               </span>
             </div>
           )}
         </motion.div>
 
+        {/* Motivational Quote */}
+        {showQuote && !showWizard && !showBreathing && (
+          <div className="mb-6">
+            <MotivationalQuote onClose={() => setShowQuote(false)} fullScreen={false} />
+          </div>
+        )}
+
         {/* Grid */}
         <div className="grid grid-cols-2 gap-3">
-          <FuelCard session={session} />
+          <Link to={createPageUrl("Fuel")}>
+            <FuelCard session={session} />
+          </Link>
           <FlowCard session={session} onSessionComplete={handleSessionComplete} />
-          <BodyCard session={session} />
-          <JournalCard session={session} />
+          <Link to={createPageUrl("Body")}>
+            <BodyCard session={session} />
+          </Link>
+          <Link to={createPageUrl("Journal")}>
+            <JournalCard session={session} />
+          </Link>
         </div>
 
         {/* Stats bar */}
@@ -154,12 +241,12 @@ export default function Dashboard() {
           >
             <div className="text-center">
               <p className="text-lg font-bold text-white">{session?.focus_sessions_completed || 0}</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Sessioni</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider">Sessions</p>
             </div>
             <div className="w-px h-8 bg-white/10" />
             <div className="text-center">
               <p className="text-lg font-bold text-white">{session?.body_breaks_done || 0}/{session?.body_breaks_target || 0}</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Pause</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider">Breaks</p>
             </div>
             <div className="w-px h-8 bg-white/10" />
             <div className="text-center">
@@ -180,11 +267,11 @@ export default function Dashboard() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => setShowWizard(true)}
+              onClick={handleShowWizard}
               className="flex-1 h-14 rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
             >
               <Sun className="w-5 h-5" />
-              INIZIA GIORNATA
+              START DAY
             </motion.button>
           )}
 
@@ -212,7 +299,7 @@ export default function Dashboard() {
                 className="h-14 px-6 rounded-2xl bg-white/10 border border-white/10 text-white/50 hover:text-white hover:bg-white/15 font-medium flex items-center justify-center gap-2 transition-all"
               >
                 <Moon className="w-5 h-5" />
-                Fine
+                End
               </motion.button>
             </>
           )}
@@ -224,11 +311,18 @@ export default function Dashboard() {
               className="flex-1 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium flex items-center justify-center gap-2"
             >
               <Moon className="w-5 h-5" />
-              Giornata Completata
+              Day Completed
             </motion.div>
           )}
         </div>
       </div>
+
+      {/* Motivational Quote Fullscreen */}
+      <AnimatePresence>
+        {showQuote && showFirstQuote && (
+          <MotivationalQuote onClose={() => setShowQuote(false)} fullScreen={true} />
+        )}
+      </AnimatePresence>
 
       {/* Wizard Overlay */}
       <AnimatePresence>
