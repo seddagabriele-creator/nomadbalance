@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Moon, Wind } from "lucide-react";
 
 const PHASES = [
-  { label: "Inspira", duration: 4000, scale: 1.4 },
-  { label: "Trattieni", duration: 4000, scale: 1.4 },
-  { label: "Espira", duration: 6000, scale: 1 },
-  { label: "Pausa", duration: 2000, scale: 1 },
+  { label: "Breathe In", duration: 4000, scale: 1.4 },
+  { label: "Hold", duration: 4000, scale: 1.4 },
+  { label: "Breathe Out", duration: 6000, scale: 1 },
+  { label: "Pause", duration: 2000, scale: 1 },
 ];
 
 const TOTAL_CYCLE = PHASES.reduce((sum, p) => sum + p.duration, 0);
@@ -97,7 +97,7 @@ export default function BreathingCircle({ onComplete }) {
       <div className="relative z-10 flex flex-col items-center">
         <div className="flex items-center gap-2 mb-8">
           <Moon className="w-5 h-5 text-indigo-400" />
-          <h2 className="text-white/60 text-sm font-medium uppercase tracking-widest">Decompressione</h2>
+          <h2 className="text-white/60 text-sm font-medium uppercase tracking-widest">Decompression</h2>
         </div>
 
         {!started ? (
@@ -106,14 +106,14 @@ export default function BreathingCircle({ onComplete }) {
               <Wind className="w-12 h-12 text-indigo-400" />
             </div>
             <div className="text-center">
-              <p className="text-white text-lg font-semibold mb-2">Sessione di Respirazione</p>
-              <p className="text-white/40 text-sm">5 minuti per rilasciare la tensione</p>
+              <p className="text-white text-lg font-semibold mb-2">Breathing Session</p>
+              <p className="text-white/40 text-sm">5 minutes to release tension</p>
             </div>
             <Button
               onClick={() => setStarted(true)}
               className="h-14 px-10 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-500 hover:from-indigo-500 hover:to-violet-400 text-white font-semibold text-base"
             >
-              Inizia Respirazione
+              Start Breathing
             </Button>
           </motion.div>
         ) : (
@@ -155,7 +155,7 @@ export default function BreathingCircle({ onComplete }) {
               onClick={onComplete}
               className="mt-8 text-white/30 hover:text-white/60 text-sm"
             >
-              Salta
+              Skip
             </Button>
           </>
         )}

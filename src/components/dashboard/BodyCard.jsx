@@ -36,7 +36,7 @@ export default function BodyCard({ session }) {
         <span className="text-xs font-semibold uppercase tracking-widest text-orange-400">Body</span>
       </div>
       <div className="flex-1 flex flex-col justify-center">
-        <p className="text-white/50 text-xs mb-1">Prossima pausa</p>
+        <p className="text-white/50 text-xs mb-1">Next break</p>
         <div className="flex items-center gap-2">
           <ChevronRight className="w-4 h-4 text-orange-400" />
           <p className="text-white font-semibold text-sm">{nextExercise}</p>
@@ -44,7 +44,7 @@ export default function BodyCard({ session }) {
       </div>
       <div className="mt-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-white/40 uppercase tracking-wider">Progresso</span>
+          <span className="text-[10px] text-white/40 uppercase tracking-wider">Progress</span>
           <span className="text-xs text-white/60 font-medium">{breaksDone}/{breaksTarget}</span>
         </div>
         <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">

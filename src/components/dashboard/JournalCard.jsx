@@ -3,7 +3,7 @@ import { Target, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function JournalCard({ session }) {
-  const goal = session?.daily_goal || "Nessun obiettivo impostato";
+  const goal = session?.daily_goal || "No goal set";
 
   return (
     <motion.div
@@ -20,7 +20,7 @@ export default function JournalCard({ session }) {
         <span className="text-xs font-semibold uppercase tracking-widest text-cyan-400">Journal</span>
       </div>
       <div className="flex-1 flex flex-col justify-center">
-        <p className="text-white/50 text-xs mb-1">Obiettivo di oggi</p>
+        <p className="text-white/50 text-xs mb-1">Today's goal</p>
         <div className="flex items-start gap-2">
           <Sparkles className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
           <p className="text-white font-semibold text-sm leading-relaxed">{goal}</p>
@@ -37,7 +37,7 @@ export default function JournalCard({ session }) {
             ))}
           </div>
           <span className="text-[10px] text-white/40">
-            {session.focus_sessions_completed} sessioni completate
+            {session.focus_sessions_completed} sessions completed
           </span>
         </div>
       )}

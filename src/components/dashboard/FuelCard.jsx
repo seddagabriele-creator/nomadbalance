@@ -7,7 +7,7 @@ export default function FuelCard({ session }) {
 
   useEffect(() => {
     if (!session || !session.last_meal_time) {
-      setFuelStatus({ label: "Nessun dato", detail: "Avvia la giornata", icon: "clock" });
+      setFuelStatus({ label: "No data", detail: "Start your day", icon: "clock" });
       return;
     }
 
@@ -30,21 +30,21 @@ export default function FuelCard({ session }) {
         const untilH = Math.floor(untilNext / 3600000);
         const untilM = Math.floor((untilNext % 3600000) / 60000);
         setFuelStatus({
-          label: `Digiuno attivo ${diffH}h ${diffM}m`,
-          detail: `Prossimo pasto tra ${untilH}h ${untilM}m`,
+          label: `Fasting ${diffH}h ${diffM}m`,
+          detail: `Next meal in ${untilH}h ${untilM}m`,
           icon: "droplets",
         });
       } else {
         setFuelStatus({
-          label: "È ora di mangiare!",
-          detail: `Digiuno: ${diffH}h ${diffM}m`,
+          label: "Time to eat!",
+          detail: `Fasted: ${diffH}h ${diffM}m`,
           icon: "utensils",
         });
       }
     } else {
       setFuelStatus({
-        label: `Ultimo pasto ${diffH}h fa`,
-        detail: "Nessun pasto programmato",
+        label: `Last meal ${diffH}h ago`,
+        detail: "No meal scheduled",
         icon: "clock",
       });
     }

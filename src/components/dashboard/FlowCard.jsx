@@ -82,7 +82,7 @@ export default function FlowCard({ session, onSessionComplete }) {
         <span className="text-xs font-semibold uppercase tracking-widest text-violet-400">Flow</span>
         {isBreak && (
           <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-medium">
-            PAUSA
+            BREAK
           </span>
         )}
       </div>
