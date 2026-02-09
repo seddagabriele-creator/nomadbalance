@@ -89,10 +89,32 @@ export default function Dashboard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
   });
 
-  const handleStartDay = (wizardData) => {
-    createSession.mutate(wizardData);
-    setShowWizard(false);
-    setShowFirstQuote(false);
+  const handleStartDay = async (wizardData, tasks) => {
+    try {
+      const newSession = await base44.entities.DaySession.create({
+        ...wizardData,
+        date: today,
+        status: "active",
+        started_at: new Date().toTimeString().slice(0, 5),
+      });
+
+      // Create tasks
+      for (const task of tasks) {
+        await base44.entities.Task.create({
+          session_id: newSession.id,
+          title: task.title,
+          order: task.order,
+          completed: false,
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["daySession"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      setShowWizard(false);
+      setShowFirstQuote(false);
+    } catch (error) {
+      console.error("Error starting day:", error);
+    }
   };
 
   const handleShowWizard = () => {
@@ -327,7 +349,11 @@ export default function Dashboard() {
       {/* Wizard Overlay */}
       <AnimatePresence>
         {showWizard && (
-          <StartDayWizard onComplete={handleStartDay} onCancel={() => setShowWizard(false)} />
+          <StartDayWizard 
+            onComplete={handleStartDay} 
+            onCancel={() => setShowWizard(false)}
+            userSettings={userSettings}
+          />
         )}
       </AnimatePresence>
 
