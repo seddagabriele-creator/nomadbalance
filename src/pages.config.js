@@ -47,20 +47,20 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Dashboard from './pages/Dashboard';
-import Settings from './pages/Settings';
-import Fuel from './pages/Fuel';
 import Body from './pages/Body';
+import Dashboard from './pages/Dashboard';
+import Fuel from './pages/Fuel';
 import Journal from './pages/Journal';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Settings": Settings,
-    "Fuel": Fuel,
     "Body": Body,
+    "Dashboard": Dashboard,
+    "Fuel": Fuel,
     "Journal": Journal,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {

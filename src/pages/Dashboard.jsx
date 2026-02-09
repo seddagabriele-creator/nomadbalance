@@ -13,7 +13,7 @@ import JournalCard from "../components/dashboard/JournalCard";
 import StartDayWizard from "../components/wizard/StartDayWizard";
 import BreathingCircle from "../components/decompression/BreathingCircle";
 import MotivationalQuote from "../components/MotivationalQuote";
-import CurrentTaskOverlay from "../components/CurrentTaskOverlay";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -179,9 +179,6 @@ export default function Dashboard() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
 
       <div className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-28">
-        {/* Current Task Overlay */}
-        <CurrentTaskOverlay task={topTask} onToggle={handleToggleTask} />
-
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center justify-between mb-1">
@@ -250,7 +247,7 @@ export default function Dashboard() {
             <BodyCard session={session} />
           </Link>
           <Link to={createPageUrl("Journal")}>
-            <JournalCard session={session} />
+            <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />
           </Link>
         </div>
 
