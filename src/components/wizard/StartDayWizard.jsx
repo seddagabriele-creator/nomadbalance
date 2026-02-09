@@ -1,12 +1,15 @@
 import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Droplets, Timer, Activity, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const STEPS = [
+  { key: "goals", label: "Today's Goals", icon: Target, color: "cyan" },
   { key: "fuel", label: "Fuel Check", icon: Droplets, color: "emerald" },
   { key: "focus", label: "Focus Rhythm", icon: Timer, color: "violet" },
   { key: "body", label: "Body Pledge", icon: Activity, color: "orange" },
@@ -18,23 +21,31 @@ const PRESETS = [
   { label: "Custom", work: null, rest: null },
 ];
 
-export default function StartDayWizard({ onComplete, onCancel }) {
+export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
   const [step, setStep] = useState(0);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [tasks, setTasks] = useState([]);
   const [data, setData] = useState({
     last_meal_time: "",
     next_meal_time: "",
     focus_work_minutes: 45,
     focus_break_minutes: 5,
-    body_breaks_target: 4,
-    daily_goal: "",
+    body_breaks_target: 6,
+    work_start_today: userSettings?.morning_work_start || "10:00",
+    work_end_today: userSettings?.afternoon_work_end || "19:00",
   });
   const [selectedPreset, setSelectedPreset] = useState(0);
+  const [needsWorkHours, setNeedsWorkHours] = useState(!userSettings?.morning_work_start);
 
   const currentStep = STEPS[step];
 
-  const handleNext = () => {
-    if (step < 2) setStep(step + 1);
-    else onComplete(data);
+  const handleNext = async () => {
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      // Create session and tasks
+      await onComplete(data, tasks);
+    }
   };
 
   const handleBack = () => {
@@ -49,6 +60,24 @@ export default function StartDayWizard({ onComplete, onCancel }) {
     }
   };
 
+  const addTask = () => {
+    if (!newTaskTitle.trim()) return;
+    setTasks([...tasks, { title: newTaskTitle, order: tasks.length + 1 }]);
+    setNewTaskTitle("");
+  };
+
+  const removeTask = (index) => {
+    setTasks(tasks.filter((_, i) => i !== index));
+  };
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    const reordered = Array.from(tasks);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+    setTasks(reordered.map((t, i) => ({ ...t, order: i + 1 })));
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -60,16 +89,14 @@ export default function StartDayWizard({ onComplete, onCancel }) {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="w-full max-w-md bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden"
+        className="w-full max-w-md bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden max-h-[90vh] overflow-y-auto"
       >
         {/* Progress */}
         <div className="flex gap-2 p-6 pb-0">
           {STEPS.map((s, i) => (
             <div key={s.key} className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
               <motion.div
-                className={`h-full rounded-full ${
-                  i <= step ? "bg-gradient-to-r from-violet-500 to-cyan-400" : ""
-                }`}
+                className={`h-full rounded-full ${i <= step ? "bg-gradient-to-r from-violet-500 to-cyan-400" : ""}`}
                 initial={{ width: 0 }}
                 animate={{ width: i <= step ? "100%" : "0%" }}
                 transition={{ duration: 0.4 }}
@@ -85,7 +112,7 @@ export default function StartDayWizard({ onComplete, onCancel }) {
               <currentStep.icon className={`w-5 h-5 text-${currentStep.color}-400`} />
             </div>
             <div>
-              <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/3</p>
+              <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>
               <h2 className="text-white font-bold text-lg">{currentStep.label}</h2>
             </div>
           </div>
@@ -95,9 +122,72 @@ export default function StartDayWizard({ onComplete, onCancel }) {
         <div className="p-6 min-h-[240px]">
           <AnimatePresence mode="wait">
             {step === 0 && (
+              <motion.div key="goals" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-4">
+                <p className="text-white/70 text-sm">What must you complete today? List in order of priority.</p>
+                <div className="flex gap-2">
+                  <Input
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && addTask()}
+                    placeholder="Add a task..."
+                    className="bg-white/5 border-white/10 text-white flex-1"
+                  />
+                  <Button onClick={addTask} className="bg-cyan-600 hover:bg-cyan-700">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {tasks.length > 0 && (
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="wizard-tasks">
+                      {(provided) => (
+                        <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                          {tasks.map((task, index) => (
+                            <Draggable key={index} draggableId={`task-${index}`} index={index}>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/10"
+                                >
+                                  <div {...provided.dragHandleProps}>
+                                    <GripVertical className="w-4 h-4 text-white/40" />
+                                  </div>
+                                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold">
+                                    {index + 1}
+                                  </div>
+                                  <span className="flex-1 text-white text-sm">{task.title}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeTask(index)}
+                                    className="text-red-400 hover:text-red-300 h-8 w-8"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                )}
+
+                {tasks.length === 0 && (
+                  <div className="text-center py-6 text-white/40 text-sm">
+                    Add at least one task to continue
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {step === 1 && (
               <motion.div key="fuel" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
                 <div className="space-y-2">
-                  <Label className="text-white/70 text-sm">Quando hai fatto l'ultimo pasto?</Label>
+                  <Label className="text-white/70 text-sm">When did you last eat?</Label>
                   <Input
                     type="time"
                     value={data.last_meal_time}
@@ -106,7 +196,7 @@ export default function StartDayWizard({ onComplete, onCancel }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-white/70 text-sm">Quando vuoi che sia il prossimo?</Label>
+                  <Label className="text-white/70 text-sm">When is your next meal?</Label>
                   <Input
                     type="time"
                     value={data.next_meal_time}
@@ -114,24 +204,35 @@ export default function StartDayWizard({ onComplete, onCancel }) {
                     className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-white/70 text-sm flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-cyan-400" />
-                    Obiettivo di oggi
-                  </Label>
-                  <Input
-                    placeholder="Es. Completare Progetto X"
-                    value={data.daily_goal}
-                    onChange={(e) => setData({ ...data, daily_goal: e.target.value })}
-                    className="bg-white/5 border-white/10 text-white h-12 rounded-xl placeholder:text-white/20"
-                  />
-                </div>
+                {needsWorkHours && (
+                  <>
+                    <div className="h-px bg-white/10 my-4" />
+                    <div className="space-y-2">
+                      <Label className="text-white/70 text-sm">Today's work start time</Label>
+                      <Input
+                        type="time"
+                        value={data.work_start_today}
+                        onChange={(e) => setData({ ...data, work_start_today: e.target.value })}
+                        className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white/70 text-sm">Today's work end time</Label>
+                      <Input
+                        type="time"
+                        value={data.work_end_today}
+                        onChange={(e) => setData({ ...data, work_end_today: e.target.value })}
+                        className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                      />
+                    </div>
+                  </>
+                )}
               </motion.div>
             )}
 
-            {step === 1 && (
+            {step === 2 && (
               <motion.div key="focus" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                <p className="text-white/50 text-sm">Scegli il tuo ritmo di lavoro/pausa</p>
+                <p className="text-white/50 text-sm">Choose your work/break rhythm</p>
                 <div className="flex gap-3">
                   {PRESETS.map((p, i) => (
                     <button
@@ -150,7 +251,7 @@ export default function StartDayWizard({ onComplete, onCancel }) {
                 {selectedPreset === 2 && (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-white/70 text-sm">Lavoro: {data.focus_work_minutes} min</Label>
+                      <Label className="text-white/70 text-sm">Work: {data.focus_work_minutes} min</Label>
                       <Slider
                         value={[data.focus_work_minutes]}
                         onValueChange={([v]) => setData({ ...data, focus_work_minutes: v })}
@@ -161,7 +262,7 @@ export default function StartDayWizard({ onComplete, onCancel }) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-white/70 text-sm">Pausa: {data.focus_break_minutes} min</Label>
+                      <Label className="text-white/70 text-sm">Break: {data.focus_break_minutes} min</Label>
                       <Slider
                         value={[data.focus_break_minutes]}
                         onValueChange={([v]) => setData({ ...data, focus_break_minutes: v })}
@@ -174,15 +275,15 @@ export default function StartDayWizard({ onComplete, onCancel }) {
                   </div>
                 )}
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <p className="text-white/40 text-xs mb-1">Il tuo ritmo</p>
-                  <p className="text-white font-semibold">{data.focus_work_minutes} min focus → {data.focus_break_minutes} min pausa</p>
+                  <p className="text-white/40 text-xs mb-1">Your rhythm</p>
+                  <p className="text-white font-semibold">{data.focus_work_minutes} min focus → {data.focus_break_minutes} min break</p>
                 </div>
               </motion.div>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <motion.div key="body" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                <p className="text-white/50 text-sm">Quante pause attive vuoi fare oggi?</p>
+                <p className="text-white/50 text-sm">How many active breaks today?</p>
                 <div className="flex justify-center gap-4 py-4">
                   {[2, 4, 6, 8].map((n) => (
                     <button
@@ -199,12 +300,12 @@ export default function StartDayWizard({ onComplete, onCancel }) {
                   ))}
                 </div>
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <p className="text-white/40 text-xs mb-1">Piano</p>
+                  <p className="text-white/40 text-xs mb-1">Plan</p>
                   <p className="text-white font-semibold">
-                    {data.body_breaks_target} pause attive durante la giornata
+                    {data.body_breaks_target} active breaks during the day
                   </p>
                   <p className="text-white/40 text-xs mt-1">
-                    Circa 1 ogni {Math.round((8 * 60) / data.body_breaks_target)} minuti
+                    About 1 every {Math.round((8 * 60) / data.body_breaks_target)} minutes
                   </p>
                 </div>
               </motion.div>
@@ -220,13 +321,14 @@ export default function StartDayWizard({ onComplete, onCancel }) {
             className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {step === 0 ? "Annulla" : "Indietro"}
+            {step === 0 ? "Cancel" : "Back"}
           </Button>
           <Button
             onClick={handleNext}
-            className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-semibold"
+            disabled={(step === 0 && tasks.length === 0) || (step === 1 && (!data.last_meal_time || !data.next_meal_time))}
+            className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-semibold disabled:opacity-50"
           >
-            {step === 2 ? "Inizia!" : "Avanti"}
+            {step === 3 ? "Start!" : "Next"}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
