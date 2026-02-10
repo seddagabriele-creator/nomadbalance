@@ -3,10 +3,10 @@ import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
 const PHASES = [
-  { label: "Inspira", duration: 4000, scale: 1.5 },
-  { label: "Trattieni", duration: 7000, scale: 1.5 },
-  { label: "Espira", duration: 8000, scale: 1 },
-  { label: "Pausa", duration: 2000, scale: 1 },
+  { label: "Breathe In", duration: 4000, scale: 1.5 },
+  { label: "Hold", duration: 7000, scale: 1.5 },
+  { label: "Breathe Out", duration: 8000, scale: 1 },
+  { label: "Pause", duration: 2000, scale: 1 },
 ];
 
 export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
@@ -79,14 +79,14 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
         >
           <Sparkles className="w-16 h-16 text-cyan-400 mx-auto" />
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Sessione di Respiro</h1>
-            <p className="text-white/60">{durationMinutes} minuti di pausa profonda</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Breathing Session</h1>
+            <p className="text-white/60">{durationMinutes} minutes of deep pause</p>
           </div>
           <button
             onClick={() => setStarted(true)}
             className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 text-white font-semibold rounded-2xl text-lg transition-all"
           >
-            Inizia Respiro
+            Start Breathing
           </button>
         </motion.div>
       ) : (
@@ -106,7 +106,7 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
               {currentPhase.label}
             </motion.p>
             <p className="text-white/40 text-sm">
-              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")} rimanenti
+              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")} remaining
             </p>
           </motion.div>
 
@@ -125,7 +125,7 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
             onClick={onComplete}
             className="mt-8 text-white/40 hover:text-white/60 transition-colors text-sm"
           >
-            Salta
+            Skip
           </button>
         </>
       )}

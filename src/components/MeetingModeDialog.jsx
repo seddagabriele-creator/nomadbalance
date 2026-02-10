@@ -28,16 +28,16 @@ export default function MeetingModeDialog({ onConfirm, onCancel }) {
               <Users className="w-5 h-5 text-amber-400" />
             </div>
             <h2 className="text-white font-bold text-lg">Meeting Mode</h2>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onCancel} className="text-white/60 hover:text-white">
+            </div>
+            <Button variant="ghost" size="icon" onClick={onCancel} className="text-white/60 hover:text-white">
             <X className="w-4 h-4" />
-          </Button>
-        </div>
+            </Button>
+            </div>
 
-        <div className="space-y-4">
-          <p className="text-white/70 text-sm">Vuoi fare una sessione di respiro prima del meeting?</p>
+            <div className="space-y-4">
+            <p className="text-white/70 text-sm">Would you like a breathing session before the meeting?</p>
 
-          <div className="space-y-3">
+            <div className="space-y-3">
             <button
               onClick={() => setShowBreathing(true)}
               className={`w-full p-4 rounded-xl border transition-all ${
@@ -49,8 +49,8 @@ export default function MeetingModeDialog({ onConfirm, onCancel }) {
               <div className="flex items-center gap-3">
                 <Wind className="w-5 h-5 text-cyan-400" />
                 <div className="flex-1 text-left">
-                  <p className="text-white font-medium text-sm">Sì, respiro prima</p>
-                  <p className="text-white/40 text-xs">Preparati mentalmente</p>
+                  <p className="text-white font-medium text-sm">Yes, breathe first</p>
+                  <p className="text-white/40 text-xs">Prepare mentally</p>
                 </div>
               </div>
             </button>
@@ -66,16 +66,16 @@ export default function MeetingModeDialog({ onConfirm, onCancel }) {
               <div className="flex items-center gap-3">
                 <Users className="w-5 h-5 text-amber-400" />
                 <div className="flex-1 text-left">
-                  <p className="text-white font-medium text-sm">No, entra subito</p>
-                  <p className="text-white/40 text-xs">Attiva meeting mode ora</p>
+                  <p className="text-white font-medium text-sm">No, enter now</p>
+                  <p className="text-white/40 text-xs">Activate meeting mode now</p>
                 </div>
               </div>
             </button>
-          </div>
+            </div>
 
-          {showBreathing && (
+            {showBreathing && (
             <div className="space-y-2">
-              <p className="text-white/70 text-sm">Durata sessione respiro</p>
+              <p className="text-white/70 text-sm">Breathing session duration</p>
               <div className="flex gap-2">
                 {[1, 3, 5].map((min) => (
                   <button
@@ -101,13 +101,13 @@ export default function MeetingModeDialog({ onConfirm, onCancel }) {
             onClick={onCancel}
             className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
           >
-            Annulla
+            Cancel
           </Button>
           <Button
             onClick={() => onConfirm(showBreathing ? breathingMinutes : 0)}
             className="flex-1 h-12 rounded-xl bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400"
           >
-            Conferma
+            Confirm
           </Button>
         </div>
       </motion.div>

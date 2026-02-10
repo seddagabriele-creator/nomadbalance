@@ -49,20 +49,20 @@
  */
 import Body from './pages/Body';
 import Dashboard from './pages/Dashboard';
+import Flow from './pages/Flow';
 import Fuel from './pages/Fuel';
 import Journal from './pages/Journal';
 import Settings from './pages/Settings';
-import Flow from './pages/Flow';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Body": Body,
     "Dashboard": Dashboard,
+    "Flow": Flow,
     "Fuel": Fuel,
     "Journal": Journal,
     "Settings": Settings,
-    "Flow": Flow,
 }
 
 export const pagesConfig = {

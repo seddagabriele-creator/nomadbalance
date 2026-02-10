@@ -242,7 +242,7 @@ export default function Dashboard() {
   };
 
   const handleResetDay = () => {
-    if (session && window.confirm("Vuoi davvero reimpostare il giorno?")) {
+    if (session && window.confirm("Do you really want to reset the day?")) {
       updateSession.mutate({ 
         status: "standby",
         body_breaks_done: 0,
@@ -290,7 +290,7 @@ export default function Dashboard() {
                   <Link to={createPageUrl("Settings")}>
                     <DropdownMenuItem className="text-white hover:bg-white/10 cursor-pointer">
                       <SettingsIcon className="w-4 h-4 mr-2" />
-                      Impostazioni
+                      Settings
                     </DropdownMenuItem>
                   </Link>
                   {(isActive || isCompleted) && (
@@ -299,7 +299,7 @@ export default function Dashboard() {
                       className="text-amber-400 hover:bg-white/10 cursor-pointer"
                     >
                       <RotateCcw className="w-4 h-4 mr-2" />
-                      Reimposta Giorno
+                      Reset Day
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>

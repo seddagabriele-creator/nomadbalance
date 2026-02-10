@@ -42,7 +42,8 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
     next_meal_time: "",
     focus_work_minutes: 45,
     focus_break_minutes: 5,
-    focus_music_type: "40hz_wind",
+    focus_sound: "wind",
+    relax_sound: "wind",
     body_breaks_target: 6,
     work_start_today: userSettings?.morning_work_start || "10:00",
     work_end_today: userSettings?.afternoon_work_end || "19:00",
@@ -80,7 +81,8 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
       next_meal_time: previousSession.next_meal_time || "",
       focus_work_minutes: previousSession.focus_work_minutes || 45,
       focus_break_minutes: previousSession.focus_break_minutes || 5,
-      focus_music_type: previousSession.focus_music_type || "40hz_wind",
+      focus_sound: previousSession.focus_sound || "wind",
+      relax_sound: previousSession.relax_sound || "wind",
       body_breaks_target: previousSession.body_breaks_target || 6,
     });
     setShowPreviousSettings(false);
@@ -151,11 +153,11 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
             <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
               <History className="w-5 h-5 text-violet-400" />
             </div>
-            <h2 className="text-white font-bold text-lg">Impostazioni Precedenti</h2>
+            <h2 className="text-white font-bold text-lg">Previous Settings</h2>
           </div>
           
           <p className="text-white/70 mb-6">
-            Vuoi utilizzare le stesse impostazioni di ieri?
+            Would you like to use yesterday's settings?
           </p>
 
           <div className="bg-white/5 rounded-xl p-4 border border-white/10 mb-6 space-y-2 text-sm">
@@ -164,7 +166,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
               <span className="text-white">{previousSession.focus_work_minutes}/{previousSession.focus_break_minutes} min</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/40">Pause fisiche:</span>
+              <span className="text-white/40">Active breaks:</span>
               <span className="text-white">{previousSession.body_breaks_target}</span>
             </div>
           </div>
@@ -175,13 +177,13 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
               onClick={() => setShowPreviousSettings(false)}
               className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
             >
-              No, personalizza
+              No, customize
             </Button>
             <Button
               onClick={loadPreviousSettings}
               className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400"
             >
-              Sì, usa quelle
+              Yes, use those
             </Button>
           </div>
         </motion.div>
@@ -224,13 +226,13 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
             <AnimatePresence mode="wait">
               {step === 0 && (
                 <motion.div key="goals" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-4">
-                  <p className="text-white/70 text-sm">Cosa devi completare oggi? Ordina per priorità.</p>
+                  <p className="text-white/70 text-sm">What must you complete today? List in order of priority.</p>
                   <div className="flex gap-2">
                     <Input
                       value={newTaskTitle}
                       onChange={(e) => setNewTaskTitle(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && addTask()}
-                      placeholder="Aggiungi un task..."
+                      placeholder="Add a task..."
                       className="bg-white/5 border-white/10 text-white flex-1"
                     />
                     <Button onClick={addTask} className="bg-cyan-600 hover:bg-cyan-700">
@@ -278,8 +280,8 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                   )}
 
                   {tasks.length === 0 && (
-                    <div className="text-center py-6 text-white/40 text-sm">
-                      Aggiungi almeno un task per continuare
+                    <div className="text-center py-6">
+                      <p className="text-white/40 text-sm italic">No specific tasks, I'll follow the flow ✨</p>
                     </div>
                   )}
                 </motion.div>
@@ -288,28 +290,35 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
               {step === 1 && (
                 <motion.div key="fuel" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
                   <div className="space-y-2">
-                    <Label className="text-white/70 text-sm">Quando hai mangiato l'ultima volta?</Label>
+                    <Label className="text-white/70 text-sm">When did you last eat?</Label>
                     <Input
                       type="time"
                       value={data.last_meal_time}
                       onChange={(e) => setData({ ...data, last_meal_time: e.target.value })}
                       className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                      placeholder="Optional"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-white/70 text-sm">Quando sarà il tuo prossimo pasto?</Label>
+                    <Label className="text-white/70 text-sm">When is your next meal?</Label>
                     <Input
                       type="time"
                       value={data.next_meal_time}
                       onChange={(e) => setData({ ...data, next_meal_time: e.target.value })}
                       className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                      placeholder="Optional"
                     />
                   </div>
+                  {!data.last_meal_time && !data.next_meal_time && (
+                    <div className="text-center py-4">
+                      <p className="text-white/40 text-sm italic">Today I'll eat when I feel it 🍃</p>
+                    </div>
+                  )}
                   {needsWorkHours && (
                     <>
                       <div className="h-px bg-white/10 my-4" />
                       <div className="space-y-2">
-                        <Label className="text-white/70 text-sm">Orario inizio lavoro oggi</Label>
+                        <Label className="text-white/70 text-sm">Today's work start time</Label>
                         <Input
                           type="time"
                           value={data.work_start_today}
@@ -318,7 +327,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-white/70 text-sm">Orario fine lavoro oggi</Label>
+                        <Label className="text-white/70 text-sm">Today's work end time</Label>
                         <Input
                           type="time"
                           value={data.work_end_today}
@@ -333,7 +342,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
 
               {step === 2 && (
                 <motion.div key="focus" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                  <p className="text-white/50 text-sm">Scegli il tuo ritmo lavoro/pausa</p>
+                  <p className="text-white/50 text-sm">Choose your work/break rhythm</p>
                   <div className="flex gap-3">
                     {PRESETS.map((p, i) => (
                       <button
@@ -352,7 +361,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                   {selectedPreset === 2 && (
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-white/70 text-sm">Lavoro: {data.focus_work_minutes} min</Label>
+                        <Label className="text-white/70 text-sm">Work: {data.focus_work_minutes} min</Label>
                         <Slider
                           value={[data.focus_work_minutes]}
                           onValueChange={([v]) => setData({ ...data, focus_work_minutes: v })}
@@ -363,7 +372,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-white/70 text-sm">Pausa: {data.focus_break_minutes} min</Label>
+                        <Label className="text-white/70 text-sm">Break: {data.focus_break_minutes} min</Label>
                         <Slider
                           value={[data.focus_break_minutes]}
                           onValueChange={([v]) => setData({ ...data, focus_break_minutes: v })}
@@ -376,15 +385,15 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                     </div>
                   )}
                   <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                    <p className="text-white/40 text-xs mb-1">Il tuo ritmo</p>
-                    <p className="text-white font-semibold">{data.focus_work_minutes} min focus → {data.focus_break_minutes} min pausa</p>
+                    <p className="text-white/40 text-xs mb-1">Your rhythm</p>
+                    <p className="text-white font-semibold">{data.focus_work_minutes} min focus → {data.focus_break_minutes} min break</p>
                   </div>
                 </motion.div>
               )}
 
               {step === 3 && (
                 <motion.div key="body" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                  <p className="text-white/50 text-sm">Quante pause fisiche oggi?</p>
+                  <p className="text-white/50 text-sm">How many active breaks today?</p>
                   <div className="flex justify-center gap-4 py-4">
                     {[2, 4, 6, 8].map((n) => (
                       <button
@@ -402,7 +411,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-white/70 text-sm">Selezione esercizi</p>
+                    <p className="text-white/70 text-sm">Exercise selection</p>
                     <div className="space-y-2">
                       <button
                         onClick={() => setExerciseSelection("auto")}
@@ -412,8 +421,8 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                             : "bg-white/5 border-white/10 hover:bg-white/10"
                         }`}
                       >
-                        <p className="text-white font-medium text-sm">L'app sceglie per me</p>
-                        <p className="text-white/40 text-xs">Allenamento bilanciato automatico</p>
+                        <p className="text-white font-medium text-sm">App chooses for me</p>
+                        <p className="text-white/40 text-xs">Automatic balanced workout</p>
                       </button>
                       <button
                         onClick={() => setExerciseSelection("manual")}
@@ -423,15 +432,15 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                             : "bg-white/5 border-white/10 hover:bg-white/10"
                         }`}
                       >
-                        <p className="text-white font-medium text-sm">Scelgo io i gruppi</p>
-                        <p className="text-white/40 text-xs">Focus su aree specifiche</p>
+                        <p className="text-white font-medium text-sm">I choose the groups</p>
+                        <p className="text-white/40 text-xs">Focus on specific areas</p>
                       </button>
                     </div>
                   </div>
 
                   {exerciseSelection === "manual" && (
                     <div className="space-y-2">
-                      <p className="text-white/70 text-sm">Seleziona i gruppi muscolari</p>
+                      <p className="text-white/70 text-sm">Select muscle groups</p>
                       <div className="space-y-2">
                         {Object.entries(GROUP_LABELS).map(([key, label]) => (
                           <button
@@ -451,12 +460,12 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                   )}
 
                   <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                    <p className="text-white/40 text-xs mb-1">Piano</p>
+                    <p className="text-white/40 text-xs mb-1">Plan</p>
                     <p className="text-white font-semibold">
-                      {data.body_breaks_target} pause attive durante il giorno
+                      {data.body_breaks_target} active breaks during the day
                     </p>
                     <p className="text-white/40 text-xs mt-1">
-                      Circa 1 ogni {Math.round((8 * 60) / data.body_breaks_target)} minuti
+                      About 1 every {Math.round((8 * 60) / data.body_breaks_target)} minutes
                     </p>
                   </div>
                 </motion.div>
@@ -472,14 +481,14 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
               className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {step === 0 ? "Annulla" : "Indietro"}
+              {step === 0 ? "Cancel" : "Back"}
             </Button>
             <Button
               onClick={handleNext}
-              disabled={(step === 0 && tasks.length === 0) || (step === 1 && (!data.last_meal_time || !data.next_meal_time)) || (step === 3 && exerciseSelection === "manual" && selectedGroups.length === 0)}
+              disabled={(step === 3 && exerciseSelection === "manual" && selectedGroups.length === 0)}
               className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-semibold disabled:opacity-50"
             >
-              {step === 3 ? "Inizia!" : "Avanti"}
+              {step === 3 ? "Start!" : "Next"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Play, Pause, Volume2, VolumeX, RotateCcw } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Play, Pause, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
 
 const SOUND_URL = "https://drive.google.com/uc?export=download&id=1MPfMRcZVDFE7jMIbz8y_oFrn0Oi_EADw";
@@ -8,14 +8,12 @@ export default function FlowCard({ session, onSessionComplete }) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
   const intervalRef = useRef(null);
   const audioRef = useRef(null);
 
   const workMinutes = session?.focus_work_minutes || 45;
   const breakMinutes = session?.focus_break_minutes || 5;
   const totalSeconds = isBreak ? breakMinutes * 60 : workMinutes * 60;
-  const musicType = session?.focus_music_type || "40hz_wind";
 
   useEffect(() => {
     if (session?.status === "active" && !isRunning && timeLeft === 0) {
@@ -52,7 +50,7 @@ export default function FlowCard({ session, onSessionComplete }) {
   }, [isRunning, isBreak]);
 
   useEffect(() => {
-    if (isRunning && !isBreak && soundOn && musicType !== "none") {
+    if (isRunning && !isBreak) {
       if (!audioRef.current) {
         audioRef.current = new Audio(SOUND_URL);
         audioRef.current.loop = true;
@@ -67,11 +65,7 @@ export default function FlowCard({ session, onSessionComplete }) {
         audioRef.current.pause();
       }
     };
-  }, [isRunning, isBreak, soundOn, musicType]);
-
-  const toggleSound = useCallback(() => {
-    setSoundOn((prev) => !prev);
-  }, []);
+  }, [isRunning, isBreak]);
 
   const toggleTimer = () => {
     if (session?.status !== "active") return;
@@ -135,23 +129,25 @@ export default function FlowCard({ session, onSessionComplete }) {
 
       <div className="flex items-center gap-3">
         <button
-          onClick={toggleTimer}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleTimer();
+          }}
           disabled={session?.status !== "active"}
           className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all disabled:opacity-30"
         >
           {isRunning ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white" />}
         </button>
         <button
-          onClick={resetTimer}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resetTimer();
+          }}
           className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
         >
           <RotateCcw className="w-4 h-4 text-white/60" />
-        </button>
-        <button
-          onClick={toggleSound}
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
-        >
-          {soundOn ? <Volume2 className="w-4 h-4 text-violet-400" /> : <VolumeX className="w-4 h-4 text-white/40" />}
         </button>
       </div>
     </motion.div>
