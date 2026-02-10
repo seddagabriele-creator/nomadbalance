@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon } from "lucide-react";
+import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 
@@ -13,6 +13,7 @@ import JournalCard from "../components/dashboard/JournalCard";
 import StartDayWizard from "../components/wizard/StartDayWizard";
 import BreathingCircle from "../components/decompression/BreathingCircle";
 import MotivationalQuote from "../components/MotivationalQuote";
+import MeetingModeDialog from "../components/MeetingModeDialog";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +26,10 @@ import {
 export default function Dashboard() {
   const [showWizard, setShowWizard] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
+  const [breathingDuration, setBreathingDuration] = useState(5);
   const [showQuote, setShowQuote] = useState(false);
   const [showFirstQuote, setShowFirstQuote] = useState(true);
+  const [showMeetingDialog, setShowMeetingDialog] = useState(false);
   const [userName, setUserName] = useState("");
   const [greeting, setGreeting] = useState("");
 
@@ -89,16 +92,68 @@ export default function Dashboard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
   });
 
-  const handleStartDay = async (wizardData, tasks) => {
+  const { data: exercises = [] } = useQuery({
+    queryKey: ["exercises"],
+    queryFn: () => base44.entities.Exercise.list("order"),
+  });
+
+  const { data: allPreviousSessions = [] } = useQuery({
+    queryKey: ["allSessions"],
+    queryFn: () => base44.entities.DaySession.list("-date", 30),
+  });
+
+  const handleStartDay = async (wizardData, tasks, selectedGroups) => {
     try {
+      // Get exercises done in the last 7 days
+      const last7Days = allPreviousSessions.slice(0, 7);
+      const recentExercises = last7Days.flatMap(s => s.exercises_done_today || []);
+      
+      // Select exercises based on user choice
+      let availableExercises = exercises;
+      if (selectedGroups && selectedGroups.length > 0) {
+        availableExercises = exercises.filter(ex => selectedGroups.includes(ex.group));
+      }
+
+      // Generate schedule with smart exercise selection
+      const schedule = [];
+      const breaksCount = wizardData.body_breaks_target;
+      
+      for (let i = 0; i < breaksCount; i++) {
+        // Prioritize exercises not done recently
+        const notRecentExercises = availableExercises.filter(ex => !recentExercises.includes(ex.id));
+        const exercisePool = notRecentExercises.length > 0 ? notRecentExercises : availableExercises;
+        
+        // Pick from different groups for variety
+        const usedGroups = schedule.map(s => exercises.find(e => e.id === s.exercise_id)?.group);
+        const preferredExercises = exercisePool.filter(ex => !usedGroups.includes(ex.group));
+        const finalPool = preferredExercises.length > 0 ? preferredExercises : exercisePool;
+        
+        const exercise = finalPool[Math.floor(Math.random() * finalPool.length)];
+        
+        const workStartMinutes = parseInt(wizardData.work_start_today.split(":")[0]) * 60 + parseInt(wizardData.work_start_today.split(":")[1]);
+        const workEndMinutes = parseInt(wizardData.work_end_today.split(":")[0]) * 60 + parseInt(wizardData.work_end_today.split(":")[1]);
+        const workDuration = workEndMinutes - workStartMinutes;
+        const interval = workDuration / (breaksCount + 1);
+        const breakTime = workStartMinutes + interval * (i + 1);
+        
+        schedule.push({
+          time: `${String(Math.floor(breakTime / 60)).padStart(2, "0")}:${String(Math.floor(breakTime % 60)).padStart(2, "0")}`,
+          exercise_id: exercise.id,
+          exercise_name: exercise.name,
+          completed: false,
+        });
+      }
+
       const newSession = await base44.entities.DaySession.create({
         ...wizardData,
         date: today,
         status: "active",
         started_at: new Date().toTimeString().slice(0, 5),
+        body_break_schedule: schedule,
+        selected_exercise_groups: selectedGroups,
+        exercises_done_today: [],
       });
 
-      // Create tasks
       for (const task of tasks) {
         await base44.entities.Task.create({
           session_id: newSession.id,
@@ -136,7 +191,11 @@ export default function Dashboard() {
   const handleDecompressionComplete = () => {
     setShowBreathing(false);
     if (session) {
-      updateSession.mutate({ status: "completed" });
+      if (showMeetingDialog || breathingDuration < 5) {
+        updateSession.mutate({ meeting_mode: true });
+      } else {
+        updateSession.mutate({ status: "completed" });
+      }
     }
   };
 
@@ -164,7 +223,34 @@ export default function Dashboard() {
 
   const toggleMeetingMode = () => {
     if (session) {
-      updateSession.mutate({ meeting_mode: !session.meeting_mode });
+      if (!session.meeting_mode) {
+        setShowMeetingDialog(true);
+      } else {
+        updateSession.mutate({ meeting_mode: false });
+      }
+    }
+  };
+
+  const handleMeetingConfirm = (breathingMinutes) => {
+    setShowMeetingDialog(false);
+    if (breathingMinutes > 0) {
+      setBreathingDuration(breathingMinutes);
+      setShowBreathing(true);
+    } else {
+      updateSession.mutate({ meeting_mode: true });
+    }
+  };
+
+  const handleResetDay = () => {
+    if (session && window.confirm("Vuoi davvero reimpostare il giorno?")) {
+      updateSession.mutate({ 
+        status: "standby",
+        body_breaks_done: 0,
+        focus_sessions_completed: 0,
+        meeting_mode: false,
+        body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false })),
+        exercises_done_today: [],
+      });
     }
   };
 
@@ -204,9 +290,18 @@ export default function Dashboard() {
                   <Link to={createPageUrl("Settings")}>
                     <DropdownMenuItem className="text-white hover:bg-white/10 cursor-pointer">
                       <SettingsIcon className="w-4 h-4 mr-2" />
-                      Settings
+                      Impostazioni
                     </DropdownMenuItem>
                   </Link>
+                  {(isActive || isCompleted) && (
+                    <DropdownMenuItem 
+                      onClick={handleResetDay}
+                      className="text-amber-400 hover:bg-white/10 cursor-pointer"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Reimposta Giorno
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -242,7 +337,9 @@ export default function Dashboard() {
           <Link to={createPageUrl("Fuel")}>
             <FuelCard session={session} />
           </Link>
-          <FlowCard session={session} onSessionComplete={handleSessionComplete} />
+          <Link to={createPageUrl("Flow")}>
+            <FlowCard session={session} onSessionComplete={handleSessionComplete} />
+          </Link>
           <Link to={createPageUrl("Body")}>
             <BodyCard session={session} />
           </Link>
@@ -357,7 +454,17 @@ export default function Dashboard() {
       {/* Breathing Overlay */}
       <AnimatePresence>
         {showBreathing && (
-          <BreathingCircle onComplete={handleDecompressionComplete} />
+          <BreathingCircle onComplete={handleDecompressionComplete} durationMinutes={breathingDuration} />
+        )}
+      </AnimatePresence>
+
+      {/* Meeting Mode Dialog */}
+      <AnimatePresence>
+        {showMeetingDialog && (
+          <MeetingModeDialog
+            onConfirm={handleMeetingConfirm}
+            onCancel={() => setShowMeetingDialog(false)}
+          />
         )}
       </AnimatePresence>
     </div>

@@ -52,6 +52,7 @@ import Dashboard from './pages/Dashboard';
 import Fuel from './pages/Fuel';
 import Journal from './pages/Journal';
 import Settings from './pages/Settings';
+import Flow from './pages/Flow';
 import __Layout from './Layout.jsx';
 
 
@@ -61,6 +62,7 @@ export const PAGES = {
     "Fuel": Fuel,
     "Journal": Journal,
     "Settings": Settings,
+    "Flow": Flow,
 }
 
 export const pagesConfig = {

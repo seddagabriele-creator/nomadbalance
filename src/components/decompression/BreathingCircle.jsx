@@ -1,74 +1,46 @@
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Moon, Wind } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 
 const PHASES = [
-  { label: "Breathe In", duration: 4000, scale: 1.4 },
-  { label: "Hold", duration: 4000, scale: 1.4 },
-  { label: "Breathe Out", duration: 6000, scale: 1 },
-  { label: "Pause", duration: 2000, scale: 1 },
+  { label: "Inspira", duration: 4000, scale: 1.5 },
+  { label: "Trattieni", duration: 7000, scale: 1.5 },
+  { label: "Espira", duration: 8000, scale: 1 },
+  { label: "Pausa", duration: 2000, scale: 1 },
 ];
 
-const TOTAL_CYCLE = PHASES.reduce((sum, p) => sum + p.duration, 0);
-const SESSION_DURATION = 5 * 60; // 5 minutes
-
-export default function BreathingCircle({ onComplete }) {
+export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
   const [phase, setPhase] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(SESSION_DURATION);
+  const [timeLeft, setTimeLeft] = useState(durationMinutes * 60);
   const [started, setStarted] = useState(false);
-  const timerRef = useRef(null);
-  const phaseRef = useRef(null);
 
   useEffect(() => {
     if (!started) return;
 
-    timerRef.current = setInterval(() => {
+    const sessionInterval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          clearInterval(timerRef.current);
-          clearInterval(phaseRef.current);
-          onComplete?.();
+          clearInterval(sessionInterval);
+          setTimeout(onComplete, 1000);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
 
-    let elapsed = 0;
-    const advancePhase = () => {
-      const currentPhase = PHASES[phase];
-      elapsed += 100;
-      if (elapsed >= currentPhase.duration) {
-        elapsed = 0;
-        setPhase((p) => (p + 1) % PHASES.length);
-      }
-    };
-    phaseRef.current = setInterval(advancePhase, 100);
+    return () => clearInterval(sessionInterval);
+  }, [started, onComplete]);
 
-    // Better phase cycling
-    const cyclePhases = () => {
-      let currentIdx = 0;
-      const cycle = () => {
-        setPhase(currentIdx);
-        const dur = PHASES[currentIdx].duration;
-        currentIdx = (currentIdx + 1) % PHASES.length;
-        phaseRef.current = setTimeout(cycle, dur);
-      };
-      cycle();
-    };
+  useEffect(() => {
+    if (!started) return;
 
-    clearInterval(phaseRef.current);
-    cyclePhases();
+    const phaseTimeout = setTimeout(() => {
+      setPhase((prev) => (prev + 1) % PHASES.length);
+    }, PHASES[phase].duration);
 
-    return () => {
-      clearInterval(timerRef.current);
-      clearTimeout(phaseRef.current);
-    };
-  }, [started]);
+    return () => clearTimeout(phaseTimeout);
+  }, [phase, started]);
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
   const currentPhase = PHASES[phase];
 
   return (
@@ -76,90 +48,87 @@ export default function BreathingCircle({ onComplete }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-950 flex flex-col items-center justify-center p-6"
+      className="fixed inset-0 z-50 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col items-center justify-center overflow-hidden"
     >
-      {/* Stars background */}
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 30 }).map((_, i) => (
+      {/* Animated background stars */}
+      {Array.from({ length: 50 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-white/20 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            opacity: [0.2, 0.8, 0.2],
+            scale: [1, 1.5, 1],
+          }}
+          transition={{
+            duration: 2 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+          }}
+        />
+      ))}
+
+      {!started ? (
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center space-y-6 px-6"
+        >
+          <Sparkles className="w-16 h-16 text-cyan-400 mx-auto" />
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Sessione di Respiro</h1>
+            <p className="text-white/60">{durationMinutes} minuti di pausa profonda</p>
+          </div>
+          <button
+            onClick={() => setStarted(true)}
+            className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 text-white font-semibold rounded-2xl text-lg transition-all"
+          >
+            Inizia Respiro
+          </button>
+        </motion.div>
+      ) : (
+        <>
           <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{ opacity: [0.1, 0.6, 0.1] }}
-            transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, delay: Math.random() * 2 }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="flex items-center gap-2 mb-8">
-          <Moon className="w-5 h-5 text-indigo-400" />
-          <h2 className="text-white/60 text-sm font-medium uppercase tracking-widest">Decompression</h2>
-        </div>
-
-        {!started ? (
-          <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex flex-col items-center gap-6">
-            <div className="w-40 h-40 rounded-full bg-indigo-500/10 border border-indigo-400/20 flex items-center justify-center">
-              <Wind className="w-12 h-12 text-indigo-400" />
-            </div>
-            <div className="text-center">
-              <p className="text-white text-lg font-semibold mb-2">Breathing Session</p>
-              <p className="text-white/40 text-sm">5 minutes to release tension</p>
-            </div>
-            <Button
-              onClick={() => setStarted(true)}
-              className="h-14 px-10 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-500 hover:from-indigo-500 hover:to-violet-400 text-white font-semibold text-base"
+            key={phase}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            className="text-center mb-8"
+          >
+            <motion.p
+              className="text-4xl font-bold text-white mb-2"
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity }}
             >
-              Start Breathing
-            </Button>
-          </motion.div>
-        ) : (
-          <>
-            {/* Breathing circle */}
-            <div className="relative flex items-center justify-center mb-8">
-              <motion.div
-                className="w-48 h-48 rounded-full bg-gradient-to-br from-indigo-500/30 to-violet-500/30 border border-indigo-400/30"
-                animate={{ scale: currentPhase.scale }}
-                transition={{ duration: currentPhase.duration / 1000, ease: "easeInOut" }}
-              />
-              <motion.div
-                className="absolute w-36 h-36 rounded-full bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-white/10"
-                animate={{ scale: currentPhase.scale }}
-                transition={{ duration: currentPhase.duration / 1000, ease: "easeInOut", delay: 0.1 }}
-              />
-              <div className="absolute flex flex-col items-center">
-                <AnimatePresence mode="wait">
-                  <motion.p
-                    key={phase}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="text-white font-semibold text-xl"
-                  >
-                    {currentPhase.label}
-                  </motion.p>
-                </AnimatePresence>
-              </div>
-            </div>
-
-            {/* Timer */}
-            <p className="text-white/30 text-sm tabular-nums">
-              {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+              {currentPhase.label}
+            </motion.p>
+            <p className="text-white/40 text-sm">
+              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")} rimanenti
             </p>
+          </motion.div>
 
-            <Button
-              variant="ghost"
-              onClick={onComplete}
-              className="mt-8 text-white/30 hover:text-white/60 text-sm"
-            >
-              Skip
-            </Button>
-          </>
-        )}
-      </div>
+          <motion.div
+            className="relative w-64 h-64"
+            animate={{ scale: currentPhase.scale }}
+            transition={{ duration: currentPhase.duration / 1000, ease: "easeInOut" }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-full blur-3xl" />
+            <div className="absolute inset-8 bg-gradient-to-br from-cyan-400/30 to-blue-500/30 rounded-full blur-2xl" />
+            <div className="absolute inset-16 bg-gradient-to-br from-cyan-300/40 to-blue-400/40 rounded-full blur-xl" />
+            <div className="absolute inset-20 bg-gradient-to-br from-cyan-200/50 to-blue-300/50 rounded-full" />
+          </motion.div>
+
+          <button
+            onClick={onComplete}
+            className="mt-8 text-white/40 hover:text-white/60 transition-colors text-sm"
+          >
+            Salta
+          </button>
+        </>
+      )}
     </motion.div>
   );
 }

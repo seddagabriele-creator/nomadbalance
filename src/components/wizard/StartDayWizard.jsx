@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical } from "lucide-react";
+import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { useQuery } from "@tanstack/react-query";
 
 const STEPS = [
   { key: "goals", label: "Today's Goals", icon: Target, color: "cyan" },
@@ -21,15 +22,27 @@ const PRESETS = [
   { label: "Custom", work: null, rest: null },
 ];
 
+const GROUP_LABELS = {
+  "neck_cervical": "Collo & Cervicale",
+  "shoulders_thoracic": "Spalle & Torace",
+  "wrists_forearms": "Polsi & Avambracci",
+  "lower_back_core": "Schiena & Core",
+  "hips_legs": "Anche & Gambe"
+};
+
 export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
   const [step, setStep] = useState(0);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [tasks, setTasks] = useState([]);
+  const [showPreviousSettings, setShowPreviousSettings] = useState(false);
+  const [exerciseSelection, setExerciseSelection] = useState("auto");
+  const [selectedGroups, setSelectedGroups] = useState([]);
   const [data, setData] = useState({
     last_meal_time: "",
     next_meal_time: "",
     focus_work_minutes: 45,
     focus_break_minutes: 5,
+    focus_music_type: "40hz_wind",
     body_breaks_target: 6,
     work_start_today: userSettings?.morning_work_start || "10:00",
     work_end_today: userSettings?.afternoon_work_end || "19:00",
@@ -37,14 +50,49 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [needsWorkHours, setNeedsWorkHours] = useState(!userSettings?.morning_work_start);
 
+  const { data: previousSessions = [] } = useQuery({
+    queryKey: ["previousSession"],
+    queryFn: async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+      return base44.entities.DaySession.filter({ date: yesterdayStr });
+    },
+  });
+
+  const { data: exercises = [] } = useQuery({
+    queryKey: ["exercises"],
+    queryFn: () => base44.entities.Exercise.list("order"),
+  });
+
+  const previousSession = previousSessions[0];
+
+  useEffect(() => {
+    if (previousSession && step === 0) {
+      setShowPreviousSettings(true);
+    }
+  }, [previousSession, step]);
+
+  const loadPreviousSettings = () => {
+    setData({
+      ...data,
+      last_meal_time: previousSession.last_meal_time || "",
+      next_meal_time: previousSession.next_meal_time || "",
+      focus_work_minutes: previousSession.focus_work_minutes || 45,
+      focus_break_minutes: previousSession.focus_break_minutes || 5,
+      focus_music_type: previousSession.focus_music_type || "40hz_wind",
+      body_breaks_target: previousSession.body_breaks_target || 6,
+    });
+    setShowPreviousSettings(false);
+  };
+
   const currentStep = STEPS[step];
 
   const handleNext = async () => {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      // Create session and tasks
-      await onComplete(data, tasks);
+      await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
     }
   };
 
@@ -78,6 +126,14 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
     setTasks(reordered.map((t, i) => ({ ...t, order: i + 1 })));
   };
 
+  const toggleGroup = (group) => {
+    if (selectedGroups.includes(group)) {
+      setSelectedGroups(selectedGroups.filter(g => g !== group));
+    } else {
+      setSelectedGroups([...selectedGroups, group]);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -85,254 +141,350 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
     >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="w-full max-w-md bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden max-h-[90vh] overflow-y-auto"
-      >
-        {/* Progress */}
-        <div className="flex gap-2 p-6 pb-0">
-          {STEPS.map((s, i) => (
-            <div key={s.key} className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
-              <motion.div
-                className={`h-full rounded-full ${i <= step ? "bg-gradient-to-r from-violet-500 to-cyan-400" : ""}`}
-                initial={{ width: 0 }}
-                animate={{ width: i <= step ? "100%" : "0%" }}
-                transition={{ duration: 0.4 }}
-              />
+      {showPreviousSettings ? (
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-full max-w-md bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 p-6"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+              <History className="w-5 h-5 text-violet-400" />
             </div>
-          ))}
-        </div>
+            <h2 className="text-white font-bold text-lg">Impostazioni Precedenti</h2>
+          </div>
+          
+          <p className="text-white/70 mb-6">
+            Vuoi utilizzare le stesse impostazioni di ieri?
+          </p>
 
-        {/* Header */}
-        <div className="p-6 pb-2">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl bg-${currentStep.color}-500/20 flex items-center justify-center`}>
-              <currentStep.icon className={`w-5 h-5 text-${currentStep.color}-400`} />
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10 mb-6 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-white/40">Focus:</span>
+              <span className="text-white">{previousSession.focus_work_minutes}/{previousSession.focus_break_minutes} min</span>
             </div>
-            <div>
-              <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>
-              <h2 className="text-white font-bold text-lg">{currentStep.label}</h2>
+            <div className="flex justify-between">
+              <span className="text-white/40">Pause fisiche:</span>
+              <span className="text-white">{previousSession.body_breaks_target}</span>
             </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="p-6 min-h-[240px]">
-          <AnimatePresence mode="wait">
-            {step === 0 && (
-              <motion.div key="goals" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-4">
-                <p className="text-white/70 text-sm">What must you complete today? List in order of priority.</p>
-                <div className="flex gap-2">
-                  <Input
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addTask()}
-                    placeholder="Add a task..."
-                    className="bg-white/5 border-white/10 text-white flex-1"
-                  />
-                  <Button onClick={addTask} className="bg-cyan-600 hover:bg-cyan-700">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
+          <div className="flex gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => setShowPreviousSettings(false)}
+              className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
+            >
+              No, personalizza
+            </Button>
+            <Button
+              onClick={loadPreviousSettings}
+              className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400"
+            >
+              Sì, usa quelle
+            </Button>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="w-full max-w-md bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden max-h-[90vh] overflow-y-auto"
+        >
+          {/* Progress */}
+          <div className="flex gap-2 p-6 pb-0">
+            {STEPS.map((s, i) => (
+              <div key={s.key} className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+                <motion.div
+                  className={`h-full rounded-full ${i <= step ? "bg-gradient-to-r from-violet-500 to-cyan-400" : ""}`}
+                  initial={{ width: 0 }}
+                  animate={{ width: i <= step ? "100%" : "0%" }}
+                  transition={{ duration: 0.4 }}
+                />
+              </div>
+            ))}
+          </div>
 
-                {tasks.length > 0 && (
-                  <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="wizard-tasks">
-                      {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                          {tasks.map((task, index) => (
-                            <Draggable key={index} draggableId={`task-${index}`} index={index}>
-                              {(provided) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/10"
-                                >
-                                  <div {...provided.dragHandleProps}>
-                                    <GripVertical className="w-4 h-4 text-white/40" />
-                                  </div>
-                                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold">
-                                    {index + 1}
-                                  </div>
-                                  <span className="flex-1 text-white text-sm">{task.title}</span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => removeTask(index)}
-                                    className="text-red-400 hover:text-red-300 h-8 w-8"
+          {/* Header */}
+          <div className="p-6 pb-2">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl bg-${currentStep.color}-500/20 flex items-center justify-center`}>
+                <currentStep.icon className={`w-5 h-5 text-${currentStep.color}-400`} />
+              </div>
+              <div>
+                <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>
+                <h2 className="text-white font-bold text-lg">{currentStep.label}</h2>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 min-h-[240px]">
+            <AnimatePresence mode="wait">
+              {step === 0 && (
+                <motion.div key="goals" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-4">
+                  <p className="text-white/70 text-sm">Cosa devi completare oggi? Ordina per priorità.</p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && addTask()}
+                      placeholder="Aggiungi un task..."
+                      className="bg-white/5 border-white/10 text-white flex-1"
+                    />
+                    <Button onClick={addTask} className="bg-cyan-600 hover:bg-cyan-700">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {tasks.length > 0 && (
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                      <Droppable droppableId="wizard-tasks">
+                        {(provided) => (
+                          <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                            {tasks.map((task, index) => (
+                              <Draggable key={index} draggableId={`task-${index}`} index={index}>
+                                {(provided) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/10"
                                   >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
-                )}
+                                    <div {...provided.dragHandleProps}>
+                                      <GripVertical className="w-4 h-4 text-white/40" />
+                                    </div>
+                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold">
+                                      {index + 1}
+                                    </div>
+                                    <span className="flex-1 text-white text-sm">{task.title}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeTask(index)}
+                                      className="text-red-400 hover:text-red-300 h-8 w-8"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  )}
 
-                {tasks.length === 0 && (
-                  <div className="text-center py-6 text-white/40 text-sm">
-                    Add at least one task to continue
+                  {tasks.length === 0 && (
+                    <div className="text-center py-6 text-white/40 text-sm">
+                      Aggiungi almeno un task per continuare
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {step === 1 && (
+                <motion.div key="fuel" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label className="text-white/70 text-sm">Quando hai mangiato l'ultima volta?</Label>
+                    <Input
+                      type="time"
+                      value={data.last_meal_time}
+                      onChange={(e) => setData({ ...data, last_meal_time: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                    />
                   </div>
-                )}
-              </motion.div>
-            )}
+                  <div className="space-y-2">
+                    <Label className="text-white/70 text-sm">Quando sarà il tuo prossimo pasto?</Label>
+                    <Input
+                      type="time"
+                      value={data.next_meal_time}
+                      onChange={(e) => setData({ ...data, next_meal_time: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                    />
+                  </div>
+                  {needsWorkHours && (
+                    <>
+                      <div className="h-px bg-white/10 my-4" />
+                      <div className="space-y-2">
+                        <Label className="text-white/70 text-sm">Orario inizio lavoro oggi</Label>
+                        <Input
+                          type="time"
+                          value={data.work_start_today}
+                          onChange={(e) => setData({ ...data, work_start_today: e.target.value })}
+                          className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white/70 text-sm">Orario fine lavoro oggi</Label>
+                        <Input
+                          type="time"
+                          value={data.work_end_today}
+                          onChange={(e) => setData({ ...data, work_end_today: e.target.value })}
+                          className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                        />
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              )}
 
-            {step === 1 && (
-              <motion.div key="fuel" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                <div className="space-y-2">
-                  <Label className="text-white/70 text-sm">When did you last eat?</Label>
-                  <Input
-                    type="time"
-                    value={data.last_meal_time}
-                    onChange={(e) => setData({ ...data, last_meal_time: e.target.value })}
-                    className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/70 text-sm">When is your next meal?</Label>
-                  <Input
-                    type="time"
-                    value={data.next_meal_time}
-                    onChange={(e) => setData({ ...data, next_meal_time: e.target.value })}
-                    className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                  />
-                </div>
-                {needsWorkHours && (
-                  <>
-                    <div className="h-px bg-white/10 my-4" />
-                    <div className="space-y-2">
-                      <Label className="text-white/70 text-sm">Today's work start time</Label>
-                      <Input
-                        type="time"
-                        value={data.work_start_today}
-                        onChange={(e) => setData({ ...data, work_start_today: e.target.value })}
-                        className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                      />
+              {step === 2 && (
+                <motion.div key="focus" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
+                  <p className="text-white/50 text-sm">Scegli il tuo ritmo lavoro/pausa</p>
+                  <div className="flex gap-3">
+                    {PRESETS.map((p, i) => (
+                      <button
+                        key={i}
+                        onClick={() => selectPreset(i)}
+                        className={`flex-1 py-3 px-4 rounded-xl border text-sm font-medium transition-all ${
+                          selectedPreset === i
+                            ? "bg-violet-500/20 border-violet-500/50 text-violet-300"
+                            : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedPreset === 2 && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-white/70 text-sm">Lavoro: {data.focus_work_minutes} min</Label>
+                        <Slider
+                          value={[data.focus_work_minutes]}
+                          onValueChange={([v]) => setData({ ...data, focus_work_minutes: v })}
+                          min={15}
+                          max={90}
+                          step={5}
+                          className="py-2"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white/70 text-sm">Pausa: {data.focus_break_minutes} min</Label>
+                        <Slider
+                          value={[data.focus_break_minutes]}
+                          onValueChange={([v]) => setData({ ...data, focus_break_minutes: v })}
+                          min={3}
+                          max={20}
+                          step={1}
+                          className="py-2"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-white/70 text-sm">Today's work end time</Label>
-                      <Input
-                        type="time"
-                        value={data.work_end_today}
-                        onChange={(e) => setData({ ...data, work_end_today: e.target.value })}
-                        className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                      />
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            )}
+                  )}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <p className="text-white/40 text-xs mb-1">Il tuo ritmo</p>
+                    <p className="text-white font-semibold">{data.focus_work_minutes} min focus → {data.focus_break_minutes} min pausa</p>
+                  </div>
+                </motion.div>
+              )}
 
-            {step === 2 && (
-              <motion.div key="focus" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                <p className="text-white/50 text-sm">Choose your work/break rhythm</p>
-                <div className="flex gap-3">
-                  {PRESETS.map((p, i) => (
-                    <button
-                      key={i}
-                      onClick={() => selectPreset(i)}
-                      className={`flex-1 py-3 px-4 rounded-xl border text-sm font-medium transition-all ${
-                        selectedPreset === i
-                          ? "bg-violet-500/20 border-violet-500/50 text-violet-300"
-                          : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-                {selectedPreset === 2 && (
-                  <div className="space-y-4">
+              {step === 3 && (
+                <motion.div key="body" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
+                  <p className="text-white/50 text-sm">Quante pause fisiche oggi?</p>
+                  <div className="flex justify-center gap-4 py-4">
+                    {[2, 4, 6, 8].map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setData({ ...data, body_breaks_target: n })}
+                        className={`w-14 h-14 rounded-2xl border text-lg font-bold transition-all ${
+                          data.body_breaks_target === n
+                            ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
+                            : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-white/70 text-sm">Selezione esercizi</p>
                     <div className="space-y-2">
-                      <Label className="text-white/70 text-sm">Work: {data.focus_work_minutes} min</Label>
-                      <Slider
-                        value={[data.focus_work_minutes]}
-                        onValueChange={([v]) => setData({ ...data, focus_work_minutes: v })}
-                        min={15}
-                        max={90}
-                        step={5}
-                        className="py-2"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white/70 text-sm">Break: {data.focus_break_minutes} min</Label>
-                      <Slider
-                        value={[data.focus_break_minutes]}
-                        onValueChange={([v]) => setData({ ...data, focus_break_minutes: v })}
-                        min={3}
-                        max={20}
-                        step={1}
-                        className="py-2"
-                      />
+                      <button
+                        onClick={() => setExerciseSelection("auto")}
+                        className={`w-full p-4 rounded-xl border transition-all ${
+                          exerciseSelection === "auto"
+                            ? "bg-orange-500/20 border-orange-500/50"
+                            : "bg-white/5 border-white/10 hover:bg-white/10"
+                        }`}
+                      >
+                        <p className="text-white font-medium text-sm">L'app sceglie per me</p>
+                        <p className="text-white/40 text-xs">Allenamento bilanciato automatico</p>
+                      </button>
+                      <button
+                        onClick={() => setExerciseSelection("manual")}
+                        className={`w-full p-4 rounded-xl border transition-all ${
+                          exerciseSelection === "manual"
+                            ? "bg-orange-500/20 border-orange-500/50"
+                            : "bg-white/5 border-white/10 hover:bg-white/10"
+                        }`}
+                      >
+                        <p className="text-white font-medium text-sm">Scelgo io i gruppi</p>
+                        <p className="text-white/40 text-xs">Focus su aree specifiche</p>
+                      </button>
                     </div>
                   </div>
-                )}
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <p className="text-white/40 text-xs mb-1">Your rhythm</p>
-                  <p className="text-white font-semibold">{data.focus_work_minutes} min focus → {data.focus_break_minutes} min break</p>
-                </div>
-              </motion.div>
-            )}
 
-            {step === 3 && (
-              <motion.div key="body" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                <p className="text-white/50 text-sm">How many active breaks today?</p>
-                <div className="flex justify-center gap-4 py-4">
-                  {[2, 4, 6, 8].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setData({ ...data, body_breaks_target: n })}
-                      className={`w-14 h-14 rounded-2xl border text-lg font-bold transition-all ${
-                        data.body_breaks_target === n
-                          ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
-                          : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <p className="text-white/40 text-xs mb-1">Plan</p>
-                  <p className="text-white font-semibold">
-                    {data.body_breaks_target} active breaks during the day
-                  </p>
-                  <p className="text-white/40 text-xs mt-1">
-                    About 1 every {Math.round((8 * 60) / data.body_breaks_target)} minutes
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                  {exerciseSelection === "manual" && (
+                    <div className="space-y-2">
+                      <p className="text-white/70 text-sm">Seleziona i gruppi muscolari</p>
+                      <div className="space-y-2">
+                        {Object.entries(GROUP_LABELS).map(([key, label]) => (
+                          <button
+                            key={key}
+                            onClick={() => toggleGroup(key)}
+                            className={`w-full p-3 rounded-lg border text-sm transition-all ${
+                              selectedGroups.includes(key)
+                                ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
+                                : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-        {/* Actions */}
-        <div className="p-6 pt-0 flex gap-3">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {step === 0 ? "Cancel" : "Back"}
-          </Button>
-          <Button
-            onClick={handleNext}
-            disabled={(step === 0 && tasks.length === 0) || (step === 1 && (!data.last_meal_time || !data.next_meal_time))}
-            className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-semibold disabled:opacity-50"
-          >
-            {step === 3 ? "Start!" : "Next"}
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
-      </motion.div>
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <p className="text-white/40 text-xs mb-1">Piano</p>
+                    <p className="text-white font-semibold">
+                      {data.body_breaks_target} pause attive durante il giorno
+                    </p>
+                    <p className="text-white/40 text-xs mt-1">
+                      Circa 1 ogni {Math.round((8 * 60) / data.body_breaks_target)} minuti
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Actions */}
+          <div className="p-6 pt-0 flex gap-3">
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {step === 0 ? "Annulla" : "Indietro"}
+            </Button>
+            <Button
+              onClick={handleNext}
+              disabled={(step === 0 && tasks.length === 0) || (step === 1 && (!data.last_meal_time || !data.next_meal_time)) || (step === 3 && exerciseSelection === "manual" && selectedGroups.length === 0)}
+              className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-semibold disabled:opacity-50"
+            >
+              {step === 3 ? "Inizia!" : "Avanti"}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

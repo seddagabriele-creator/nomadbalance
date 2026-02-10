@@ -2,17 +2,20 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Pause, Volume2, VolumeX, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
 
+const SOUND_URL = "https://drive.google.com/uc?export=download&id=1MPfMRcZVDFE7jMIbz8y_oFrn0Oi_EADw";
+
 export default function FlowCard({ session, onSessionComplete }) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [soundOn, setSoundOn] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
   const intervalRef = useRef(null);
   const audioRef = useRef(null);
 
   const workMinutes = session?.focus_work_minutes || 45;
   const breakMinutes = session?.focus_break_minutes || 5;
   const totalSeconds = isBreak ? breakMinutes * 60 : workMinutes * 60;
+  const musicType = session?.focus_music_type || "40hz_wind";
 
   useEffect(() => {
     if (session?.status === "active" && !isRunning && timeLeft === 0) {
@@ -30,6 +33,10 @@ export default function FlowCard({ session, onSessionComplete }) {
               onSessionComplete?.();
               setIsBreak(true);
               setIsRunning(true);
+              if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+              }
               return breakMinutes * 60;
             } else {
               setIsBreak(false);
@@ -43,6 +50,24 @@ export default function FlowCard({ session, onSessionComplete }) {
     }
     return () => clearInterval(intervalRef.current);
   }, [isRunning, isBreak]);
+
+  useEffect(() => {
+    if (isRunning && !isBreak && soundOn && musicType !== "none") {
+      if (!audioRef.current) {
+        audioRef.current = new Audio(SOUND_URL);
+        audioRef.current.loop = true;
+      }
+      audioRef.current.play().catch(console.error);
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [isRunning, isBreak, soundOn, musicType]);
 
   const toggleSound = useCallback(() => {
     setSoundOn((prev) => !prev);
@@ -72,7 +97,7 @@ export default function FlowCard({ session, onSessionComplete }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-5 flex flex-col items-center justify-between min-h-[180px]"
+      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-5 flex flex-col items-center justify-between min-h-[180px] cursor-pointer"
     >
       <div className="absolute top-0 left-0 w-24 h-24 bg-violet-400/10 rounded-full -translate-y-6 -translate-x-6" />
       <div className="flex items-center gap-2 mb-2 self-start">
