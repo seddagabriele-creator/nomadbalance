@@ -25,10 +25,11 @@ export default function FlowCard({ session, onSessionComplete }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="relative rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 flex flex-col items-center justify-between h-full"
+      className="relative rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-5 flex flex-col justify-between h-full"
     >
       <div className="absolute top-0 left-0 w-24 h-24 bg-violet-400/10 rounded-full -translate-y-6 -translate-x-6" />
-      <div className="flex items-center gap-2 mb-4 self-start">
+      
+      <div className="flex items-center gap-2 mb-3">
         <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
           <Play className="w-4 h-4 text-violet-400" />
         </div>
@@ -40,37 +41,25 @@ export default function FlowCard({ session, onSessionComplete }) {
         )}
       </div>
 
-      <div className="relative flex items-center justify-center flex-1">
-        <svg width="80" height="80" className="-rotate-90">
-          <circle cx="40" cy="40" r="34" stroke="rgba(255,255,255,0.08)" strokeWidth="5" fill="none" />
-          <circle
-            cx="40" cy="40" r="34"
-            stroke={isBreak ? "#f59e0b" : "#8b5cf6"}
-            strokeWidth="5"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            className="transition-all duration-1000"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xl font-bold text-white tabular-nums">
-            {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-          </span>
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="text-4xl font-bold text-white tabular-nums mb-1">
+          {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+        </div>
+        <div className="text-xs text-white/40 uppercase tracking-wider">
+          {isBreak ? "Break time" : "Focus time"}
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-center gap-3 mt-3">
         <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             toggleTimer();
           }}
-          className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all"
+          className="w-11 h-11 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all shadow-lg"
         >
-          {isRunning ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white" />}
+          {isRunning ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
         </button>
         <button
           onClick={(e) => {
@@ -78,9 +67,9 @@ export default function FlowCard({ session, onSessionComplete }) {
             e.stopPropagation();
             resetTimer();
           }}
-          className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all"
+          className="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
         >
-          <RotateCcw className="w-4 h-4 text-white" />
+          <RotateCcw className="w-4 h-4 text-white/70" />
         </button>
       </div>
     </motion.div>
