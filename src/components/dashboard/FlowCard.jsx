@@ -99,7 +99,7 @@ export default function FlowCard({ session, onSessionComplete }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-5 flex flex-col items-center justify-between min-h-[180px] cursor-pointer"
+      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-4 flex flex-col items-center justify-between h-full cursor-pointer"
     >
       <div className="absolute top-0 left-0 w-24 h-24 bg-violet-400/10 rounded-full -translate-y-6 -translate-x-6" />
       <div className="flex items-center gap-2 mb-2 self-start">
@@ -114,13 +114,13 @@ export default function FlowCard({ session, onSessionComplete }) {
         )}
       </div>
 
-      <div className="relative flex items-center justify-center my-2">
-        <svg width="120" height="120" className="-rotate-90">
-          <circle cx="60" cy="60" r="52" stroke="rgba(255,255,255,0.08)" strokeWidth="6" fill="none" />
+      <div className="relative flex items-center justify-center flex-1">
+        <svg width="80" height="80" className="-rotate-90">
+          <circle cx="40" cy="40" r="34" stroke="rgba(255,255,255,0.08)" strokeWidth="5" fill="none" />
           <circle
-            cx="60" cy="60" r="52"
+            cx="40" cy="40" r="34"
             stroke={isBreak ? "#f59e0b" : "#8b5cf6"}
-            strokeWidth="6"
+            strokeWidth="5"
             fill="none"
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -129,13 +129,13 @@ export default function FlowCard({ session, onSessionComplete }) {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-bold text-white tabular-nums">
+          <span className="text-xl font-bold text-white tabular-nums">
             {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -143,9 +143,9 @@ export default function FlowCard({ session, onSessionComplete }) {
             toggleTimer();
           }}
           disabled={session?.status !== "active"}
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all disabled:opacity-30"
+          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all disabled:opacity-30"
         >
-          {isRunning ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white" />}
+          {isRunning ? <Pause className="w-3.5 h-3.5 text-white" /> : <Play className="w-3.5 h-3.5 text-white" />}
         </button>
         <button
           onClick={(e) => {
@@ -153,9 +153,9 @@ export default function FlowCard({ session, onSessionComplete }) {
             e.stopPropagation();
             resetTimer();
           }}
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
         >
-          <RotateCcw className="w-4 h-4 text-white/60" />
+          <RotateCcw className="w-3.5 h-3.5 text-white/60" />
         </button>
       </div>
     </motion.div>

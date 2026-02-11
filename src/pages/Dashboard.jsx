@@ -264,7 +264,7 @@ export default function Dashboard() {
       <div className="absolute bottom-20 -right-20 w-80 h-80 bg-cyan-600/10 rounded-full blur-3xl" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
 
-      <div className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-28">
+      <div className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-6">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center justify-between mb-1">
@@ -334,104 +334,101 @@ export default function Dashboard() {
 
         {/* Grid */}
         <div className="grid grid-cols-2 gap-3">
-          <Link to={createPageUrl("Fuel")}>
+          <Link to={createPageUrl("Fuel")} className="h-[160px]">
             <FuelCard session={session} />
           </Link>
-          <Link to={createPageUrl("Flow")}>
+          <Link to={createPageUrl("Flow")} className="h-[160px]">
             <FlowCard session={session} onSessionComplete={handleSessionComplete} />
           </Link>
-          <Link to={createPageUrl("Body")}>
+          <Link to={createPageUrl("Body")} className="h-[160px]">
             <BodyCard session={session} />
           </Link>
-          <Link to={createPageUrl("Journal")}>
+          <Link to={createPageUrl("Journal")} className="h-[160px]">
             <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />
           </Link>
         </div>
 
-        {/* Stats bar */}
-        {isActive && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-4 flex items-center justify-around rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4"
+        {/* Action Buttons */}
+        {!isActive && !isCompleted && (
+          <motion.button
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleShowWizard}
+            className="mt-4 w-full h-14 rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
           >
-            <div className="text-center">
-              <p className="text-lg font-bold text-white">{session?.focus_sessions_completed || 0}</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Sessions</p>
-            </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="text-center">
-              <p className="text-lg font-bold text-white">{session?.body_breaks_done || 0}/{session?.body_breaks_target || 0}</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Breaks</p>
-            </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="text-center">
-              <p className="text-lg font-bold text-white">
-                {((session?.focus_sessions_completed || 0) * (session?.focus_work_minutes || 45))} min
-              </p>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Focus</p>
-            </div>
-          </motion.div>
+            <Sun className="w-5 h-5" />
+            START DAY
+          </motion.button>
         )}
-      </div>
 
-      {/* Floating Action Button */}
-      <div className="fixed bottom-6 left-0 right-0 z-20 flex justify-center px-4">
-        <div className="max-w-lg w-full flex gap-3">
-          {!isActive && !isCompleted && (
-            <motion.button
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleShowWizard}
-              className="flex-1 h-14 rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+        {isActive && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4 flex items-center justify-around rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3"
             >
-              <Sun className="w-5 h-5" />
-              START DAY
-            </motion.button>
-          )}
+              <div className="text-center">
+                <p className="text-base font-bold text-white">{session?.focus_sessions_completed || 0}</p>
+                <p className="text-[9px] text-white/40 uppercase tracking-wider">Sessions</p>
+              </div>
+              <div className="w-px h-6 bg-white/10" />
+              <div className="text-center">
+                <p className="text-base font-bold text-white">{session?.body_breaks_done || 0}/{session?.body_breaks_target || 0}</p>
+                <p className="text-[9px] text-white/40 uppercase tracking-wider">Breaks</p>
+              </div>
+              <div className="w-px h-6 bg-white/10" />
+              <div className="text-center">
+                <p className="text-base font-bold text-white">
+                  {((session?.focus_sessions_completed || 0) * (session?.focus_work_minutes || 45))} min
+                </p>
+                <p className="text-[9px] text-white/40 uppercase tracking-wider">Focus</p>
+              </div>
+            </motion.div>
 
-          {isActive && (
-            <>
+            <div className="mt-3 flex gap-3">
               <motion.button
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={toggleMeetingMode}
-                className={`flex-1 h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 h-12 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
                   session.meeting_mode
                     ? "bg-amber-500/20 border border-amber-500/30 text-amber-300"
                     : "bg-white/10 border border-white/10 text-white/70 hover:bg-white/15"
                 }`}
               >
-                <Users className="w-5 h-5" />
-                {session.meeting_mode ? "IN MEETING" : "MEETING MODE"}
+                <Users className="w-4 h-4" />
+                {session.meeting_mode ? "IN MEETING" : "MEETING"}
               </motion.button>
               <motion.button
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={handleEndDay}
-                className="h-14 px-6 rounded-2xl bg-white/10 border border-white/10 text-white/50 hover:text-white hover:bg-white/15 font-medium flex items-center justify-center gap-2 transition-all"
+                className="h-12 px-5 rounded-2xl bg-white/10 border border-white/10 text-white/50 hover:text-white hover:bg-white/15 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
               >
-                <Moon className="w-5 h-5" />
+                <Moon className="w-4 h-4" />
                 End
               </motion.button>
-            </>
-          )}
+            </div>
+          </>
+        )}
 
-          {isCompleted && (
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="flex-1 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium flex items-center justify-center gap-2"
-            >
-              <Moon className="w-5 h-5" />
-              Day Completed
-            </motion.div>
-          )}
-        </div>
+        {isCompleted && (
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="mt-4 w-full h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium flex items-center justify-center gap-2"
+          >
+            <Moon className="w-5 h-5" />
+            Day Completed
+          </motion.div>
+        )}
       </div>
+
+
 
       {/* Motivational Quote Fullscreen */}
       <AnimatePresence>
