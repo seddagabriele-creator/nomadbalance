@@ -49,7 +49,7 @@ export default function Fuel() {
     updateSession.mutate({
       last_meal_time: lastMeal,
       next_meal_time: nextMeal,
-      fasting_preset: PRESETS[selectedPreset].label,
+      fasting_preset: PRESETS[selectedPreset]?.label || "Custom",
     });
   };
 
