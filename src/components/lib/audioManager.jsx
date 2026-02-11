@@ -1,45 +1,65 @@
-// Global audio manager for seamless background music
+// Global audio manager with Web Audio API for gapless looping
 class AudioManager {
   constructor() {
-    this.audio = null;
+    this.audioContext = null;
+    this.audioBuffer = null;
+    this.source = null;
+    this.gainNode = null;
     this.isPlaying = false;
     this.currentUrl = null;
   }
 
-  play(url) {
-    if (this.currentUrl !== url) {
-      this.stop();
-      this.audio = new Audio(url);
-      this.audio.loop = true;
-      this.audio.volume = 0.7;
-      this.currentUrl = url;
+  async play(url) {
+    if (this.currentUrl !== url || !this.audioBuffer) {
+      await this.loadAudio(url);
     }
 
-    if (this.audio && !this.isPlaying) {
-      const playPromise = this.audio.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          this.isPlaying = true;
-        }).catch(err => {
-          console.log("Audio play failed:", err);
-        });
-      }
+    if (!this.isPlaying && this.audioBuffer) {
+      this.startPlayback();
     }
   }
 
+  async loadAudio(url) {
+    try {
+      this.stop();
+      
+      if (!this.audioContext) {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.gainNode = this.audioContext.createGain();
+        this.gainNode.gain.value = 0.7;
+        this.gainNode.connect(this.audioContext.destination);
+      }
+
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      this.currentUrl = url;
+    } catch (err) {
+      console.log("Audio load failed:", err);
+    }
+  }
+
+  startPlayback() {
+    if (!this.audioBuffer || !this.audioContext) return;
+
+    this.source = this.audioContext.createBufferSource();
+    this.source.buffer = this.audioBuffer;
+    this.source.loop = true;
+    this.source.connect(this.gainNode);
+    this.source.start(0);
+    this.isPlaying = true;
+  }
+
   pause() {
-    if (this.audio && this.isPlaying) {
-      this.audio.pause();
+    if (this.source && this.isPlaying) {
+      this.source.stop();
+      this.source = null;
       this.isPlaying = false;
     }
   }
 
   stop() {
-    if (this.audio) {
-      this.audio.pause();
-      this.audio.currentTime = 0;
-      this.isPlaying = false;
-    }
+    this.pause();
   }
 
   getIsPlaying() {

@@ -200,6 +200,13 @@ export default function Dashboard() {
     }
   };
 
+  const handleBreathingCancel = () => {
+    setShowBreathing(false);
+    if (session) {
+      updateSession.mutate({ status: "completed" });
+    }
+  };
+
   const handleSessionComplete = () => {
     if (session) {
       updateSession.mutate({
@@ -455,7 +462,7 @@ export default function Dashboard() {
           <BreathingCircle 
             onComplete={handleDecompressionComplete} 
             durationMinutes={breathingDuration}
-            onCancel={() => setShowBreathing(false)}
+            onCancel={handleBreathingCancel}
           />
         )}
       </AnimatePresence>
