@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
 
-const SOUND_URL = "https://drive.google.com/uc?export=download&id=1MPfMRcZVDFE7jMIbz8y_oFrn0Oi_EADw";
+const SOUND_URL = "https://files.catbox.moe/f0pwi6.mp3";
 
 export default function FlowCard({ session, onSessionComplete }) {
   const [timeLeft, setTimeLeft] = useState(0);
@@ -91,7 +91,7 @@ export default function FlowCard({ session, onSessionComplete }) {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const progress = totalSeconds > 0 ? ((totalSeconds - timeLeft) / totalSeconds) * 100 : 0;
-  const circumference = 2 * Math.PI * 52;
+  const circumference = 2 * Math.PI * 34;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (

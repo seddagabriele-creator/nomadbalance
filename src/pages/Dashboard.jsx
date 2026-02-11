@@ -333,17 +333,17 @@ export default function Dashboard() {
         )}
 
         {/* Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <Link to={createPageUrl("Fuel")} className="h-[160px]">
+        <div className="grid grid-cols-2 gap-4">
+          <Link to={createPageUrl("Fuel")} className="h-[170px]">
             <FuelCard session={session} />
           </Link>
-          <Link to={createPageUrl("Flow")} className="h-[160px]">
+          <Link to={createPageUrl("Flow")} className="h-[170px]">
             <FlowCard session={session} onSessionComplete={handleSessionComplete} />
           </Link>
-          <Link to={createPageUrl("Body")} className="h-[160px]">
+          <Link to={createPageUrl("Body")} className="h-[170px]">
             <BodyCard session={session} />
           </Link>
-          <Link to={createPageUrl("Journal")} className="h-[160px]">
+          <Link to={createPageUrl("Journal")} className="h-[170px]">
             <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />
           </Link>
         </div>

@@ -8,7 +8,7 @@ export default function JournalCard({ session, topTask, onToggleTask }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-5 flex flex-col justify-between min-h-[180px]"
+      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-5 flex flex-col justify-between h-full"
     >
       <div className="absolute bottom-0 right-0 w-20 h-20 bg-cyan-400/10 rounded-full translate-y-6 translate-x-6" />
       <div className="flex items-center gap-2 mb-3">
