@@ -54,15 +54,23 @@ export default function FlowCard({ session, onSessionComplete }) {
       if (!audioRef.current) {
         audioRef.current = new Audio(SOUND_URL);
         audioRef.current.loop = true;
+        audioRef.current.volume = 0.7;
       }
-      audioRef.current.play().catch(console.error);
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.log("Audio play failed:", err);
+        });
+      }
     } else if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
     
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current.currentTime = 0;
       }
     };
   }, [isRunning, isBreak]);

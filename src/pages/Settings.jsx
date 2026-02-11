@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
@@ -25,6 +25,7 @@ export default function Settings() {
     morning_work_end: userSettings.morning_work_end || "13:00",
     afternoon_work_start: userSettings.afternoon_work_start || "14:00",
     afternoon_work_end: userSettings.afternoon_work_end || "18:00",
+    breathing_technique: userSettings.breathing_technique || "4-7-8",
     notifications_enabled: userSettings.notifications_enabled ?? true,
     notification_start_time: userSettings.notification_start_time || "09:00",
     notification_end_time: userSettings.notification_end_time || "18:00",
@@ -55,6 +56,7 @@ export default function Settings() {
         morning_work_end: userSettings.morning_work_end || "13:00",
         afternoon_work_start: userSettings.afternoon_work_start || "14:00",
         afternoon_work_end: userSettings.afternoon_work_end || "18:00",
+        breathing_technique: userSettings.breathing_technique || "4-7-8",
         notifications_enabled: userSettings.notifications_enabled ?? true,
         notification_start_time: userSettings.notification_start_time || "09:00",
         notification_end_time: userSettings.notification_end_time || "18:00",
@@ -135,6 +137,45 @@ export default function Settings() {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Breathing */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+            <h2 className="text-lg font-semibold mb-4">Breathing Technique</h2>
+            <div className="space-y-3">
+              <button
+                onClick={() => setFormData({ ...formData, breathing_technique: "4-7-8" })}
+                className={`w-full p-4 rounded-xl border transition-all ${
+                  formData.breathing_technique === "4-7-8"
+                    ? "bg-cyan-500/20 border-cyan-500/50"
+                    : "bg-white/5 border-white/10 hover:bg-white/10"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Wind className="w-5 h-5 text-cyan-400" />
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium text-sm">4-7-8 Technique</p>
+                    <p className="text-white/40 text-xs">Breathe in 4s, hold 7s, out 8s</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => setFormData({ ...formData, breathing_technique: "box" })}
+                className={`w-full p-4 rounded-xl border transition-all ${
+                  formData.breathing_technique === "box"
+                    ? "bg-cyan-500/20 border-cyan-500/50"
+                    : "bg-white/5 border-white/10 hover:bg-white/10"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Wind className="w-5 h-5 text-cyan-400" />
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium text-sm">Box Breathing</p>
+                    <p className="text-white/40 text-xs">Equal 4s intervals - in, hold, out, pause</p>
+                  </div>
+                </div>
+              </button>
             </div>
           </div>
 

@@ -1,18 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import BreathingInstructions from "./BreathingInstructions";
 
-const PHASES = [
-  { label: "Breathe In", duration: 4000, scale: 1.5 },
-  { label: "Hold", duration: 7000, scale: 1.5 },
-  { label: "Breathe Out", duration: 8000, scale: 1 },
-  { label: "Pause", duration: 2000, scale: 1 },
-];
+const TECHNIQUES = {
+  "4-7-8": [
+    { label: "Breathe In", duration: 4000, scale: 1.5 },
+    { label: "Hold", duration: 7000, scale: 1.5 },
+    { label: "Breathe Out", duration: 8000, scale: 1 },
+  ],
+  "box": [
+    { label: "Breathe In", duration: 4000, scale: 1.5 },
+    { label: "Hold", duration: 4000, scale: 1.5 },
+    { label: "Breathe Out", duration: 4000, scale: 1 },
+    { label: "Pause", duration: 4000, scale: 1 },
+  ],
+};
 
 export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
   const [phase, setPhase] = useState(0);
   const [timeLeft, setTimeLeft] = useState(durationMinutes * 60);
   const [started, setStarted] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
+
+  const { data: settings = [] } = useQuery({
+    queryKey: ["userSettings"],
+    queryFn: () => base44.entities.UserSettings.list(),
+  });
+
+  const technique = settings[0]?.breathing_technique || "4-7-8";
+  const PHASES = TECHNIQUES[technique];
 
   useEffect(() => {
     if (!started) return;
@@ -44,32 +63,35 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
   const currentPhase = PHASES[phase];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col items-center justify-center overflow-hidden"
-    >
-      {/* Animated background stars */}
-      {Array.from({ length: 50 }).map((_, i) => (
+    <>
+      <AnimatePresence>
+        {showInstructions && (
+          <BreathingInstructions
+            technique={technique}
+            onClose={() => setShowInstructions(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {!showInstructions && (
         <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-white/20 rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            opacity: [0.2, 0.8, 0.2],
-            scale: [1, 1.5, 1],
-          }}
-          transition={{
-            duration: 2 + Math.random() * 2,
-            repeat: Infinity,
-            delay: Math.random() * 2,
-          }}
-        />
-      ))}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col items-center justify-center overflow-hidden"
+        >
+          {/* Smooth gradient background overlay */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 via-transparent to-blue-900/10"
+            animate={{
+              opacity: [0.3, 0.5, 0.3],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
 
       {!started ? (
         <motion.div
@@ -126,9 +148,11 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
             className="mt-8 text-white/40 hover:text-white/60 transition-colors text-sm"
           >
             Skip
-          </button>
-        </>
-      )}
-    </motion.div>
-  );
-}
+            </button>
+            </>
+            )}
+            </motion.div>
+            )}
+            </>
+            );
+            }

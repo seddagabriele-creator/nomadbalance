@@ -31,10 +31,11 @@ const GROUP_LABELS = {
 };
 
 export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(-1); // Start at -1 to handle pre-existing tasks
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [tasks, setTasks] = useState([]);
   const [showPreviousSettings, setShowPreviousSettings] = useState(false);
+  const [showTasksDialog, setShowTasksDialog] = useState(false);
   const [exerciseSelection, setExerciseSelection] = useState("auto");
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [data, setData] = useState({
@@ -86,9 +87,16 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
       body_breaks_target: previousSession.body_breaks_target || 6,
     });
     setShowPreviousSettings(false);
+    setStep(0);
   };
 
-  const currentStep = STEPS[step];
+  const loadExistingTasks = () => {
+    setTasks(existingTasks.map(t => ({ title: t.title, order: t.order })));
+    setShowTasksDialog(false);
+    setStep(0);
+  };
+
+  const currentStep = step >= 0 ? STEPS[step] : STEPS[0];
 
   const handleNext = async () => {
     if (step < 3) {
@@ -99,8 +107,11 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
   };
 
   const handleBack = () => {
-    if (step > 0) setStep(step - 1);
-    else onCancel();
+    if (step > 0) {
+      setStep(step - 1);
+    } else {
+      onCancel();
+    }
   };
 
   const selectPreset = (idx) => {
@@ -143,7 +154,52 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
     >
-      {showPreviousSettings ? (
+      {showTasksDialog ? (
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-full max-w-md bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 p-6"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+              <Target className="w-5 h-5 text-cyan-400" />
+            </div>
+            <h2 className="text-white font-bold text-lg">Existing Tasks</h2>
+          </div>
+          
+          <p className="text-white/70 mb-6">
+            You have {existingTasks.length} task{existingTasks.length > 1 ? 's' : ''} from before. Keep them for today?
+          </p>
+
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10 mb-6 space-y-2 max-h-48 overflow-y-auto">
+            {existingTasks.slice(0, 5).map((task, i) => (
+              <div key={task.id} className="flex items-center gap-2 text-sm">
+                <span className="text-cyan-400">{i + 1}.</span>
+                <span className="text-white">{task.title}</span>
+              </div>
+            ))}
+            {existingTasks.length > 5 && (
+              <p className="text-white/40 text-xs">...and {existingTasks.length - 5} more</p>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => { setShowTasksDialog(false); setStep(0); }}
+              className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
+            >
+              Create new
+            </Button>
+            <Button
+              onClick={loadExistingTasks}
+              className="flex-1 h-12 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400"
+            >
+              Keep these
+            </Button>
+          </div>
+        </motion.div>
+      ) : showPreviousSettings ? (
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -174,7 +230,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
           <div className="flex gap-3">
             <Button
               variant="ghost"
-              onClick={() => setShowPreviousSettings(false)}
+              onClick={() => { setShowPreviousSettings(false); setStep(0); }}
               className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
             >
               No, customize
@@ -195,18 +251,20 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
           className="w-full max-w-md bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden max-h-[90vh] overflow-y-auto"
         >
           {/* Progress */}
-          <div className="flex gap-2 p-6 pb-0">
-            {STEPS.map((s, i) => (
-              <div key={s.key} className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
-                <motion.div
-                  className={`h-full rounded-full ${i <= step ? "bg-gradient-to-r from-violet-500 to-cyan-400" : ""}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: i <= step ? "100%" : "0%" }}
-                  transition={{ duration: 0.4 }}
-                />
-              </div>
-            ))}
-          </div>
+          {step >= 0 && (
+            <div className="flex gap-2 p-6 pb-0">
+              {STEPS.map((s, i) => (
+                <div key={s.key} className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+                  <motion.div
+                    className={`h-full rounded-full ${i <= step ? "bg-gradient-to-r from-violet-500 to-cyan-400" : ""}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: i <= step ? "100%" : "0%" }}
+                    transition={{ duration: 0.4 }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Header */}
           <div className="p-6 pb-2">

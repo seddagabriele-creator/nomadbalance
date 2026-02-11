@@ -99,14 +99,12 @@ export default function Flow() {
                 const Icon = sound.icon;
                 const isSelected = currentFocusSound === sound.id;
                 return (
-                  <button
+                  <div
                     key={sound.id}
-                    onClick={() => handleSelectFocusSound(sound.id)}
-                    disabled={!session}
-                    className={`w-full p-4 rounded-xl border transition-all disabled:opacity-50 ${
+                    className={`w-full p-4 rounded-xl border ${
                       isSelected
                         ? "bg-violet-500/20 border-violet-500/50"
-                        : "bg-white/5 border-white/10 hover:bg-white/10"
+                        : "bg-white/5 border-white/10"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -121,11 +119,9 @@ export default function Flow() {
                         <p className="text-white font-medium">{sound.name}</p>
                         <p className="text-white/40 text-xs">{sound.description}</p>
                       </div>
-                      {isSelected && (
-                        <Check className="w-5 h-5 text-violet-400" />
-                      )}
+                      <Check className="w-5 h-5 text-violet-400" />
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -145,14 +141,12 @@ export default function Flow() {
                 const Icon = sound.icon;
                 const isSelected = currentRelaxSound === sound.id;
                 return (
-                  <button
+                  <div
                     key={sound.id}
-                    onClick={() => handleSelectRelaxSound(sound.id)}
-                    disabled={!session}
-                    className={`w-full p-4 rounded-xl border transition-all disabled:opacity-50 ${
+                    className={`w-full p-4 rounded-xl border ${
                       isSelected
                         ? "bg-cyan-500/20 border-cyan-500/50"
-                        : "bg-white/5 border-white/10 hover:bg-white/10"
+                        : "bg-white/5 border-white/10"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -167,11 +161,9 @@ export default function Flow() {
                         <p className="text-white font-medium">{sound.name}</p>
                         <p className="text-white/40 text-xs">{sound.description}</p>
                       </div>
-                      {isSelected && (
-                        <Check className="w-5 h-5 text-cyan-400" />
-                      )}
+                      <Check className="w-5 h-5 text-cyan-400" />
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
