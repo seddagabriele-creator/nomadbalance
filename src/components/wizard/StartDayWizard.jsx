@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const STEPS = [
   { key: "goals", label: "Today's Goals", icon: Target, color: "cyan" },
@@ -31,6 +31,7 @@ const GROUP_LABELS = {
 };
 
 export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(-1); // Start at -1 to handle pre-existing tasks
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [tasks, setTasks] = useState([]);
