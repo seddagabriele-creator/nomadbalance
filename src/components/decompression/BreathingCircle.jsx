@@ -82,7 +82,7 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
         >
           {/* Smooth gradient background overlay */}
           <motion.div
-            className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 via-transparent to-blue-900/10"
+            className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 via-transparent to-blue-900/10 pointer-events-none"
             animate={{
               opacity: [0.3, 0.5, 0.3],
             }}
@@ -97,7 +97,7 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-center space-y-6 px-6"
+          className="text-center space-y-6 px-6 relative z-10"
         >
           <Sparkles className="w-16 h-16 text-cyan-400 mx-auto" />
           <div>
@@ -106,7 +106,7 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
           </div>
           <button
             onClick={() => setStarted(true)}
-            className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 text-white font-semibold rounded-2xl text-lg transition-all"
+            className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 text-white font-semibold rounded-2xl text-lg transition-all shadow-lg"
           >
             Start Breathing
           </button>
