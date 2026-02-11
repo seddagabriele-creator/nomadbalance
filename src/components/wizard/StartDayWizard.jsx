@@ -212,6 +212,13 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
           <div className="flex gap-3">
             <Button
               variant="ghost"
+              onClick={onCancel}
+              className="w-10 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 px-0"
+            >
+              ✕
+            </Button>
+            <Button
+              variant="ghost"
               onClick={() => { setShowTasksDialog(false); setStep(0); }}
               className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
             >
@@ -254,6 +261,13 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
           </div>
 
           <div className="flex gap-3">
+            <Button
+              variant="ghost"
+              onClick={onCancel}
+              className="w-10 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 px-0"
+            >
+              ✕
+            </Button>
             <Button
               variant="ghost"
               onClick={() => { setShowPreviousSettings(false); setStep(0); }}
