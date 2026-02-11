@@ -116,16 +116,16 @@ export default function FlowCard({ session, onSessionComplete }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             toggleTimer();
           }}
-          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+          className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all"
         >
-          {isRunning ? <Pause className="w-3.5 h-3.5 text-white" /> : <Play className="w-3.5 h-3.5 text-white" />}
+          {isRunning ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white" />}
         </button>
         <button
           onClick={(e) => {
@@ -133,9 +133,9 @@ export default function FlowCard({ session, onSessionComplete }) {
             e.stopPropagation();
             resetTimer();
           }}
-          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+          className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all"
         >
-          <RotateCcw className="w-3.5 h-3.5 text-white/60" />
+          <RotateCcw className="w-4 h-4 text-white" />
         </button>
       </div>
     </motion.div>
