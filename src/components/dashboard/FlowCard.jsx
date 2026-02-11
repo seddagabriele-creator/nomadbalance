@@ -1,73 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
-import { audioManager } from "../../components/lib/audioManager";
-
-const SOUND_URL = "https://files.catbox.moe/f0pwi6.mp3";
+import { useTimer } from "../lib/TimerContext";
 
 export default function FlowCard({ session, onSessionComplete }) {
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isBreak, setIsBreak] = useState(false);
-  const [isAudioPlaying, setIsAudioPlaying] = useState(audioManager.getIsPlaying());
-  const intervalRef = useRef(null);
+  const { timeLeft, isRunning, isBreak, workMinutes, breakMinutes, toggleTimer, resetTimer, initializeTimer } = useTimer();
 
-  const workMinutes = session?.focus_work_minutes || 45;
-  const breakMinutes = session?.focus_break_minutes || 5;
+  const sessionWorkMinutes = session?.focus_work_minutes || 45;
+  const sessionBreakMinutes = session?.focus_break_minutes || 5;
   const totalSeconds = isBreak ? breakMinutes * 60 : workMinutes * 60;
 
   useEffect(() => {
-    if (session?.status === "active" && !isRunning && timeLeft === 0) {
-      setTimeLeft(workMinutes * 60);
-    }
-  }, [session]);
-
-  useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current);
-            if (!isBreak) {
-              onSessionComplete?.();
-              setIsBreak(true);
-              setIsRunning(true);
-              audioManager.pause();
-              return breakMinutes * 60;
-            } else {
-              setIsBreak(false);
-              setIsRunning(false);
-              return workMinutes * 60;
-            }
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning, isBreak]);
-
-  useEffect(() => {
-    if (isRunning && !isBreak) {
-      audioManager.play(SOUND_URL);
-      setIsAudioPlaying(true);
-    } else {
-      audioManager.pause();
-      setIsAudioPlaying(false);
-    }
-  }, [isRunning, isBreak]);
-
-  const toggleTimer = () => {
-    if (timeLeft === 0) setTimeLeft(workMinutes * 60);
-    setIsRunning(!isRunning);
-  };
-
-  const resetTimer = () => {
-    setIsRunning(false);
-    setIsBreak(false);
-    setTimeLeft(workMinutes * 60);
-    clearInterval(intervalRef.current);
-  };
+    initializeTimer(sessionWorkMinutes, sessionBreakMinutes, onSessionComplete);
+  }, [sessionWorkMinutes, sessionBreakMinutes, onSessionComplete]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
