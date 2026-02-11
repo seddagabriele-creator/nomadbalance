@@ -25,7 +25,7 @@ export default function FlowCard({ session, onSessionComplete }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 flex flex-col items-center justify-between h-full"
+      className="relative rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 flex flex-col items-center justify-between h-full"
     >
       <div className="absolute top-0 left-0 w-24 h-24 bg-violet-400/10 rounded-full -translate-y-6 -translate-x-6" />
       <div className="flex items-center gap-2 mb-4 self-start">

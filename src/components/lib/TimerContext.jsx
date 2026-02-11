@@ -67,6 +67,17 @@ export function TimerProvider({ children }) {
     }
   };
 
+  const pauseTimer = () => {
+    setIsRunning(false);
+    audioManager.pause();
+  };
+
+  const resumeTimer = () => {
+    if (timeLeft > 0) {
+      setIsRunning(true);
+    }
+  };
+
   return (
     <TimerContext.Provider
       value={{
@@ -78,6 +89,8 @@ export function TimerProvider({ children }) {
         toggleTimer,
         resetTimer,
         initializeTimer,
+        pauseTimer,
+        resumeTimer,
       }}
     >
       {children}
