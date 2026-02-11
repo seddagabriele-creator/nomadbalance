@@ -13,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import TaskHistoryCalendar from "../components/journal/TaskHistoryCalendar";
 
 export default function Journal() {
   const queryClient = useQueryClient();
@@ -30,15 +31,20 @@ export default function Journal() {
   const session = sessions[0] || null;
   const isInWorkDay = session?.status === "active";
 
-  // Get all tasks (pre-day and work day)
+  // Get all tasks (pre-day and work day, including previous uncompleted)
   const { data: allTasks = [] } = useQuery({
     queryKey: ["allTasks"],
     queryFn: () => base44.entities.Task.list("-order"),
   });
 
+  // Get previous day's uncompleted tasks
+  const previousUncompletedTasks = allTasks.filter(
+    t => t.session_id !== session?.id && !t.completed && t.session_id !== null
+  );
+
   // Filter tasks based on context
   const tasks = isInWorkDay
-    ? allTasks.filter(t => t.session_id === session.id)
+    ? allTasks.filter(t => t.session_id === session.id || (!t.completed && t.session_id !== null && t.session_id !== session.id))
     : showWorkDayTasks
     ? allTasks
     : allTasks.filter(t => !t.is_work_day_task || !t.completed);
@@ -64,6 +70,22 @@ export default function Journal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allTasks"] });
       toast.success("Task deleted");
+    },
+  });
+
+  const completeAllPreviousTasks = useMutation({
+    mutationFn: async () => {
+      const promises = previousUncompletedTasks.map(task =>
+        base44.entities.Task.update(task.id, {
+          completed: true,
+          completed_at: new Date().toISOString(),
+        })
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+      toast.success("All previous tasks completed");
     },
   });
 
@@ -141,16 +163,28 @@ export default function Journal() {
             </div>
           </div>
 
-          {!isInWorkDay && (
-            <Button
-              onClick={() => setShowWorkDayTasks(!showWorkDayTasks)}
-              variant="ghost"
-              className="text-white/60 hover:text-white"
-            >
-              {showWorkDayTasks ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
-              {showWorkDayTasks ? "Show all" : "Hide completed work"}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {previousUncompletedTasks.length > 0 && isInWorkDay && (
+              <Button
+                onClick={() => completeAllPreviousTasks.mutate()}
+                variant="ghost"
+                className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Complete {previousUncompletedTasks.length} old tasks
+              </Button>
+            )}
+            {!isInWorkDay && (
+              <Button
+                onClick={() => setShowWorkDayTasks(!showWorkDayTasks)}
+                variant="ghost"
+                className="text-white/60 hover:text-white"
+              >
+                {showWorkDayTasks ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                {showWorkDayTasks ? "Show all" : "Hide completed work"}
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -323,6 +357,8 @@ export default function Journal() {
               </div>
             </div>
           )}
+
+          <TaskHistoryCalendar />
         </div>
       </div>
     </div>

@@ -148,12 +148,21 @@ export default function BreathingInstructions({ technique, onClose, onCancel }) 
           </div>
         </div>
 
-        <Button
-          onClick={onClose}
-          className="w-full h-12 mt-6 bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400"
-        >
-          Start Session
-        </Button>
+        <div className="flex gap-3 mt-6">
+          <Button
+            variant="ghost"
+            onClick={onCancel}
+            className="flex-1 h-12 text-white/50 hover:text-white hover:bg-white/10"
+          >
+            Skip & Close Day
+          </Button>
+          <Button
+            onClick={onClose}
+            className="flex-1 h-12 bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400"
+          >
+            Start Session
+          </Button>
+        </div>
       </motion.div>
     </motion.div>
   );
