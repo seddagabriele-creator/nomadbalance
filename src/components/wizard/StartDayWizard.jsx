@@ -23,11 +23,11 @@ const PRESETS = [
 ];
 
 const GROUP_LABELS = {
-  "neck_cervical": "Collo & Cervicale",
-  "shoulders_thoracic": "Spalle & Torace",
-  "wrists_forearms": "Polsi & Avambracci",
-  "lower_back_core": "Schiena & Core",
-  "hips_legs": "Anche & Gambe"
+  "neck_cervical": "Neck & Cervical",
+  "shoulders_thoracic": "Shoulders & Thoracic",
+  "wrists_forearms": "Wrists & Forearms",
+  "lower_back_core": "Lower Back & Core",
+  "hips_legs": "Hips & Legs"
 };
 
 export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
@@ -67,13 +67,28 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
     queryFn: () => base44.entities.Exercise.list("order"),
   });
 
+  const { data: allPreviousSessions = [] } = useQuery({
+    queryKey: ["allSessions"],
+    queryFn: () => base44.entities.DaySession.list("-date", 30),
+  });
+
+  const { data: existingTasks = [] } = useQuery({
+    queryKey: ["preDayTasks"],
+    queryFn: () => base44.entities.Task.filter({ session_id: null }),
+  });
+
   const previousSession = previousSessions[0];
 
   useEffect(() => {
-    if (previousSession && step === 0) {
+    // Check for existing pre-day tasks
+    if (existingTasks.length > 0 && step === -1) {
+      setShowTasksDialog(true);
+    } else if (previousSession && step === -1) {
       setShowPreviousSettings(true);
+    } else if (step === -1) {
+      setStep(0);
     }
-  }, [previousSession, step]);
+  }, [existingTasks, previousSession, step]);
 
   const loadPreviousSettings = () => {
     setData({
