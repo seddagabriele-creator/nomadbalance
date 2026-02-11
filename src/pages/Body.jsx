@@ -26,11 +26,21 @@ const GROUP_OBJECTIVES = {
 
 export default function Body() {
   const [selectedExercise, setSelectedExercise] = useState(null);
+  const today = new Date().toISOString().split("T")[0];
 
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises"],
     queryFn: () => base44.entities.Exercise.list("order"),
   });
+
+  const { data: sessions = [] } = useQuery({
+    queryKey: ["daySession", today],
+    queryFn: () => base44.entities.DaySession.filter({ date: today }),
+  });
+
+  const session = sessions[0] || null;
+  const nextBreak = session?.body_break_schedule?.find(b => !b.completed);
+  const nextExerciseId = nextBreak?.exercise_id;
 
   const groupedExercises = exercises.reduce((acc, exercise) => {
     if (!acc[exercise.group]) {
@@ -72,7 +82,11 @@ export default function Body() {
                   <button
                     key={exercise.id}
                     onClick={() => setSelectedExercise(exercise)}
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all group"
+                    className={`backdrop-blur-xl rounded-xl p-4 hover:bg-white/10 transition-all group ${
+                      exercise.id === nextExerciseId
+                        ? "bg-orange-500/20 border-2 border-orange-500/50"
+                        : "bg-white/5 border border-white/10"
+                    }`}
                   >
                     <div className="flex items-center gap-4">
                       {exercise.image_url && (

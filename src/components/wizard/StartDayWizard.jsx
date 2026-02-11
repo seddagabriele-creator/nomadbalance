@@ -90,8 +90,8 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
     }
   }, [existingTasks, previousSession, step]);
 
-  const loadPreviousSettings = () => {
-    setData({
+  const loadPreviousSettings = async () => {
+    const prevData = {
       ...data,
       last_meal_time: previousSession.last_meal_time || "",
       next_meal_time: previousSession.next_meal_time || "",
@@ -100,9 +100,20 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
       focus_sound: previousSession.focus_sound || "wind",
       relax_sound: previousSession.relax_sound || "wind",
       body_breaks_target: previousSession.body_breaks_target || 6,
+    };
+    
+    // Load previous tasks
+    const { data: prevTasks = [] } = await queryClient.fetchQuery({
+      queryKey: ["previousTasks", previousSession.id],
+      queryFn: () => base44.entities.Task.filter({ session_id: previousSession.id }),
     });
-    setShowPreviousSettings(false);
-    setStep(0);
+    
+    const prevTasksList = prevTasks.map((t, i) => ({ title: t.title, order: i + 1 }));
+    
+    // Use previous exercise selection
+    const selectedGroups = previousSession.selected_exercise_groups || null;
+    
+    await handleStartDay(prevData, prevTasksList, selectedGroups);
   };
 
   const loadExistingTasks = () => {

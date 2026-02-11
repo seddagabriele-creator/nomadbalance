@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function BreathingInstructions({ technique, onClose }) {
+export default function BreathingInstructions({ technique, onClose, onCancel }) {
   const is478 = technique === "4-7-8";
 
   return (
@@ -28,7 +28,7 @@ export default function BreathingInstructions({ technique, onClose }) {
               {is478 ? "4-7-8 Technique" : "Box Breathing"}
             </h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-white/60 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={onCancel || onClose} className="text-white/60 hover:text-white">
             <X className="w-4 h-4" />
           </Button>
         </div>

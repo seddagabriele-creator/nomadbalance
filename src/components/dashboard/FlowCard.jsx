@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
+import { audioManager } from "../../utils/audioManager";
 
 const SOUND_URL = "https://files.catbox.moe/f0pwi6.mp3";
 
@@ -8,8 +9,8 @@ export default function FlowCard({ session, onSessionComplete }) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(audioManager.getIsPlaying());
   const intervalRef = useRef(null);
-  const audioRef = useRef(null);
 
   const workMinutes = session?.focus_work_minutes || 45;
   const breakMinutes = session?.focus_break_minutes || 5;
@@ -31,10 +32,7 @@ export default function FlowCard({ session, onSessionComplete }) {
               onSessionComplete?.();
               setIsBreak(true);
               setIsRunning(true);
-              if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current.currentTime = 0;
-              }
+              audioManager.pause();
               return breakMinutes * 60;
             } else {
               setIsBreak(false);
@@ -51,28 +49,12 @@ export default function FlowCard({ session, onSessionComplete }) {
 
   useEffect(() => {
     if (isRunning && !isBreak) {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(SOUND_URL);
-        audioRef.current.loop = true;
-        audioRef.current.volume = 0.7;
-      }
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(err => {
-          console.log("Audio play failed:", err);
-        });
-      }
-    } else if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      audioManager.play(SOUND_URL);
+      setIsAudioPlaying(true);
+    } else {
+      audioManager.pause();
+      setIsAudioPlaying(false);
     }
-    
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-    };
   }, [isRunning, isBreak]);
 
   const toggleTimer = () => {

@@ -19,7 +19,7 @@ const TECHNIQUES = {
   ],
 };
 
-export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
+export default function BreathingCircle({ onComplete, durationMinutes = 5, onCancel }) {
   const [phase, setPhase] = useState(0);
   const [timeLeft, setTimeLeft] = useState(durationMinutes * 60);
   const [started, setStarted] = useState(false);
@@ -69,6 +69,7 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5 }) {
           <BreathingInstructions
             technique={technique}
             onClose={() => setShowInstructions(false)}
+            onCancel={onCancel}
           />
         )}
       </AnimatePresence>

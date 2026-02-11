@@ -3,17 +3,24 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function Journal() {
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showWorkDayTasks, setShowWorkDayTasks] = useState(true);
+  const [editingAlarm, setEditingAlarm] = useState(null);
+  const [alarmTime, setAlarmTime] = useState("");
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
@@ -79,6 +86,26 @@ export default function Journal() {
         completed_at: !task.completed ? new Date().toISOString() : null,
       },
     });
+  };
+
+  const handleSetAlarm = (task) => {
+    if (alarmTime) {
+      updateTask.mutate({
+        id: task.id,
+        data: { alarm_time: alarmTime },
+      });
+      toast.success("Alarm set");
+    }
+    setEditingAlarm(null);
+    setAlarmTime("");
+  };
+
+  const handleRemoveAlarm = (task) => {
+    updateTask.mutate({
+      id: task.id,
+      data: { alarm_time: null },
+    });
+    toast.success("Alarm removed");
   };
 
   const handleDragEnd = (result) => {
@@ -182,22 +209,81 @@ export default function Journal() {
                                     <Circle className="w-5 h-5" />
                                   )}
                                 </button>
-                                <span
-                                  className={`flex-1 ${
-                                    task.completed ? "text-white/40 line-through" : "text-white"
-                                  }`}
+                                <div className="flex-1 flex items-center gap-2">
+                                  <span
+                                    className={`flex-1 ${
+                                      task.completed ? "text-white/40 line-through" : "text-white"
+                                    }`}
+                                  >
+                                    {task.title}
+                                  </span>
+                                  {task.alarm_time && (
+                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs">
+                                      <Clock className="w-3 h-3" />
+                                      <span>{task.alarm_time}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
+                                  if (!open) {
+                                    setEditingAlarm(null);
+                                    setAlarmTime("");
+                                  }
+                                }}>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        setEditingAlarm(task.id);
+                                        setAlarmTime(task.alarm_time || "");
+                                      }}
+                                      className={`${task.alarm_time ? 'text-cyan-400' : 'text-white/40'} hover:text-cyan-300 hover:bg-cyan-500/10`}
+                                    >
+                                      <Clock className="w-4 h-4" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
+                                    <div className="space-y-2">
+                                      <Input
+                                        type="time"
+                                        value={alarmTime}
+                                        onChange={(e) => setAlarmTime(e.target.value)}
+                                        className="bg-white/5 border-white/10 text-white"
+                                      />
+                                      <div className="flex gap-2">
+                                        {task.alarm_time && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleRemoveAlarm(task)}
+                                            className="flex-1 text-red-400 hover:text-red-300"
+                                          >
+                                            Remove
+                                          </Button>
+                                        )}
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleSetAlarm(task)}
+                                          className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                                        >
+                                          Set
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => deleteTask.mutate(task.id)}
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                 >
-                                  {task.title}
-                                </span>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => deleteTask.mutate(task.id)}
-                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                                </div>
                             </div>
                           )}
                         </Draggable>

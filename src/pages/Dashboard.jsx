@@ -175,13 +175,14 @@ export default function Dashboard() {
   const handleShowWizard = () => {
     if (showFirstQuote) {
       setShowQuote(true);
-      setTimeout(() => {
-        setShowQuote(false);
-        setShowWizard(true);
-      }, 3000);
     } else {
       setShowWizard(true);
     }
+  };
+
+  const handleQuoteClose = () => {
+    setShowQuote(false);
+    setShowWizard(true);
   };
 
   const handleEndDay = () => {
@@ -433,7 +434,7 @@ export default function Dashboard() {
       {/* Motivational Quote Fullscreen */}
       <AnimatePresence>
         {showQuote && showFirstQuote && (
-          <MotivationalQuote onClose={() => setShowQuote(false)} fullScreen={true} />
+          <MotivationalQuote onClose={handleQuoteClose} fullScreen={true} autoClose={false} />
         )}
       </AnimatePresence>
 
@@ -451,7 +452,11 @@ export default function Dashboard() {
       {/* Breathing Overlay */}
       <AnimatePresence>
         {showBreathing && (
-          <BreathingCircle onComplete={handleDecompressionComplete} durationMinutes={breathingDuration} />
+          <BreathingCircle 
+            onComplete={handleDecompressionComplete} 
+            durationMinutes={breathingDuration}
+            onCancel={() => setShowBreathing(false)}
+          />
         )}
       </AnimatePresence>
 

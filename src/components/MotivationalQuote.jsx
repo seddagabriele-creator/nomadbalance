@@ -30,7 +30,7 @@ const QUOTES = [
   { text: "A journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
 ];
 
-export default function MotivationalQuote({ onClose, fullScreen = true }) {
+export default function MotivationalQuote({ onClose, fullScreen = true, autoClose = true }) {
   const [quote, setQuote] = useState(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
 
   useEffect(() => {
