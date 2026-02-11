@@ -14,6 +14,7 @@ import StartDayWizard from "../components/wizard/StartDayWizard";
 import BreathingCircle from "../components/decompression/BreathingCircle";
 import MotivationalQuote from "../components/MotivationalQuote";
 import MeetingModeDialog from "../components/MeetingModeDialog";
+import { useTimer } from "../components/lib/TimerContext";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ export default function Dashboard() {
 
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
+  const { pauseTimer, resumeTimer } = useTimer();
 
   const { data: settings = [] } = useQuery({
     queryKey: ["userSettings"],
@@ -234,6 +236,7 @@ export default function Dashboard() {
       if (!session.meeting_mode) {
         setShowMeetingDialog(true);
       } else {
+        resumeTimer();
         updateSession.mutate({ meeting_mode: false });
       }
     }
@@ -241,6 +244,7 @@ export default function Dashboard() {
 
   const handleMeetingConfirm = (breathingMinutes) => {
     setShowMeetingDialog(false);
+    pauseTimer();
     if (breathingMinutes > 0) {
       setBreathingDuration(breathingMinutes);
       setShowBreathing(true);
