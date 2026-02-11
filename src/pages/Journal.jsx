@@ -43,13 +43,16 @@ export default function Journal() {
   );
 
   // Filter tasks based on context
-  const tasks = isInWorkDay
-    ? allTasks.filter(t => t.session_id === session.id || (!t.completed && t.session_id !== null && t.session_id !== session.id))
-    : showWorkDayTasks
-    ? allTasks
-    : allTasks.filter(t => !t.is_work_day_task || !t.completed);
+  const todayTasks = isInWorkDay
+    ? allTasks.filter(t => t.session_id === session.id)
+    : allTasks.filter(t => t.session_id === null);
 
-  const sortedTasks = [...tasks].sort((a, b) => a.order - b.order);
+  const previousTasks = isInWorkDay
+    ? allTasks.filter(t => t.session_id !== session.id && !t.completed && t.session_id !== null)
+    : [];
+
+  const sortedTodayTasks = [...todayTasks].sort((a, b) => a.order - b.order);
+  const sortedPreviousTasks = [...previousTasks].sort((a, b) => a.order - b.order);
 
   const createTask = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
@@ -91,7 +94,7 @@ export default function Journal() {
 
   const handleAddTask = () => {
     if (!newTaskTitle.trim()) return;
-    const maxOrder = allTasks.length > 0 ? Math.max(...allTasks.map((t) => t.order)) : 0;
+    const maxOrder = todayTasks.length > 0 ? Math.max(...todayTasks.map((t) => t.order)) : 0;
     createTask.mutate({
       session_id: session?.id || null,
       title: newTaskTitle,
@@ -133,7 +136,10 @@ export default function Journal() {
   const handleDragEnd = (result) => {
     if (!result.destination) return;
 
-    const reordered = Array.from(sortedTasks);
+    const listId = result.source.droppableId;
+    const tasksList = listId === "today" ? sortedTodayTasks : sortedPreviousTasks;
+    
+    const reordered = Array.from(tasksList);
     const [moved] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, moved);
 
@@ -207,14 +213,14 @@ export default function Journal() {
             </div>
           </div>
 
-          {sortedTasks.length > 0 && (
+          {sortedTodayTasks.length > 0 && (
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-              <h2 className="text-lg font-semibold mb-4">Priority Order</h2>
+              <h2 className="text-lg font-semibold mb-4">Today's Tasks</h2>
               <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="tasks">
+                <Droppable droppableId="today">
                   {(provided) => (
                     <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                      {sortedTasks.map((task, index) => (
+                      {sortedTodayTasks.map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
                           {(provided, snapshot) => (
                             <div
@@ -330,29 +336,148 @@ export default function Journal() {
             </div>
           )}
 
-          {sortedTasks.length === 0 && (
+          {sortedPreviousTasks.length > 0 && (
+            <div className="bg-amber-500/5 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-6">
+              <h2 className="text-lg font-semibold mb-4 text-amber-400">Previous Tasks</h2>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="previous">
+                  {(provided) => (
+                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                      {sortedPreviousTasks.map((task, index) => (
+                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                                snapshot.isDragging
+                                  ? "bg-amber-500/15 border-amber-500/50"
+                                  : "bg-amber-500/5 border-amber-500/20"
+                              }`}
+                            >
+                              <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60">
+                                <GripVertical className="w-4 h-4" />
+                              </div>
+                              <div className="flex items-center gap-2 flex-1">
+                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold">
+                                  {index + 1}
+                                </div>
+                                <button
+                                  onClick={() => handleToggleComplete(task)}
+                                  className="text-white/40 hover:text-white transition-colors"
+                                >
+                                  {task.completed ? (
+                                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                  ) : (
+                                    <Circle className="w-5 h-5" />
+                                  )}
+                                </button>
+                                <div className="flex-1 flex items-center gap-2">
+                                  <span className={`flex-1 ${task.completed ? "text-white/40 line-through" : "text-white"}`}>
+                                    {task.title}
+                                  </span>
+                                  {task.alarm_time && (
+                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs">
+                                      <Clock className="w-3 h-3" />
+                                      <span>{task.alarm_time}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
+                                  if (!open) {
+                                    setEditingAlarm(null);
+                                    setAlarmTime("");
+                                  }
+                                }}>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        setEditingAlarm(task.id);
+                                        setAlarmTime(task.alarm_time || "");
+                                      }}
+                                      className={`${task.alarm_time ? 'text-amber-400' : 'text-white/40'} hover:text-amber-300 hover:bg-amber-500/10`}
+                                    >
+                                      <Clock className="w-4 h-4" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
+                                    <div className="space-y-2">
+                                      <Input
+                                        type="time"
+                                        value={alarmTime}
+                                        onChange={(e) => setAlarmTime(e.target.value)}
+                                        className="bg-white/5 border-white/10 text-white"
+                                      />
+                                      <div className="flex gap-2">
+                                        {task.alarm_time && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleRemoveAlarm(task)}
+                                            className="flex-1 text-red-400 hover:text-red-300"
+                                          >
+                                            Remove
+                                          </Button>
+                                        )}
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleSetAlarm(task)}
+                                          className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                        >
+                                          Set
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => deleteTask.mutate(task.id)}
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </div>
+          )}
+
+          {sortedTodayTasks.length === 0 && sortedPreviousTasks.length === 0 && (
             <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-white/10 rounded-2xl p-8 text-center">
               <Target className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
               <p className="text-white/60">No tasks yet. Add your first goal above!</p>
             </div>
           )}
 
-          {sortedTasks.length > 0 && (
+          {sortedTodayTasks.length > 0 && (
             <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-white/10 rounded-2xl p-6">
-              <h3 className="font-semibold mb-2">Progress</h3>
+              <h3 className="font-semibold mb-2">Today's Progress</h3>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-cyan-500 to-blue-400 rounded-full transition-all"
                       style={{
-                        width: `${(sortedTasks.filter((t) => t.completed).length / sortedTasks.length) * 100}%`,
+                        width: `${(sortedTodayTasks.filter((t) => t.completed).length / sortedTodayTasks.length) * 100}%`,
                       }}
                     />
                   </div>
                 </div>
                 <span className="text-sm font-medium text-cyan-400">
-                  {sortedTasks.filter((t) => t.completed).length} / {sortedTasks.length}
+                  {sortedTodayTasks.filter((t) => t.completed).length} / {sortedTodayTasks.length}
                 </span>
               </div>
             </div>

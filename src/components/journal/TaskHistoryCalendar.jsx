@@ -63,7 +63,15 @@ export default function TaskHistoryCalendar() {
                 fontWeight: "bold",
               },
             }}
+            modifiersClassNames={{
+              hasTask: "text-cyan-400 font-bold",
+            }}
             className="rounded-md border-0"
+            styles={{
+              day: { color: "#e2e8f0" },
+              day_selected: { backgroundColor: "#0891b2", color: "white" },
+              day_today: { color: "#22d3ee", fontWeight: "bold" },
+            }}
           />
         </PopoverContent>
       </Popover>

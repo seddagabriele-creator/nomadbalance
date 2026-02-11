@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function BreathingInstructions({ technique, onClose, onCancel }) {
+export default function BreathingInstructions({ technique, onClose, onCancel = onClose }) {
   const is478 = technique === "4-7-8";
 
   return (
