@@ -31,24 +31,25 @@ export default function Journal() {
   const session = sessions[0] || null;
   const isInWorkDay = session?.status === "active";
 
-  // Get all tasks (pre-day and work day, including previous uncompleted)
+  // Get all tasks
   const { data: allTasks = [] } = useQuery({
-    queryKey: ["allTasks"],
+    queryKey: ["allTasks", session?.id],
     queryFn: () => base44.entities.Task.list("-order"),
+    enabled: true,
   });
 
   // Get previous day's uncompleted tasks
   const previousUncompletedTasks = allTasks.filter(
-    t => t.session_id !== session?.id && !t.completed && t.session_id !== null
+    t => t.session_id && t.session_id !== session?.id && !t.completed
   );
 
   // Filter tasks based on context
   const todayTasks = isInWorkDay
-    ? allTasks.filter(t => t.session_id === session.id)
-    : allTasks.filter(t => t.session_id === null);
+    ? allTasks.filter(t => t.session_id === session?.id)
+    : allTasks.filter(t => !t.session_id);
 
   const previousTasks = isInWorkDay
-    ? allTasks.filter(t => t.session_id !== session.id && !t.completed && t.session_id !== null)
+    ? previousUncompletedTasks
     : [];
 
   const sortedTodayTasks = [...todayTasks].sort((a, b) => a.order - b.order);

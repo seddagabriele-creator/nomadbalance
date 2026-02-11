@@ -458,27 +458,29 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                   </div>
                   {selectedPreset === 2 && (
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-white/70 text-sm">Work: {data.focus_work_minutes} min</Label>
-                        <Slider
-                          value={[data.focus_work_minutes]}
-                          onValueChange={([v]) => setData({ ...data, focus_work_minutes: v })}
-                          min={15}
-                          max={90}
-                          step={5}
-                          className="py-2"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-white/70 text-sm">Break: {data.focus_break_minutes} min</Label>
-                        <Slider
-                          value={[data.focus_break_minutes]}
-                          onValueChange={([v]) => setData({ ...data, focus_break_minutes: v })}
-                          min={3}
-                          max={20}
-                          step={1}
-                          className="py-2"
-                        />
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-white text-sm font-medium">Work: {data.focus_work_minutes} min</Label>
+                          <Slider
+                            value={[data.focus_work_minutes]}
+                            onValueChange={([v]) => setData({ ...data, focus_work_minutes: v })}
+                            min={15}
+                            max={90}
+                            step={5}
+                            className="py-3"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-white text-sm font-medium">Break: {data.focus_break_minutes} min</Label>
+                          <Slider
+                            value={[data.focus_break_minutes]}
+                            onValueChange={([v]) => setData({ ...data, focus_break_minutes: v })}
+                            min={3}
+                            max={20}
+                            step={1}
+                            className="py-3"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}

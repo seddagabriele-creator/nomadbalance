@@ -15,10 +15,10 @@ export default function BodyCard({ session }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-5 flex flex-col justify-between h-full"
+      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 flex flex-col justify-between h-full"
     >
       <div className="absolute bottom-0 left-0 w-20 h-20 bg-orange-400/10 rounded-full translate-y-6 -translate-x-6" />
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-4">
         <div className="w-8 h-8 rounded-xl bg-orange-500/20 flex items-center justify-center">
           <Activity className="w-4 h-4 text-orange-400" />
         </div>
@@ -31,7 +31,7 @@ export default function BodyCard({ session }) {
           <p className="text-white font-semibold text-sm">{nextExercise}</p>
         </div>
       </div>
-      <div className="mt-3">
+      <div className="mt-4">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[10px] text-white/40 uppercase tracking-wider">Progress</span>
           <span className="text-xs text-white/60 font-medium">{breaksDone}/{breaksTarget}</span>

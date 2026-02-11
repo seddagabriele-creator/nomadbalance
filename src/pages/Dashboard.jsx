@@ -425,14 +425,31 @@ export default function Dashboard() {
         )}
 
         {isCompleted && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="mt-4 w-full h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium flex items-center justify-center gap-2"
-          >
-            <Moon className="w-5 h-5" />
-            Day Completed
-          </motion.div>
+          <>
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="mt-4 w-full h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium flex items-center justify-center gap-2"
+            >
+              <Moon className="w-5 h-5" />
+              Day Completed
+            </motion.div>
+            <motion.button
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                if (window.confirm("Start a new day now?")) {
+                  handleResetDay();
+                  setShowWizard(true);
+                }
+              }}
+              className="mt-3 w-full h-12 rounded-2xl bg-white/10 border border-white/10 text-white/70 hover:text-white hover:bg-white/15 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+            >
+              <Sun className="w-4 h-4" />
+              Start a new day now
+            </motion.button>
+          </>
         )}
       </div>
 

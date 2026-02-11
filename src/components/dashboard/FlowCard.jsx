@@ -58,7 +58,6 @@ export default function FlowCard({ session, onSessionComplete }) {
   }, [isRunning, isBreak]);
 
   const toggleTimer = () => {
-    if (session?.status !== "active") return;
     if (timeLeft === 0) setTimeLeft(workMinutes * 60);
     setIsRunning(!isRunning);
   };
@@ -81,10 +80,10 @@ export default function FlowCard({ session, onSessionComplete }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-4 flex flex-col items-center justify-between h-full cursor-pointer"
+      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 flex flex-col items-center justify-between h-full"
     >
       <div className="absolute top-0 left-0 w-24 h-24 bg-violet-400/10 rounded-full -translate-y-6 -translate-x-6" />
-      <div className="flex items-center gap-2 mb-2 self-start">
+      <div className="flex items-center gap-2 mb-4 self-start">
         <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
           <Play className="w-4 h-4 text-violet-400" />
         </div>
@@ -124,8 +123,7 @@ export default function FlowCard({ session, onSessionComplete }) {
             e.stopPropagation();
             toggleTimer();
           }}
-          disabled={session?.status !== "active"}
-          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all disabled:opacity-30"
+          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
         >
           {isRunning ? <Pause className="w-3.5 h-3.5 text-white" /> : <Play className="w-3.5 h-3.5 text-white" />}
         </button>

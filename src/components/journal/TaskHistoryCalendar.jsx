@@ -67,10 +67,20 @@ export default function TaskHistoryCalendar() {
               hasTask: "text-cyan-400 font-bold",
             }}
             className="rounded-md border-0"
-            styles={{
-              day: { color: "#e2e8f0" },
-              day_selected: { backgroundColor: "#0891b2", color: "white" },
-              day_today: { color: "#22d3ee", fontWeight: "bold" },
+            classNames={{
+              months: "text-white",
+              month: "text-white",
+              caption: "text-white",
+              caption_label: "text-white text-sm font-medium",
+              nav: "text-white",
+              nav_button: "text-white hover:bg-white/10",
+              nav_button_previous: "text-white hover:bg-white/10",
+              nav_button_next: "text-white hover:bg-white/10",
+              head_cell: "text-white/60",
+              cell: "text-white/80",
+              day: "text-white/80",
+              day_selected: "bg-cyan-600 text-white",
+              day_today: "text-cyan-400 font-bold",
             }}
           />
         </PopoverContent>
@@ -104,12 +114,40 @@ export default function TaskHistoryCalendar() {
         </div>
       )}
 
-      <div className="mt-4 pt-4 border-t border-white/10">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-white/60">Total completed (30 days)</span>
-          <span className="text-cyan-400 font-semibold">{completedTasks.length}</span>
-        </div>
-      </div>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="mt-4 pt-4 border-t border-white/10 w-full">
+            <div className="flex items-center justify-between text-sm hover:bg-white/5 p-2 rounded-lg transition-colors">
+              <span className="text-white/60">Total completed (30 days)</span>
+              <div className="flex items-center gap-2">
+                <span className="text-cyan-400 font-semibold">{completedTasks.length}</span>
+                <CalendarDays className="w-4 h-4 text-cyan-400" />
+              </div>
+            </div>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 bg-slate-900 border-white/10 p-4" align="start">
+          <div className="space-y-2">
+            <h4 className="font-semibold text-white mb-3">All completed tasks (30 days)</h4>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {completedTasks.slice(0, 30).map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-start gap-2 p-2 rounded-lg bg-white/5 border border-white/10"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white/80 break-words">{task.title}</p>
+                    <p className="text-xs text-white/40 mt-1">
+                      {format(new Date(task.completed_at), "MMM d, yyyy 'at' HH:mm")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
