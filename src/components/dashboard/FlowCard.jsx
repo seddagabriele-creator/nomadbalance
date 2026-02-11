@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
-import { audioManager } from "../../utils/audioManager";
+import { audioManager } from "../../lib/audioManager";
 
 const SOUND_URL = "https://files.catbox.moe/f0pwi6.mp3";
 
