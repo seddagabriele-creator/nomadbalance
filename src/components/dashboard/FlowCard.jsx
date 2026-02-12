@@ -25,7 +25,7 @@ export default function FlowCard({ session, onSessionComplete }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="relative rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl overflow-hidden h-full p-6 flex flex-col justify-center gap-4"
+      className="relative rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl overflow-hidden h-full p-6 pb-8 flex flex-col justify-between"
     >
       <div className="absolute top-0 left-0 w-24 h-24 bg-violet-400/10 rounded-full -translate-y-6 -translate-x-6" />
       
@@ -43,7 +43,7 @@ export default function FlowCard({ session, onSessionComplete }) {
       </div>
 
       {/* Timer */}
-      <div className="flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center justify-center flex-1">
         <div className="text-3xl font-bold text-white tabular-nums">
           {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
         </div>
@@ -60,9 +60,9 @@ export default function FlowCard({ session, onSessionComplete }) {
             e.stopPropagation();
             toggleTimer();
           }}
-          className="w-12 h-12 rounded-full bg-violet-600 hover:bg-violet-500 flex items-center justify-center transition-all shadow-lg"
+          className="w-10 h-10 rounded-full bg-violet-600 hover:bg-violet-500 flex items-center justify-center transition-all shadow-lg"
         >
-          {isRunning ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
+          {isRunning ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
         </button>
         <button
           onClick={(e) => {
@@ -72,7 +72,7 @@ export default function FlowCard({ session, onSessionComplete }) {
           }}
           className="w-8 h-8 hover:bg-white/10 rounded-full flex items-center justify-center transition-all"
         >
-          <RotateCcw className="w-4 h-4 text-white/50 hover:text-white/80" />
+          <RotateCcw className="w-3.5 h-3.5 text-white/50 hover:text-white/80" />
         </button>
       </div>
     </motion.div>
