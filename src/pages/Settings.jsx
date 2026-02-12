@@ -68,6 +68,10 @@ export default function Settings() {
     // Save both user settings and daily defaults
     saveMutation.mutate(formData);
     localStorage.setItem('dailyDefaults', JSON.stringify(dailyDefaults));
+    
+    // Emit custom event to notify components
+    window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: dailyDefaults }));
+    
     toast.success("Settings saved successfully");
   };
 

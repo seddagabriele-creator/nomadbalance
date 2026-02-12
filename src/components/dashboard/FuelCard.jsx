@@ -11,43 +11,51 @@ export default function FuelCard({ session }) {
       return;
     }
 
-    const now = new Date();
-    const [lh, lm] = session.last_meal_time.split(":").map(Number);
-    const lastMeal = new Date();
-    lastMeal.setHours(lh, lm, 0, 0);
+    const updateStatus = () => {
+      const now = new Date();
+      const [lh, lm] = session.last_meal_time.split(":").map(Number);
+      const lastMeal = new Date();
+      lastMeal.setHours(lh, lm, 0, 0);
 
-    const diffMs = now - lastMeal;
-    const diffH = Math.floor(diffMs / 3600000);
-    const diffM = Math.floor((diffMs % 3600000) / 60000);
+      // Get fasting target from localStorage or session
+      const savedDefaults = localStorage.getItem('dailyDefaults');
+      let fastingHours = 16;
+      if (savedDefaults) {
+        const defaults = JSON.parse(savedDefaults);
+        if (defaults.fasting_preset === "14/10") fastingHours = 14;
+        else if (defaults.fasting_preset === "16/8") fastingHours = 16;
+        else if (defaults.fasting_preset === "18/6") fastingHours = 18;
+        else if (defaults.fasting_preset === "custom") fastingHours = defaults.custom_fasting_hours || 16;
+      }
 
-    if (session.next_meal_time) {
-      const [nh, nm] = session.next_meal_time.split(":").map(Number);
-      const nextMeal = new Date();
-      nextMeal.setHours(nh, nm, 0, 0);
+      // Calculate next meal time based on fasting target
+      const nextMeal = new Date(lastMeal.getTime() + fastingHours * 3600000);
       const untilNext = nextMeal - now;
+      const diffMs = now - lastMeal;
 
       if (untilNext > 0) {
+        // Fasting window
         const untilH = Math.floor(untilNext / 3600000);
         const untilM = Math.floor((untilNext % 3600000) / 60000);
         setFuelStatus({
-          label: `Fasting ${diffH}h ${diffM}m`,
-          detail: `Next meal in ${untilH}h ${untilM}m`,
+          label: "Fasting window active",
+          detail: `${untilH}h ${untilM}m until next meal`,
           icon: "droplets",
         });
       } else {
+        // Eating window
+        const fastedH = Math.floor(diffMs / 3600000);
         setFuelStatus({
-          label: "Time to eat!",
-          detail: `Fasted: ${diffH}h ${diffM}m`,
+          label: "Eating window open",
+          detail: "Nourish your body with real, healthy food",
           icon: "utensils",
         });
       }
-    } else {
-      setFuelStatus({
-        label: `Last meal ${diffH}h ago`,
-        detail: "No meal scheduled",
-        icon: "clock",
-      });
-    }
+    };
+
+    updateStatus();
+    const interval = setInterval(updateStatus, 60000); // Update every minute
+    return () => clearInterval(interval);
   }, [session]);
 
   const IconComp = fuelStatus.icon === "utensils" ? Utensils : fuelStatus.icon === "droplets" ? Droplets : Clock;

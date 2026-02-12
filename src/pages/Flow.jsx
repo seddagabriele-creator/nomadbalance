@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Waves, Wind, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Waves, Wind, Check, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
@@ -39,6 +41,16 @@ export default function Flow() {
   const session = sessions[0] || null;
   const currentFocusSound = session?.focus_sound || "wind";
   const currentRelaxSound = session?.relax_sound || "wind";
+  
+  const [focusMinutes, setFocusMinutes] = useState(session?.focus_work_minutes || 45);
+  const [breakMinutes, setBreakMinutes] = useState(session?.focus_break_minutes || 5);
+
+  useEffect(() => {
+    if (session) {
+      setFocusMinutes(session.focus_work_minutes || 45);
+      setBreakMinutes(session.focus_break_minutes || 5);
+    }
+  }, [session]);
 
   const updateSession = useMutation({
     mutationFn: (data) => {
@@ -59,6 +71,36 @@ export default function Flow() {
 
   const handleSelectRelaxSound = (soundId) => {
     updateSession.mutate({ relax_sound: soundId });
+  };
+
+  const handleUpdateDuration = () => {
+    if (!session?.id) return;
+    
+    updateSession.mutate(
+      { 
+        focus_work_minutes: focusMinutes, 
+        focus_break_minutes: breakMinutes 
+      },
+      {
+        onSuccess: () => {
+          // Update localStorage defaults
+          const savedDefaults = localStorage.getItem('dailyDefaults');
+          if (savedDefaults) {
+            const defaults = JSON.parse(savedDefaults);
+            defaults.focus_work_minutes = focusMinutes;
+            defaults.focus_break_minutes = breakMinutes;
+            localStorage.setItem('dailyDefaults', JSON.stringify(defaults));
+          }
+          
+          // Emit event to update FlowCard
+          window.dispatchEvent(new CustomEvent('settingsUpdated', { 
+            detail: { focus_work_minutes: focusMinutes, focus_break_minutes: breakMinutes }
+          }));
+          
+          toast.success("Duration updated");
+        }
+      }
+    );
   };
 
   return (
@@ -83,6 +125,47 @@ export default function Flow() {
               Immerse yourself in carefully crafted soundscapes designed to enhance concentration during work 
               and promote relaxation during breaks. Let the flow carry you.
             </p>
+          </div>
+
+          {/* Duration Controls */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                <Timer className="w-4 h-4 text-violet-400" />
+              </div>
+              <h2 className="text-lg font-semibold">Session Duration</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <Label className="text-white/70 text-sm">Focus (minutes)</Label>
+                <Input
+                  type="number"
+                  min="15"
+                  max="90"
+                  value={focusMinutes}
+                  onChange={(e) => setFocusMinutes(parseInt(e.target.value))}
+                  className="bg-white/5 border-white/10 text-white mt-2"
+                />
+              </div>
+              <div>
+                <Label className="text-white/70 text-sm">Break (minutes)</Label>
+                <Input
+                  type="number"
+                  min="3"
+                  max="20"
+                  value={breakMinutes}
+                  onChange={(e) => setBreakMinutes(parseInt(e.target.value))}
+                  className="bg-white/5 border-white/10 text-white mt-2"
+                />
+              </div>
+            </div>
+            <Button
+              onClick={handleUpdateDuration}
+              disabled={!session}
+              className="w-full bg-violet-600 hover:bg-violet-500"
+            >
+              Apply Duration
+            </Button>
           </div>
 
           {/* Focus Sounds */}

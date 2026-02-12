@@ -30,6 +30,19 @@ export default function FlowCard({ session, onSessionComplete }) {
     initializeTimer(sessionWorkMinutes, sessionBreakMinutes, onSessionComplete);
   }, [sessionWorkMinutes, sessionBreakMinutes, onSessionComplete]);
 
+  // Listen for settings updates
+  useEffect(() => {
+    const handleSettingsUpdate = (event) => {
+      const newDefaults = event.detail;
+      const newWork = newDefaults.focus_work_minutes || 45;
+      const newBreak = newDefaults.focus_break_minutes || 5;
+      initializeTimer(newWork, newBreak, onSessionComplete);
+    };
+
+    window.addEventListener('settingsUpdated', handleSettingsUpdate);
+    return () => window.removeEventListener('settingsUpdated', handleSettingsUpdate);
+  }, [onSessionComplete, initializeTimer]);
+
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const progress = totalSeconds > 0 ? ((totalSeconds - timeLeft) / totalSeconds) * 100 : 0;
