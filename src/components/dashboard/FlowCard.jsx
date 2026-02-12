@@ -89,6 +89,8 @@ export default function FlowCard({ session, onSessionComplete }) {
             e.stopPropagation();
             toggleTimer();
           }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           className="w-10 h-10 rounded-full bg-violet-600 hover:bg-violet-500 flex items-center justify-center transition-all shadow-lg"
         >
           {isRunning ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
@@ -99,6 +101,8 @@ export default function FlowCard({ session, onSessionComplete }) {
             e.stopPropagation();
             resetTimer();
           }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           className="w-8 h-8 hover:bg-white/10 rounded-full flex items-center justify-center transition-all"
         >
           <RotateCcw className="w-3.5 h-3.5 text-white/50 hover:text-white/80" />
