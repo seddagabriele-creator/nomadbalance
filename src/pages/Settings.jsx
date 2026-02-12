@@ -65,12 +65,10 @@ export default function Settings() {
   });
 
   const handleSave = () => {
+    // Save both user settings and daily defaults
     saveMutation.mutate(formData);
-  };
-
-  const handleSaveDailyDefaults = () => {
     localStorage.setItem('dailyDefaults', JSON.stringify(dailyDefaults));
-    toast.success("Daily defaults saved");
+    toast.success("Settings saved successfully");
   };
 
   React.useEffect(() => {
@@ -260,7 +258,7 @@ export default function Settings() {
                   <Label className="text-white/90 font-medium">Fasting Preset</Label>
                 </div>
                 <div className="flex gap-2">
-                  {["14/10", "16/8", "18/6"].map(preset => (
+                  {["14/10", "16/8", "18/6", "custom"].map(preset => (
                     <button
                       key={preset}
                       onClick={() => setDailyDefaults({ ...dailyDefaults, fasting_preset: preset })}
@@ -270,10 +268,23 @@ export default function Settings() {
                           : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
                       }`}
                     >
-                      {preset}
+                      {preset === "custom" ? "Custom" : preset}
                     </button>
                   ))}
                 </div>
+                {dailyDefaults.fasting_preset === "custom" && (
+                  <div>
+                    <Label className="text-white/60 text-xs">Fasting duration (hours)</Label>
+                    <Input
+                      type="number"
+                      min="8"
+                      max="24"
+                      value={dailyDefaults.custom_fasting_hours || 16}
+                      onChange={(e) => setDailyDefaults({ ...dailyDefaults, custom_fasting_hours: parseInt(e.target.value) })}
+                      className="bg-white/5 border-white/10 text-white mt-1 h-10"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Focus */}
@@ -361,13 +372,6 @@ export default function Settings() {
               </div>
             </div>
 
-            <Button
-              onClick={handleSaveDailyDefaults}
-              className="w-full h-11 mt-4 bg-violet-600 hover:bg-violet-500"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Save Daily Defaults
-            </Button>
           </div>
 
           <Button

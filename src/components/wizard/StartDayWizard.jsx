@@ -38,7 +38,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     ? JSON.parse(localStorage.getItem('dailyDefaults'))
     : null;
 
-  const [step, setStep] = useState(useDefaults ? 0 : -1); // Skip to tasks if using defaults
+  const [step, setStep] = useState(useDefaults ? 1 : -1); // Start at fuel check if using defaults
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [tasks, setTasks] = useState([]);
   const [showPreviousSettings, setShowPreviousSettings] = useState(false);
@@ -138,9 +138,13 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   const currentStep = step >= 0 ? STEPS[step] : STEPS[0];
 
   const handleNext = async () => {
-    // If using defaults, only show tasks step (step 0)
-    if (useDefaults && step === 0) {
-      await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
+    // If using defaults, show fuel (step 1) then tasks (step 0)
+    if (useDefaults) {
+      if (step === 1) {
+        setStep(0); // Go to tasks
+      } else if (step === 0) {
+        await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
+      }
     } else if (step < 3) {
       setStep(step + 1);
     } else {
@@ -330,7 +334,9 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
               </div>
               <div>
                 {!useDefaults && <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>}
-                <h2 className="text-white font-bold text-lg">{useDefaults ? "Today's Tasks" : currentStep.label}</h2>
+                <h2 className="text-white font-bold text-lg">
+                  {useDefaults ? (step === 1 ? "Fuel Check" : "Today's Tasks") : currentStep.label}
+                </h2>
               </div>
             </div>
           </div>
@@ -338,7 +344,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
           {/* Content */}
           <div className="p-6 min-h-[240px]">
             <AnimatePresence mode="wait">
-              {(step === 0 || useDefaults) && (
+              {step === 0 && (
                 <motion.div key="goals" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-4">
                   <p className="text-white/70 text-sm">What must you complete today? List in order of priority.</p>
                   <div className="flex gap-2">
@@ -604,7 +610,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
               disabled={(step === 3 && exerciseSelection === "manual" && selectedGroups.length === 0)}
               className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-semibold disabled:opacity-50"
             >
-              {(useDefaults || step === 3) ? "Start!" : "Next"}
+              {(useDefaults && step === 0) || step === 3 ? "Start!" : "Next"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>

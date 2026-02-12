@@ -6,8 +6,24 @@ import { useTimer } from "../lib/TimerContext";
 export default function FlowCard({ session, onSessionComplete }) {
   const { timeLeft, isRunning, isBreak, workMinutes, breakMinutes, toggleTimer, resetTimer, initializeTimer } = useTimer();
 
-  const sessionWorkMinutes = session?.focus_work_minutes || 45;
-  const sessionBreakMinutes = session?.focus_break_minutes || 5;
+  // Load user's preferred duration from localStorage or use session/default
+  const getUserPreferredDuration = () => {
+    const savedDefaults = localStorage.getItem('dailyDefaults');
+    if (savedDefaults) {
+      const defaults = JSON.parse(savedDefaults);
+      return {
+        work: defaults.focus_work_minutes || 45,
+        break: defaults.focus_break_minutes || 5
+      };
+    }
+    return {
+      work: session?.focus_work_minutes || 45,
+      break: session?.focus_break_minutes || 5
+    };
+  };
+
+  const sessionWorkMinutes = session?.focus_work_minutes || getUserPreferredDuration().work;
+  const sessionBreakMinutes = session?.focus_break_minutes || getUserPreferredDuration().break;
   const totalSeconds = isBreak ? breakMinutes * 60 : workMinutes * 60;
 
   useEffect(() => {
