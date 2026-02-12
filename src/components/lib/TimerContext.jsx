@@ -46,8 +46,12 @@ export function TimerProvider({ children }) {
   }, [isRunning, isBreak]);
 
   const toggleTimer = () => {
-    if (timeLeft === 0) setTimeLeft(workMinutes * 60);
-    setIsRunning(!isRunning);
+    if (timeLeft === 0) {
+      setTimeLeft(workMinutes * 60);
+      setIsRunning(true);
+    } else {
+      setIsRunning(!isRunning);
+    }
   };
 
   const resetTimer = () => {
