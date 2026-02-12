@@ -126,7 +126,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     // Use previous exercise selection
     const selectedGroups = previousSession.selected_exercise_groups || null;
     
-    await handleStartDay(prevData, prevTasksList, selectedGroups);
+    await onComplete(prevData, prevTasksList, selectedGroups);
   };
 
   const loadExistingTasks = () => {
