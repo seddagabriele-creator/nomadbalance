@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, Wind } from "lucide-react";
+import { ArrowLeft, Save, Wind, Droplets, Timer, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
@@ -19,6 +19,24 @@ export default function Settings() {
   });
 
   const userSettings = settings[0] || {};
+  
+  // Load daily defaults from localStorage
+  const loadDailyDefaults = () => {
+    const saved = localStorage.getItem('dailyDefaults');
+    return saved ? JSON.parse(saved) : {
+      fasting_preset: "16/8",
+      last_meal_time: "",
+      next_meal_time: "",
+      focus_work_minutes: 45,
+      focus_break_minutes: 5,
+      focus_sound: "wind",
+      relax_sound: "wind",
+      body_breaks_target: 6,
+      exercise_selection: "auto",
+      selected_groups: []
+    };
+  };
+
   const [formData, setFormData] = useState({
     display_name: userSettings.display_name || "",
     morning_work_start: userSettings.morning_work_start || "09:00",
@@ -30,6 +48,8 @@ export default function Settings() {
     notification_start_time: userSettings.notification_start_time || "09:00",
     notification_end_time: userSettings.notification_end_time || "18:00",
   });
+
+  const [dailyDefaults, setDailyDefaults] = useState(loadDailyDefaults());
 
   const saveMutation = useMutation({
     mutationFn: (data) => {
@@ -46,6 +66,11 @@ export default function Settings() {
 
   const handleSave = () => {
     saveMutation.mutate(formData);
+  };
+
+  const handleSaveDailyDefaults = () => {
+    localStorage.setItem('dailyDefaults', JSON.stringify(dailyDefaults));
+    toast.success("Daily defaults saved");
   };
 
   React.useEffect(() => {
@@ -213,6 +238,136 @@ export default function Settings() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Daily Defaults */}
+          <div className="bg-gradient-to-br from-violet-500/10 to-cyan-500/10 backdrop-blur-xl border border-violet-500/20 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                <Timer className="w-5 h-5 text-violet-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Daily Defaults</h2>
+                <p className="text-xs text-white/50">Settings to use when starting your day quickly</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Fasting */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Droplets className="w-4 h-4 text-emerald-400" />
+                  <Label className="text-white/90 font-medium">Fasting Preset</Label>
+                </div>
+                <div className="flex gap-2">
+                  {["14/10", "16/8", "18/6"].map(preset => (
+                    <button
+                      key={preset}
+                      onClick={() => setDailyDefaults({ ...dailyDefaults, fasting_preset: preset })}
+                      className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
+                        dailyDefaults.fasting_preset === preset
+                          ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                          : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Focus */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Timer className="w-4 h-4 text-violet-400" />
+                  <Label className="text-white/90 font-medium">Focus Rhythm</Label>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-white/60 text-xs">Work (minutes)</Label>
+                    <Input
+                      type="number"
+                      min="15"
+                      max="90"
+                      value={dailyDefaults.focus_work_minutes}
+                      onChange={(e) => setDailyDefaults({ ...dailyDefaults, focus_work_minutes: parseInt(e.target.value) })}
+                      className="bg-white/5 border-white/10 text-white mt-1 h-10"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-white/60 text-xs">Break (minutes)</Label>
+                    <Input
+                      type="number"
+                      min="3"
+                      max="20"
+                      value={dailyDefaults.focus_break_minutes}
+                      onChange={(e) => setDailyDefaults({ ...dailyDefaults, focus_break_minutes: parseInt(e.target.value) })}
+                      className="bg-white/5 border-white/10 text-white mt-1 h-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Body Breaks */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-orange-400" />
+                  <Label className="text-white/90 font-medium">Active Breaks Target</Label>
+                </div>
+                <div className="flex gap-2">
+                  {[2, 4, 6, 8].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setDailyDefaults({ ...dailyDefaults, body_breaks_target: n })}
+                      className={`flex-1 w-12 h-12 rounded-xl border text-base font-bold transition-all ${
+                        dailyDefaults.body_breaks_target === n
+                          ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
+                          : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Exercise Selection */}
+              <div className="space-y-3">
+                <Label className="text-white/90 font-medium">Exercise Selection</Label>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setDailyDefaults({ ...dailyDefaults, exercise_selection: "auto" })}
+                    className={`w-full p-3 rounded-lg border transition-all text-left ${
+                      dailyDefaults.exercise_selection === "auto"
+                        ? "bg-orange-500/20 border-orange-500/50"
+                        : "bg-white/5 border-white/10 hover:bg-white/10"
+                    }`}
+                  >
+                    <p className="text-white font-medium text-sm">App chooses for me</p>
+                    <p className="text-white/40 text-xs">Automatic balanced workout</p>
+                  </button>
+                  <button
+                    onClick={() => setDailyDefaults({ ...dailyDefaults, exercise_selection: "manual" })}
+                    className={`w-full p-3 rounded-lg border transition-all text-left ${
+                      dailyDefaults.exercise_selection === "manual"
+                        ? "bg-orange-500/20 border-orange-500/50"
+                        : "bg-white/5 border-white/10 hover:bg-white/10"
+                    }`}
+                  >
+                    <p className="text-white font-medium text-sm">I'll choose in the wizard</p>
+                    <p className="text-white/40 text-xs">Select muscle groups daily</p>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSaveDailyDefaults}
+              className="w-full h-11 mt-4 bg-violet-600 hover:bg-violet-500"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Daily Defaults
+            </Button>
           </div>
 
           <Button

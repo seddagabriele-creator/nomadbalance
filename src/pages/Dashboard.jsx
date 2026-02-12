@@ -14,6 +14,7 @@ import StartDayWizard from "../components/wizard/StartDayWizard";
 import BreathingCircle from "../components/decompression/BreathingCircle";
 import MotivationalQuote from "../components/MotivationalQuote";
 import MeetingModeDialog from "../components/MeetingModeDialog";
+import UseDefaultsDialog from "../components/wizard/UseDefaultsDialog";
 import { useTimer } from "../components/lib/TimerContext";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,8 @@ export default function Dashboard() {
   const [showQuote, setShowQuote] = useState(false);
   const [showFirstQuote, setShowFirstQuote] = useState(true);
   const [showMeetingDialog, setShowMeetingDialog] = useState(false);
+  const [showDefaultsDialog, setShowDefaultsDialog] = useState(false);
+  const [useDefaults, setUseDefaults] = useState(false);
   const [userName, setUserName] = useState("");
   const [greeting, setGreeting] = useState("");
 
@@ -175,7 +178,11 @@ export default function Dashboard() {
   };
 
   const handleShowWizard = () => {
-    if (showFirstQuote) {
+    // Check if daily defaults exist
+    const savedDefaults = localStorage.getItem('dailyDefaults');
+    if (savedDefaults && !showFirstQuote) {
+      setShowDefaultsDialog(true);
+    } else if (showFirstQuote) {
       setShowQuote(true);
     } else {
       setShowWizard(true);
@@ -184,6 +191,23 @@ export default function Dashboard() {
 
   const handleQuoteClose = () => {
     setShowQuote(false);
+    const savedDefaults = localStorage.getItem('dailyDefaults');
+    if (savedDefaults) {
+      setShowDefaultsDialog(true);
+    } else {
+      setShowWizard(true);
+    }
+  };
+
+  const handleUseDefaults = () => {
+    setShowDefaultsDialog(false);
+    setUseDefaults(true);
+    setShowWizard(true);
+  };
+
+  const handleManualSetup = () => {
+    setShowDefaultsDialog(false);
+    setUseDefaults(false);
     setShowWizard(true);
   };
 
@@ -466,13 +490,28 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
+      {/* Use Defaults Dialog */}
+      <AnimatePresence>
+        {showDefaultsDialog && (
+          <UseDefaultsDialog
+            onUseDefaults={handleUseDefaults}
+            onManualSetup={handleManualSetup}
+            onCancel={() => setShowDefaultsDialog(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Wizard Overlay */}
       <AnimatePresence>
         {showWizard && (
           <StartDayWizard 
             onComplete={handleStartDay} 
-            onCancel={() => setShowWizard(false)}
+            onCancel={() => {
+              setShowWizard(false);
+              setUseDefaults(false);
+            }}
             userSettings={userSettings}
+            useDefaults={useDefaults}
           />
         )}
       </AnimatePresence>

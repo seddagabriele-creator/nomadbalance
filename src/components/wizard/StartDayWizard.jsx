@@ -30,23 +30,30 @@ const GROUP_LABELS = {
   "hips_legs": "Hips & Legs"
 };
 
-export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
+export default function StartDayWizard({ onComplete, onCancel, userSettings, useDefaults = false }) {
   const queryClient = useQueryClient();
-  const [step, setStep] = useState(-1); // Start at -1 to handle pre-existing tasks
+  
+  // Load daily defaults if using them
+  const loadedDefaults = useDefaults && localStorage.getItem('dailyDefaults') 
+    ? JSON.parse(localStorage.getItem('dailyDefaults'))
+    : null;
+
+  const [step, setStep] = useState(useDefaults ? 0 : -1); // Skip to tasks if using defaults
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [tasks, setTasks] = useState([]);
   const [showPreviousSettings, setShowPreviousSettings] = useState(false);
   const [showTasksDialog, setShowTasksDialog] = useState(false);
-  const [exerciseSelection, setExerciseSelection] = useState("auto");
-  const [selectedGroups, setSelectedGroups] = useState([]);
+  const [exerciseSelection, setExerciseSelection] = useState(loadedDefaults?.exercise_selection || "auto");
+  const [selectedGroups, setSelectedGroups] = useState(loadedDefaults?.selected_groups || []);
   const [data, setData] = useState({
-    last_meal_time: "",
-    next_meal_time: "",
-    focus_work_minutes: 45,
-    focus_break_minutes: 5,
-    focus_sound: "wind",
-    relax_sound: "wind",
-    body_breaks_target: 6,
+    last_meal_time: loadedDefaults?.last_meal_time || "",
+    next_meal_time: loadedDefaults?.next_meal_time || "",
+    fasting_preset: loadedDefaults?.fasting_preset || "16/8",
+    focus_work_minutes: loadedDefaults?.focus_work_minutes || 45,
+    focus_break_minutes: loadedDefaults?.focus_break_minutes || 5,
+    focus_sound: loadedDefaults?.focus_sound || "wind",
+    relax_sound: loadedDefaults?.relax_sound || "wind",
+    body_breaks_target: loadedDefaults?.body_breaks_target || 6,
     work_start_today: userSettings?.morning_work_start || "10:00",
     work_end_today: userSettings?.afternoon_work_end || "19:00",
   });
@@ -81,6 +88,11 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
   const previousSession = previousSessions[0];
 
   useEffect(() => {
+    // Skip dialogs if using defaults
+    if (useDefaults) {
+      return;
+    }
+    
     // Check for existing pre-day tasks
     if (existingTasks.length > 0 && step === -1) {
       setShowTasksDialog(true);
@@ -89,7 +101,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
     } else if (step === -1) {
       setStep(0);
     }
-  }, [existingTasks, previousSession, step]);
+  }, [existingTasks, previousSession, step, useDefaults]);
 
   const loadPreviousSettings = async () => {
     const prevData = {
@@ -126,7 +138,10 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
   const currentStep = step >= 0 ? STEPS[step] : STEPS[0];
 
   const handleNext = async () => {
-    if (step < 3) {
+    // If using defaults, only show tasks step (step 0)
+    if (useDefaults && step === 0) {
+      await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
+    } else if (step < 3) {
       setStep(step + 1);
     } else {
       await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
@@ -292,7 +307,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
           className="w-full max-w-md bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden max-h-[90vh] overflow-y-auto"
         >
           {/* Progress */}
-          {step >= 0 && (
+          {step >= 0 && !useDefaults && (
             <div className="flex gap-2 p-6 pb-0">
               {STEPS.map((s, i) => (
                 <div key={s.key} className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
@@ -314,8 +329,8 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                 <currentStep.icon className={`w-5 h-5 text-${currentStep.color}-400`} />
               </div>
               <div>
-                <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>
-                <h2 className="text-white font-bold text-lg">{currentStep.label}</h2>
+                {!useDefaults && <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>}
+                <h2 className="text-white font-bold text-lg">{useDefaults ? "Today's Tasks" : currentStep.label}</h2>
               </div>
             </div>
           </div>
@@ -323,7 +338,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
           {/* Content */}
           <div className="p-6 min-h-[240px]">
             <AnimatePresence mode="wait">
-              {step === 0 && (
+              {(step === 0 || useDefaults) && (
                 <motion.div key="goals" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-4">
                   <p className="text-white/70 text-sm">What must you complete today? List in order of priority.</p>
                   <div className="flex gap-2">
@@ -386,7 +401,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                 </motion.div>
               )}
 
-              {step === 1 && (
+              {step === 1 && !useDefaults && (
                 <motion.div key="fuel" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
                   <div className="space-y-2">
                     <Label className="text-white/70 text-sm">When did you last eat?</Label>
@@ -439,7 +454,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                 </motion.div>
               )}
 
-              {step === 2 && (
+              {step === 2 && !useDefaults && (
                 <motion.div key="focus" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
                   <p className="text-white/50 text-sm">Choose your work/break rhythm</p>
                   <div className="flex gap-3">
@@ -492,7 +507,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
                 </motion.div>
               )}
 
-              {step === 3 && (
+              {step === 3 && !useDefaults && (
                 <motion.div key="body" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
                   <p className="text-white/50 text-sm">How many active breaks today?</p>
                   <div className="flex justify-center gap-4 py-4">
@@ -589,7 +604,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings }) {
               disabled={(step === 3 && exerciseSelection === "manual" && selectedGroups.length === 0)}
               className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-semibold disabled:opacity-50"
             >
-              {step === 3 ? "Start!" : "Next"}
+              {(useDefaults || step === 3) ? "Start!" : "Next"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
