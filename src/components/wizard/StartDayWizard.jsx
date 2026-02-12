@@ -407,7 +407,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                 </motion.div>
               )}
 
-              {step === 1 && !useDefaults && (
+              {step === 1 && (
                 <motion.div key="fuel" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
                   <div className="space-y-2">
                     <Label className="text-white/70 text-sm">When did you last eat?</Label>
@@ -419,22 +419,24 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                       placeholder="Optional"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-white/70 text-sm">When is your next meal?</Label>
-                    <Input
-                      type="time"
-                      value={data.next_meal_time}
-                      onChange={(e) => setData({ ...data, next_meal_time: e.target.value })}
-                      className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                      placeholder="Optional"
-                    />
-                  </div>
-                  {!data.last_meal_time && !data.next_meal_time && (
+                  {!useDefaults && (
+                    <div className="space-y-2">
+                      <Label className="text-white/70 text-sm">When is your next meal?</Label>
+                      <Input
+                        type="time"
+                        value={data.next_meal_time}
+                        onChange={(e) => setData({ ...data, next_meal_time: e.target.value })}
+                        className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                        placeholder="Optional"
+                      />
+                    </div>
+                  )}
+                  {!data.last_meal_time && (
                     <div className="text-center py-4">
                       <p className="text-white/40 text-sm italic">Today I'll eat when I feel it 🍃</p>
                     </div>
                   )}
-                  {needsWorkHours && (
+                  {!useDefaults && needsWorkHours && (
                     <>
                       <div className="h-px bg-white/10 my-4" />
                       <div className="space-y-2">
