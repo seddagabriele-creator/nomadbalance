@@ -65,10 +65,12 @@ export function TimerProvider({ children }) {
   const initializeTimer = (work, breakTime, callback) => {
     setWorkMinutes(work);
     setBreakMinutes(breakTime);
-    setOnSessionComplete(() => callback);
-    // If timer is not running, update timeLeft immediately
+    if (callback) setOnSessionComplete(() => callback);
+    
+    // CHANGE IS HERE: Allow update if timer is simply NOT running (paused/stopped), 
+    // instead of only when it is 0.
     if (!isRunning) {
-      setTimeLeft(isBreak ? breakTime * 60 : work * 60);
+      setTimeLeft(work * 60);
     }
   };
 
