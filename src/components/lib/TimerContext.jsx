@@ -66,8 +66,9 @@ export function TimerProvider({ children }) {
     setWorkMinutes(work);
     setBreakMinutes(breakTime);
     setOnSessionComplete(() => callback);
-    if (timeLeft === 0) {
-      setTimeLeft(work * 60);
+    // If timer is not running, update timeLeft immediately
+    if (!isRunning) {
+      setTimeLeft(isBreak ? breakTime * 60 : work * 60);
     }
   };
 

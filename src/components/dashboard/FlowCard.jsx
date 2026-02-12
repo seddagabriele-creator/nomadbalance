@@ -28,7 +28,7 @@ export default function FlowCard({ session, onSessionComplete }) {
 
   useEffect(() => {
     initializeTimer(sessionWorkMinutes, sessionBreakMinutes, onSessionComplete);
-  }, [sessionWorkMinutes, sessionBreakMinutes, onSessionComplete]);
+  }, [sessionWorkMinutes, sessionBreakMinutes, onSessionComplete, initializeTimer]);
 
   // Listen for settings updates
   useEffect(() => {
