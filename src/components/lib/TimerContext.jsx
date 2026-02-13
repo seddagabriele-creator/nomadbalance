@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { audioManager } from "./audioManager";
 
 const TimerContext = createContext();
@@ -11,6 +11,18 @@ export function TimerProvider({ children }) {
   const [breakMinutes, setBreakMinutes] = useState(5);
   const [onSessionComplete, setOnSessionComplete] = useState(null);
   const intervalRef = useRef(null);
+  const isRunningRef = useRef(false);
+  const onSessionCompleteRef = useRef(null);
+  const workMinutesRef = useRef(workMinutes);
+  const breakMinutesRef = useRef(breakMinutes);
+  const isBreakRef = useRef(false);
+
+  // Keep refs in sync with state
+  useEffect(() => { isRunningRef.current = isRunning; }, [isRunning]);
+  useEffect(() => { onSessionCompleteRef.current = onSessionComplete; }, [onSessionComplete]);
+  useEffect(() => { workMinutesRef.current = workMinutes; }, [workMinutes]);
+  useEffect(() => { breakMinutesRef.current = breakMinutes; }, [breakMinutes]);
+  useEffect(() => { isBreakRef.current = isBreak; }, [isBreak]);
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -18,16 +30,16 @@ export function TimerProvider({ children }) {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(intervalRef.current);
-            if (!isBreak) {
-              onSessionComplete?.();
+            if (!isBreakRef.current) {
+              onSessionCompleteRef.current?.();
               setIsBreak(true);
               setIsRunning(true);
               audioManager.pause();
-              return breakMinutes * 60;
+              return breakMinutesRef.current * 60;
             } else {
               setIsBreak(false);
               setIsRunning(false);
-              return workMinutes * 60;
+              return workMinutesRef.current * 60;
             }
           }
           return prev - 1;
@@ -35,7 +47,7 @@ export function TimerProvider({ children }) {
       }, 1000);
     }
     return () => clearInterval(intervalRef.current);
-  }, [isRunning, timeLeft, isBreak, workMinutes, breakMinutes, onSessionComplete]);
+  }, [isRunning, timeLeft]);
 
   useEffect(() => {
     if (isRunning && !isBreak) {
@@ -62,17 +74,15 @@ export function TimerProvider({ children }) {
     clearInterval(intervalRef.current);
   };
 
-  const initializeTimer = (work, breakTime, callback) => {
+  const initializeTimer = useCallback((work, breakTime, callback) => {
     setWorkMinutes(work);
     setBreakMinutes(breakTime);
     if (callback) setOnSessionComplete(() => callback);
-    
-    // CHANGE IS HERE: Allow update if timer is simply NOT running (paused/stopped), 
-    // instead of only when it is 0.
-    if (!isRunning) {
+
+    if (!isRunningRef.current) {
       setTimeLeft(work * 60);
     }
-  };
+  }, []);
 
   const pauseTimer = () => {
     setIsRunning(false);
