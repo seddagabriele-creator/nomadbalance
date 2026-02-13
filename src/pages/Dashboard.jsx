@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw } from "lucide-react";
+import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 
@@ -112,37 +113,71 @@ export default function Dashboard() {
       // Get exercises done in the last 7 days
       const last7Days = allPreviousSessions.slice(0, 7);
       const recentExercises = last7Days.flatMap(s => s.exercises_done_today || []);
-      
+
       // Select exercises based on user choice
       let availableExercises = exercises;
       if (selectedGroups && selectedGroups.length > 0) {
         availableExercises = exercises.filter(ex => selectedGroups.includes(ex.group));
       }
 
+      // Smart: check feasibility with remaining time and auto-adjust
+      const feasibility = analyzeBreakFeasibility({
+        breaksTarget: wizardData.body_breaks_target,
+        workStart: wizardData.work_start_today,
+        workEnd: wizardData.work_end_today,
+        focusWorkMinutes: wizardData.focus_work_minutes,
+        focusBreakMinutes: wizardData.focus_break_minutes,
+        useRemainingTime: true,
+      });
+
+      // If user's target is unrealistic for remaining time, auto-cap it
+      const breaksCount = feasibility.level === "unrealistic"
+        ? feasibility.suggestedTarget
+        : wizardData.body_breaks_target;
+
+      // Use actual start time (now or scheduled start, whichever is later)
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const workStartMinutes = parseInt(wizardData.work_start_today.split(":")[0]) * 60 + parseInt(wizardData.work_start_today.split(":")[1]);
+      const workEndMinutes = parseInt(wizardData.work_end_today.split(":")[0]) * 60 + parseInt(wizardData.work_end_today.split(":")[1]);
+      const effectiveStart = Math.max(nowMinutes, workStartMinutes);
+      const effectiveDuration = workEndMinutes - effectiveStart;
+
+      // Try to align breaks with focus break windows
+      const cycleLength = (wizardData.focus_work_minutes || 45) + (wizardData.focus_break_minutes || 5);
+
       // Generate schedule with smart exercise selection
       const schedule = [];
-      const breaksCount = wizardData.body_breaks_target;
-      
+
       for (let i = 0; i < breaksCount; i++) {
         // Prioritize exercises not done recently
         const notRecentExercises = availableExercises.filter(ex => !recentExercises.includes(ex.id));
         const exercisePool = notRecentExercises.length > 0 ? notRecentExercises : availableExercises;
-        
+
         // Pick from different groups for variety
         const usedGroups = schedule.map(s => exercises.find(e => e.id === s.exercise_id)?.group);
         const preferredExercises = exercisePool.filter(ex => !usedGroups.includes(ex.group));
         const finalPool = preferredExercises.length > 0 ? preferredExercises : exercisePool;
-        
+
         const exercise = finalPool[Math.floor(Math.random() * finalPool.length)];
-        
-        const workStartMinutes = parseInt(wizardData.work_start_today.split(":")[0]) * 60 + parseInt(wizardData.work_start_today.split(":")[1]);
-        const workEndMinutes = parseInt(wizardData.work_end_today.split(":")[0]) * 60 + parseInt(wizardData.work_end_today.split(":")[1]);
-        const workDuration = workEndMinutes - workStartMinutes;
-        const interval = workDuration / (breaksCount + 1);
-        const breakTime = workStartMinutes + interval * (i + 1);
-        
+
+        // Evenly space breaks from effective start to end
+        const interval = effectiveDuration / (breaksCount + 1);
+        const rawBreakTime = effectiveStart + interval * (i + 1);
+
+        // Snap to nearest focus break window if possible
+        const cyclesSinceStart = (rawBreakTime - effectiveStart) / cycleLength;
+        const nearestCycleEnd = effectiveStart + Math.round(cyclesSinceStart) * cycleLength;
+        // The break window starts at cycleEnd - focusBreakMinutes
+        const breakWindowStart = nearestCycleEnd - (wizardData.focus_break_minutes || 5);
+        // Only snap if within reasonable distance (half a cycle)
+        const snapDistance = Math.abs(rawBreakTime - breakWindowStart);
+        const breakTime = snapDistance < cycleLength / 2 ? breakWindowStart : rawBreakTime;
+        // Clamp within work hours
+        const clampedBreakTime = Math.max(effectiveStart + 5, Math.min(breakTime, workEndMinutes - 5));
+
         schedule.push({
-          time: `${String(Math.floor(breakTime / 60)).padStart(2, "0")}:${String(Math.floor(breakTime % 60)).padStart(2, "0")}`,
+          time: `${String(Math.floor(clampedBreakTime / 60)).padStart(2, "0")}:${String(Math.floor(clampedBreakTime % 60)).padStart(2, "0")}`,
           exercise_id: exercise.id,
           exercise_name: exercise.name,
           completed: false,
@@ -151,6 +186,7 @@ export default function Dashboard() {
 
       const newSession = await base44.entities.DaySession.create({
         ...wizardData,
+        body_breaks_target: breaksCount,
         date: today,
         status: "active",
         started_at: new Date().toTimeString().slice(0, 5),

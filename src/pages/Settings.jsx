@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, Wind, Droplets, Timer, Activity } from "lucide-react";
+import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
@@ -324,27 +325,95 @@ export default function Settings() {
               </div>
 
               {/* Body Breaks */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-orange-400" />
-                  <Label className="text-white/90 font-medium">Active Breaks Target</Label>
-                </div>
-                <div className="flex gap-2">
-                  {[2, 4, 6, 8].map(n => (
-                    <button
-                      key={n}
-                      onClick={() => setDailyDefaults({ ...dailyDefaults, body_breaks_target: n })}
-                      className={`flex-1 w-12 h-12 rounded-xl border text-base font-bold transition-all ${
-                        dailyDefaults.body_breaks_target === n
-                          ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
-                          : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {(() => {
+                const feasibility = analyzeBreakFeasibility({
+                  breaksTarget: dailyDefaults.body_breaks_target,
+                  morningStart: formData.morning_work_start,
+                  morningEnd: formData.morning_work_end,
+                  afternoonStart: formData.afternoon_work_start,
+                  afternoonEnd: formData.afternoon_work_end,
+                  focusWorkMinutes: dailyDefaults.focus_work_minutes,
+                  focusBreakMinutes: dailyDefaults.focus_break_minutes,
+                });
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-orange-400" />
+                      <Label className="text-white/90 font-medium">Active Breaks Target</Label>
+                    </div>
+                    <div className="flex gap-2">
+                      {[2, 4, 6, 8].map(n => {
+                        const nFeasibility = analyzeBreakFeasibility({
+                          breaksTarget: n,
+                          morningStart: formData.morning_work_start,
+                          morningEnd: formData.morning_work_end,
+                          afternoonStart: formData.afternoon_work_start,
+                          afternoonEnd: formData.afternoon_work_end,
+                          focusWorkMinutes: dailyDefaults.focus_work_minutes,
+                          focusBreakMinutes: dailyDefaults.focus_break_minutes,
+                        });
+                        const isUnrealistic = nFeasibility.level === "unrealistic";
+                        const isTight = nFeasibility.level === "tight";
+                        return (
+                          <button
+                            key={n}
+                            onClick={() => setDailyDefaults({ ...dailyDefaults, body_breaks_target: n })}
+                            className={`relative flex-1 w-12 h-12 rounded-xl border text-base font-bold transition-all ${
+                              dailyDefaults.body_breaks_target === n
+                                ? isUnrealistic
+                                  ? "bg-red-500/20 border-red-500/50 text-red-300"
+                                  : isTight
+                                    ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
+                                    : "bg-orange-500/20 border-orange-500/50 text-orange-300"
+                                : isUnrealistic
+                                  ? "bg-white/5 border-white/10 text-white/20 hover:bg-white/10"
+                                  : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                            }`}
+                          >
+                            {n}
+                            {isUnrealistic && (
+                              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500/80" />
+                            )}
+                            {isTight && (
+                              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500/80" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Feasibility feedback */}
+                    <div className={`flex items-start gap-2 p-3 rounded-xl border text-xs ${
+                      feasibility.level === "good"
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                        : feasibility.level === "tight"
+                          ? "bg-amber-500/10 border-amber-500/20 text-amber-300"
+                          : "bg-red-500/10 border-red-500/20 text-red-300"
+                    }`}>
+                      {feasibility.level === "good" ? (
+                        <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                      ) : feasibility.level === "tight" ? (
+                        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                      )}
+                      <div>
+                        <p>{feasibility.message}</p>
+                        <p className="text-white/30 mt-1">
+                          {Math.round(feasibility.totalWorkMinutes / 60)}h work day &middot; {feasibility.totalCycles} focus cycles ({dailyDefaults.focus_work_minutes}+{dailyDefaults.focus_break_minutes} min)
+                        </p>
+                        {feasibility.level === "unrealistic" && (
+                          <button
+                            onClick={() => setDailyDefaults({ ...dailyDefaults, body_breaks_target: feasibility.suggestedTarget })}
+                            className="mt-2 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-xs transition-all"
+                          >
+                            Use suggested: {feasibility.suggestedTarget} breaks
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Exercise Selection */}
               <div className="space-y-3">
