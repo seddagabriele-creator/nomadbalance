@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History } from "lucide-react";
+import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { analyzeBreakFeasibility } from "../../utils/breakFeasibility";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -515,24 +516,87 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                 </motion.div>
               )}
 
-              {step === 3 && !useDefaults && (
+              {step === 3 && !useDefaults && (() => {
+                const feasibility = analyzeBreakFeasibility({
+                  breaksTarget: data.body_breaks_target,
+                  workStart: data.work_start_today,
+                  workEnd: data.work_end_today,
+                  focusWorkMinutes: data.focus_work_minutes,
+                  focusBreakMinutes: data.focus_break_minutes,
+                  useRemainingTime: false,
+                });
+                const nowFeasibility = analyzeBreakFeasibility({
+                  breaksTarget: data.body_breaks_target,
+                  workStart: data.work_start_today,
+                  workEnd: data.work_end_today,
+                  focusWorkMinutes: data.focus_work_minutes,
+                  focusBreakMinutes: data.focus_break_minutes,
+                  useRemainingTime: true,
+                });
+                const isLateStart = nowFeasibility.remainingWorkMinutes < feasibility.totalWorkMinutes - 30;
+
+                return (
                 <motion.div key="body" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
                   <p className="text-white/50 text-sm">How many active breaks today?</p>
                   <div className="flex justify-center gap-4 py-4">
-                    {[2, 4, 6, 8].map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => setData({ ...data, body_breaks_target: n })}
-                        className={`w-14 h-14 rounded-2xl border text-lg font-bold transition-all ${
-                          data.body_breaks_target === n
-                            ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
-                            : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
-                        }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
+                    {[2, 4, 6, 8].map((n) => {
+                      const nFeas = analyzeBreakFeasibility({
+                        breaksTarget: n,
+                        workStart: data.work_start_today,
+                        workEnd: data.work_end_today,
+                        focusWorkMinutes: data.focus_work_minutes,
+                        focusBreakMinutes: data.focus_break_minutes,
+                        useRemainingTime: isLateStart,
+                      });
+                      const isUnrealistic = nFeas.level === "unrealistic";
+                      const isTight = nFeas.level === "tight";
+                      return (
+                        <button
+                          key={n}
+                          onClick={() => setData({ ...data, body_breaks_target: n })}
+                          className={`relative w-14 h-14 rounded-2xl border text-lg font-bold transition-all ${
+                            data.body_breaks_target === n
+                              ? isUnrealistic
+                                ? "bg-red-500/20 border-red-500/50 text-red-300"
+                                : isTight
+                                  ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
+                                  : "bg-orange-500/20 border-orange-500/50 text-orange-300"
+                              : isUnrealistic
+                                ? "bg-white/5 border-white/10 text-white/20 hover:bg-white/10"
+                                : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                          }`}
+                        >
+                          {n}
+                          {isUnrealistic && (
+                            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500/80" />
+                          )}
+                          {isTight && (
+                            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500/80" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
+
+                  {/* Late start warning */}
+                  {isLateStart && nowFeasibility.level !== "good" && (
+                    <div className="flex items-start gap-2 p-3 rounded-xl border bg-amber-500/10 border-amber-500/20 text-amber-300 text-xs">
+                      <Clock className="w-4 h-4 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-medium">Starting late!</p>
+                        <p className="text-white/40 mt-0.5">
+                          Only {Math.round(nowFeasibility.remainingWorkMinutes / 60)}h left until {data.work_end_today}.
+                          Suggested: {nowFeasibility.suggestedTarget} breaks.
+                        </p>
+                        <button
+                          onClick={() => setData({ ...data, body_breaks_target: nowFeasibility.suggestedTarget })}
+                          className="mt-2 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-xs transition-all"
+                        >
+                          Adjust to {nowFeasibility.suggestedTarget}
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-3">
                     <p className="text-white/70 text-sm">Exercise selection</p>
@@ -583,17 +647,43 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     </div>
                   )}
 
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                    <p className="text-white/40 text-xs mb-1">Plan</p>
+                  {/* Smart plan summary */}
+                  <div className={`rounded-xl p-4 border ${
+                    feasibility.level === "good"
+                      ? "bg-white/5 border-white/10"
+                      : feasibility.level === "tight"
+                        ? "bg-amber-500/5 border-amber-500/20"
+                        : "bg-red-500/5 border-red-500/20"
+                  }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      {feasibility.level === "good" ? (
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <AlertTriangle className={`w-3.5 h-3.5 ${feasibility.level === "tight" ? "text-amber-400" : "text-red-400"}`} />
+                      )}
+                      <p className="text-white/40 text-xs">Plan</p>
+                    </div>
                     <p className="text-white font-semibold">
                       {data.body_breaks_target} active breaks during the day
                     </p>
                     <p className="text-white/40 text-xs mt-1">
-                      About 1 every {Math.round((8 * 60) / data.body_breaks_target)} minutes
+                      {feasibility.message}
                     </p>
+                    <p className="text-white/30 text-xs mt-0.5">
+                      {feasibility.totalCycles} focus cycles &middot; {data.focus_work_minutes}+{data.focus_break_minutes} min rhythm
+                    </p>
+                    {feasibility.level === "unrealistic" && (
+                      <button
+                        onClick={() => setData({ ...data, body_breaks_target: feasibility.suggestedTarget })}
+                        className="mt-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-xs transition-all"
+                      >
+                        Use suggested: {feasibility.suggestedTarget} breaks
+                      </button>
+                    )}
                   </div>
                 </motion.div>
-              )}
+                );
+              })()}
             </AnimatePresence>
           </div>
 
