@@ -1,6 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Droplets, Utensils, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import { getDailyDefaults } from "../../hooks/useDailyDefaults";
+import { DEFAULT_FASTING_HOURS, ONE_MINUTE_MS, ONE_HOUR_MS } from "../../constants";
+
+const FASTING_HOURS_MAP = {
+  "14/10": 14,
+  "16/8": 16,
+  "18/6": 18,
+};
+
+function getFastingHours() {
+  const defaults = getDailyDefaults();
+  if (defaults.fasting_preset === "custom") {
+    return defaults.custom_fasting_hours || DEFAULT_FASTING_HOURS;
+  }
+  return FASTING_HOURS_MAP[defaults.fasting_preset] || DEFAULT_FASTING_HOURS;
+}
 
 export default function FuelCard({ session }) {
   const [fuelStatus, setFuelStatus] = useState({ label: "", detail: "", icon: "droplets" });
@@ -17,34 +33,19 @@ export default function FuelCard({ session }) {
       const lastMeal = new Date();
       lastMeal.setHours(lh, lm, 0, 0);
 
-      // Get fasting target from localStorage or session
-      const savedDefaults = localStorage.getItem('dailyDefaults');
-      let fastingHours = 16;
-      if (savedDefaults) {
-        const defaults = JSON.parse(savedDefaults);
-        if (defaults.fasting_preset === "14/10") fastingHours = 14;
-        else if (defaults.fasting_preset === "16/8") fastingHours = 16;
-        else if (defaults.fasting_preset === "18/6") fastingHours = 18;
-        else if (defaults.fasting_preset === "custom") fastingHours = defaults.custom_fasting_hours || 16;
-      }
-
-      // Calculate next meal time based on fasting target
-      const nextMeal = new Date(lastMeal.getTime() + fastingHours * 3600000);
+      const fastingHours = getFastingHours();
+      const nextMeal = new Date(lastMeal.getTime() + fastingHours * ONE_HOUR_MS);
       const untilNext = nextMeal - now;
-      const diffMs = now - lastMeal;
 
       if (untilNext > 0) {
-        // Fasting window
-        const untilH = Math.floor(untilNext / 3600000);
-        const untilM = Math.floor((untilNext % 3600000) / 60000);
+        const untilH = Math.floor(untilNext / ONE_HOUR_MS);
+        const untilM = Math.floor((untilNext % ONE_HOUR_MS) / ONE_MINUTE_MS);
         setFuelStatus({
           label: "Fasting window active",
           detail: `${untilH}h ${untilM}m until next meal`,
           icon: "droplets",
         });
       } else {
-        // Eating window
-        const fastedH = Math.floor(diffMs / 3600000);
         setFuelStatus({
           label: "Eating window open",
           detail: "Nourish your body with real, healthy food",
@@ -54,7 +55,7 @@ export default function FuelCard({ session }) {
     };
 
     updateStatus();
-    const interval = setInterval(updateStatus, 60000); // Update every minute
+    const interval = setInterval(updateStatus, ONE_MINUTE_MS);
     return () => clearInterval(interval);
   }, [session]);
 
@@ -66,6 +67,8 @@ export default function FuelCard({ session }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
       className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 flex flex-col justify-between h-full"
+      role="region"
+      aria-label="Fasting status"
     >
       <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-400/10 rounded-full -translate-y-6 translate-x-6" />
       <div className="flex items-center gap-2 mb-4">

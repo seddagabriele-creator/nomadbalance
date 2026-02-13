@@ -5,8 +5,7 @@
  * given: work hours, focus rhythm, current time, and minimum spacing.
  */
 
-const MIN_BREAK_SPACING_MINUTES = 20; // Minimum minutes between two active breaks
-const ACTIVE_BREAK_DURATION_MINUTES = 5; // Estimated duration of one active break
+import { MIN_BREAK_SPACING_MINUTES, ACTIVE_BREAK_DURATION_MINUTES, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES } from "../constants";
 
 /**
  * Parse "HH:MM" into total minutes from midnight
@@ -83,7 +82,7 @@ export function calculateRemainingWorkMinutes({ morningStart, morningEnd, aftern
  * We also check that breaks fit within focus cycles.
  */
 export function calculateMaxBreaks({ totalWorkMinutes, focusWorkMinutes, focusBreakMinutes }) {
-  const cycleLength = (focusWorkMinutes || 45) + (focusBreakMinutes || 5);
+  const cycleLength = (focusWorkMinutes || DEFAULT_WORK_MINUTES) + (focusBreakMinutes || DEFAULT_BREAK_MINUTES);
   const totalCycles = Math.floor(totalWorkMinutes / cycleLength);
 
   // Approach 1: based on spacing — how many breaks fit with minimum spacing

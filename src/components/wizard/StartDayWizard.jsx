@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { daySessionService, exerciseService, taskService } from "../../api/services";
+import { getDailyDefaults } from "../../hooks/useDailyDefaults";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,13 @@ import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2,
 import { analyzeBreakFeasibility } from "../../utils/breakFeasibility";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+const STEP_COLOR_MAP = {
+  cyan: { bg: "bg-cyan-500/20", text: "text-cyan-400" },
+  emerald: { bg: "bg-emerald-500/20", text: "text-emerald-400" },
+  violet: { bg: "bg-violet-500/20", text: "text-violet-400" },
+  orange: { bg: "bg-orange-500/20", text: "text-orange-400" },
+};
 
 const STEPS = [
   { key: "goals", label: "Today's Goals", icon: Target, color: "cyan" },
@@ -35,9 +43,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   const queryClient = useQueryClient();
   
   // Load daily defaults if using them
-  const loadedDefaults = useDefaults && localStorage.getItem('dailyDefaults') 
-    ? JSON.parse(localStorage.getItem('dailyDefaults'))
-    : null;
+  const loadedDefaults = useDefaults ? getDailyDefaults() : null;
 
   const [step, setStep] = useState(useDefaults ? 1 : -1); // Start at fuel check if using defaults
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -67,23 +73,23 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split("T")[0];
-      return base44.entities.DaySession.filter({ date: yesterdayStr });
+      return daySessionService.getByDate(yesterdayStr);
     },
   });
 
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises"],
-    queryFn: () => base44.entities.Exercise.list("order"),
+    queryFn: () => exerciseService.listAll(),
   });
 
   const { data: allPreviousSessions = [] } = useQuery({
     queryKey: ["allSessions"],
-    queryFn: () => base44.entities.DaySession.list("-date", 30),
+    queryFn: () => daySessionService.listRecent(),
   });
 
   const { data: existingTasks = [] } = useQuery({
     queryKey: ["preDayTasks"],
-    queryFn: () => base44.entities.Task.filter({ session_id: null }),
+    queryFn: () => taskService.getUnassigned(),
   });
 
   const previousSession = previousSessions[0];
@@ -119,7 +125,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     // Load previous tasks
     const { data: prevTasks = [] } = await queryClient.fetchQuery({
       queryKey: ["previousTasks", previousSession.id],
-      queryFn: () => base44.entities.Task.filter({ session_id: previousSession.id }),
+      queryFn: () => taskService.getBySession(previousSession.id),
     });
     
     const prevTasksList = prevTasks.map((t, i) => ({ title: t.title, order: i + 1 }));
@@ -330,8 +336,8 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
           {/* Header */}
           <div className="p-6 pb-2">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl bg-${currentStep.color}-500/20 flex items-center justify-center`}>
-                <currentStep.icon className={`w-5 h-5 text-${currentStep.color}-400`} />
+              <div className={`w-10 h-10 rounded-xl ${STEP_COLOR_MAP[currentStep.color].bg} flex items-center justify-center`}>
+                <currentStep.icon className={`w-5 h-5 ${STEP_COLOR_MAP[currentStep.color].text}`} />
               </div>
               <div>
                 {!useDefaults && <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>}

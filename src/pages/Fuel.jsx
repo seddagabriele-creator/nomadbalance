@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { daySessionService } from "../api/services";
+import { ONE_HOUR_MS } from "../constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +23,7 @@ export default function Fuel() {
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
-    queryFn: () => base44.entities.DaySession.filter({ date: today }),
+    queryFn: () => daySessionService.getByDate(today),
   });
 
   const session = sessions[0] || null;
@@ -35,9 +36,9 @@ export default function Fuel() {
   const updateSession = useMutation({
     mutationFn: (data) => {
       if (session?.id) {
-        return base44.entities.DaySession.update(session.id, data);
+        return daySessionService.update(session.id, data);
       }
-      return base44.entities.DaySession.create({ ...data, date: today });
+      return daySessionService.create({ ...data, date: today });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["daySession"] });
@@ -152,8 +153,8 @@ export default function Fuel() {
                     last.setHours(lh, lm, 0, 0);
                     const next = new Date();
                     next.setHours(nh, nm, 0, 0);
-                    const elapsed = Math.floor((now - last) / 3600000);
-                    const remaining = Math.floor((next - now) / 3600000);
+                    const elapsed = Math.floor((now - last) / ONE_HOUR_MS);
+                    const remaining = Math.floor((next - now) / ONE_HOUR_MS);
                     if (remaining > 0) {
                       return `${elapsed}h into fast, ${remaining}h until next meal`;
                     }

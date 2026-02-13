@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { daySessionService, exerciseService } from "../api/services";
+import { GROUP_LABELS } from "../constants";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Activity, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -8,13 +9,7 @@ import { createPageUrl } from "../utils";
 import { AnimatePresence } from "framer-motion";
 import ExerciseDetail from "../components/body/ExerciseDetail";
 
-const GROUP_LABELS = {
-  "neck_cervical": "Neck & Cervical",
-  "shoulders_thoracic": "Shoulders & Thoracic",
-  "wrists_forearms": "Wrists & Forearms",
-  "lower_back_core": "Lower Back & Core",
-  "hips_legs": "Hips & Legs"
-};
+// GROUP_LABELS imported from constants
 
 const GROUP_OBJECTIVES = {
   "neck_cervical": 'Reposition the head over the shoulders without stressing the cervical spine.',
@@ -30,12 +25,12 @@ export default function Body() {
 
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises"],
-    queryFn: () => base44.entities.Exercise.list("order"),
+    queryFn: () => exerciseService.listAll(),
   });
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
-    queryFn: () => base44.entities.DaySession.filter({ date: today }),
+    queryFn: () => daySessionService.getByDate(today),
   });
 
   const session = sessions[0] || null;

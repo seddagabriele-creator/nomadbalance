@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
+import { toast } from "sonner";
+import { daySessionService, taskService, exerciseService, userSettingsService, authService } from "../api/services";
+import { hasDailyDefaults } from "../hooks/useDailyDefaults";
+import { ONE_HOUR_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -44,7 +47,7 @@ export default function Dashboard() {
 
   const { data: settings = [] } = useQuery({
     queryKey: ["userSettings"],
-    queryFn: () => base44.entities.UserSettings.list(),
+    queryFn: () => userSettingsService.list(),
   });
 
   const userSettings = settings[0] || {};
@@ -55,14 +58,14 @@ export default function Dashboard() {
     else if (hour < 18) setGreeting("Good afternoon");
     else setGreeting("Good evening");
 
-    base44.auth.me().then((user) => {
+    authService.me().then((user) => {
       setUserName(userSettings.display_name || user?.full_name?.split(" ")[0] || "");
     }).catch(() => {});
   }, [userSettings]);
 
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ["daySession", today],
-    queryFn: () => base44.entities.DaySession.filter({ date: today }),
+    queryFn: () => daySessionService.getByDate(today),
   });
 
   const session = sessions[0] || null;
@@ -71,7 +74,7 @@ export default function Dashboard() {
     queryKey: ["tasks", session?.id],
     queryFn: () => {
       if (!session?.id) return [];
-      return base44.entities.Task.filter({ session_id: session.id });
+      return taskService.getBySession(session.id);
     },
     enabled: !!session?.id,
   });
@@ -84,28 +87,45 @@ export default function Dashboard() {
     const interval = setInterval(() => {
       setShowQuote(true);
       setTimeout(() => setShowQuote(false), 10000);
-    }, 3600000); // Every hour
+    }, ONE_HOUR_MS);
     return () => clearInterval(interval);
   }, [session]);
 
   const createSession = useMutation({
-    mutationFn: (data) => base44.entities.DaySession.create({ ...data, date: today, status: "active", started_at: new Date().toTimeString().slice(0, 5) }),
+    mutationFn: (data) => daySessionService.create({ ...data, date: today, status: "active", started_at: new Date().toTimeString().slice(0, 5) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
+    onError: (error) => {
+      toast.error("Failed to start day session");
+      console.error("Create session error:", error);
+    },
   });
 
   const updateSession = useMutation({
-    mutationFn: (data) => base44.entities.DaySession.update(session.id, data),
+    mutationFn: (data) => daySessionService.update(session.id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
+    onError: (error) => {
+      toast.error("Failed to update session");
+      console.error("Update session error:", error);
+    },
   });
 
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises"],
-    queryFn: () => base44.entities.Exercise.list("order"),
+    queryFn: () => exerciseService.listAll(),
   });
 
   const { data: allPreviousSessions = [] } = useQuery({
     queryKey: ["allSessions"],
-    queryFn: () => base44.entities.DaySession.list("-date", 30),
+    queryFn: () => daySessionService.listRecent(),
+  });
+
+  const taskUpdateMutation = useMutation({
+    mutationFn: ({ taskId, data }) => taskService.update(taskId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (error) => {
+      toast.error("Failed to update task");
+      console.error("Task update error:", error);
+    },
   });
 
   const handleStartDay = async (wizardData, tasks, selectedGroups) => {
@@ -144,7 +164,7 @@ export default function Dashboard() {
       const effectiveDuration = workEndMinutes - effectiveStart;
 
       // Try to align breaks with focus break windows
-      const cycleLength = (wizardData.focus_work_minutes || 45) + (wizardData.focus_break_minutes || 5);
+      const cycleLength = (wizardData.focus_work_minutes || DEFAULT_WORK_MINUTES) + (wizardData.focus_break_minutes || DEFAULT_BREAK_MINUTES);
 
       // Generate schedule with smart exercise selection
       const schedule = [];
@@ -169,7 +189,7 @@ export default function Dashboard() {
         const cyclesSinceStart = (rawBreakTime - effectiveStart) / cycleLength;
         const nearestCycleEnd = effectiveStart + Math.round(cyclesSinceStart) * cycleLength;
         // The break window starts at cycleEnd - focusBreakMinutes
-        const breakWindowStart = nearestCycleEnd - (wizardData.focus_break_minutes || 5);
+        const breakWindowStart = nearestCycleEnd - (wizardData.focus_break_minutes || DEFAULT_BREAK_MINUTES);
         // Only snap if within reasonable distance (half a cycle)
         const snapDistance = Math.abs(rawBreakTime - breakWindowStart);
         const breakTime = snapDistance < cycleLength / 2 ? breakWindowStart : rawBreakTime;
@@ -184,7 +204,7 @@ export default function Dashboard() {
         });
       }
 
-      const newSession = await base44.entities.DaySession.create({
+      const newSession = await daySessionService.create({
         ...wizardData,
         body_breaks_target: breaksCount,
         date: today,
@@ -196,7 +216,7 @@ export default function Dashboard() {
       });
 
       for (const task of tasks) {
-        await base44.entities.Task.create({
+        await taskService.create({
           session_id: newSession.id,
           title: task.title,
           order: task.order,
@@ -210,13 +230,12 @@ export default function Dashboard() {
       setShowFirstQuote(false);
     } catch (error) {
       console.error("Error starting day:", error);
+      toast.error("Failed to start the day. Please try again.");
     }
   };
 
   const handleShowWizard = () => {
-    // Check if daily defaults exist
-    const savedDefaults = localStorage.getItem('dailyDefaults');
-    if (savedDefaults && !showFirstQuote) {
+    if (hasDailyDefaults() && !showFirstQuote) {
       setShowDefaultsDialog(true);
     } else if (showFirstQuote) {
       setShowQuote(true);
@@ -227,8 +246,7 @@ export default function Dashboard() {
 
   const handleQuoteClose = () => {
     setShowQuote(false);
-    const savedDefaults = localStorage.getItem('dailyDefaults');
-    if (savedDefaults) {
+    if (hasDailyDefaults()) {
       setShowDefaultsDialog(true);
     } else {
       setShowWizard(true);
@@ -280,14 +298,13 @@ export default function Dashboard() {
 
   const handleToggleTask = () => {
     if (topTask) {
-      const taskUpdateMutation = useMutation({
-        mutationFn: () => base44.entities.Task.update(topTask.id, {
+      taskUpdateMutation.mutate({
+        taskId: topTask.id,
+        data: {
           completed: !topTask.completed,
           completed_at: !topTask.completed ? new Date().toISOString() : null,
-        }),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+        },
       });
-      taskUpdateMutation.mutate();
     }
   };
 
@@ -453,7 +470,7 @@ export default function Dashboard() {
               <div className="w-px h-6 bg-white/10" />
               <div className="text-center">
                 <p className="text-base font-bold text-white">
-                  {((session?.focus_sessions_completed || 0) * (session?.focus_work_minutes || 45))} min
+                  {((session?.focus_sessions_completed || 0) * (session?.focus_work_minutes || DEFAULT_WORK_MINUTES))} min
                 </p>
                 <p className="text-[9px] text-white/40 uppercase tracking-wider">Focus</p>
               </div>
