@@ -22,8 +22,10 @@ export default function FlowCard({ session, onSessionComplete }) {
     };
   };
 
-  const sessionWorkMinutes = session?.focus_work_minutes || getUserPreferredDuration().work;
-  const sessionBreakMinutes = session?.focus_break_minutes || getUserPreferredDuration().break;
+  // Always prioritize localStorage (user's saved settings) over session values
+  const userDuration = getUserPreferredDuration();
+  const sessionWorkMinutes = userDuration.work;
+  const sessionBreakMinutes = userDuration.break;
   const totalSeconds = isBreak ? breakMinutes * 60 : workMinutes * 60;
 
   useEffect(() => {
