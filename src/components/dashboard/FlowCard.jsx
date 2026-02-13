@@ -82,7 +82,7 @@ export default function FlowCard({ session, onSessionComplete }) {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-2">
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -91,9 +91,9 @@ export default function FlowCard({ session, onSessionComplete }) {
           }}
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className="w-10 h-10 rounded-full bg-violet-600 hover:bg-violet-500 flex items-center justify-center transition-all shadow-lg"
+          className="w-7 h-7 rounded-full bg-violet-600 hover:bg-violet-500 flex items-center justify-center transition-all shadow-lg"
         >
-          {isRunning ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
+          {isRunning ? <Pause className="w-3 h-3 text-white" /> : <Play className="w-3 h-3 text-white ml-0.5" />}
         </button>
         <button
           onClick={(e) => {
@@ -103,9 +103,9 @@ export default function FlowCard({ session, onSessionComplete }) {
           }}
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className="w-8 h-8 hover:bg-white/10 rounded-full flex items-center justify-center transition-all"
+          className="w-6 h-6 hover:bg-white/10 rounded-full flex items-center justify-center transition-all"
         >
-          <RotateCcw className="w-3.5 h-3.5 text-white/50 hover:text-white/80" />
+          <RotateCcw className="w-3 h-3 text-white/50 hover:text-white/80" />
         </button>
       </div>
     </motion.div>
