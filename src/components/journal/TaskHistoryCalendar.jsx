@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { taskService } from "../../api/services";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ export default function TaskHistoryCalendar() {
   // Get all completed tasks from last 30 days
   const { data: allTasks = [] } = useQuery({
     queryKey: ["completedTasks"],
-    queryFn: () => base44.entities.Task.list("-completed_at"),
+    queryFn: () => taskService.listCompleted(),
   });
 
   const completedTasks = allTasks.filter(t => t.completed && t.completed_at);

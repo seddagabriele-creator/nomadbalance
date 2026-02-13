@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { daySessionService, taskService } from "../api/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock } from "lucide-react";
@@ -25,7 +25,7 @@ export default function Journal() {
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
-    queryFn: () => base44.entities.DaySession.filter({ date: today }),
+    queryFn: () => daySessionService.getByDate(today),
   });
 
   const session = sessions[0] || null;
@@ -34,7 +34,7 @@ export default function Journal() {
   // Get all tasks
   const { data: allTasks = [] } = useQuery({
     queryKey: ["allTasks", session?.id],
-    queryFn: () => base44.entities.Task.list("-order"),
+    queryFn: () => taskService.listAll("-order"),
     enabled: true,
   });
 
@@ -56,7 +56,7 @@ export default function Journal() {
   const sortedPreviousTasks = [...previousTasks].sort((a, b) => a.order - b.order);
 
   const createTask = useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
+    mutationFn: (data) => taskService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allTasks"] });
       setNewTaskTitle("");
@@ -65,12 +65,12 @@ export default function Journal() {
   });
 
   const updateTask = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: ({ id, data }) => taskService.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["allTasks"] }),
   });
 
   const deleteTask = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
+    mutationFn: (id) => taskService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allTasks"] });
       toast.success("Task deleted");
@@ -80,7 +80,7 @@ export default function Journal() {
   const completeAllPreviousTasks = useMutation({
     mutationFn: async () => {
       const promises = previousUncompletedTasks.map(task =>
-        base44.entities.Task.update(task.id, {
+        taskService.update(task.id, {
           completed: true,
           completed_at: new Date().toISOString(),
         })

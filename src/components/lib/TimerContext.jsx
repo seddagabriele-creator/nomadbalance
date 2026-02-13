@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { audioManager } from "./audioManager";
+import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, ONE_SECOND_MS, AUDIO_URLS } from "../../constants";
 
 const TimerContext = createContext();
 
@@ -7,8 +8,8 @@ export function TimerProvider({ children }) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [workMinutes, setWorkMinutes] = useState(45);
-  const [breakMinutes, setBreakMinutes] = useState(5);
+  const [workMinutes, setWorkMinutes] = useState(DEFAULT_WORK_MINUTES);
+  const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_MINUTES);
   const [onSessionComplete, setOnSessionComplete] = useState(null);
   const intervalRef = useRef(null);
   const isRunningRef = useRef(false);
@@ -17,7 +18,6 @@ export function TimerProvider({ children }) {
   const breakMinutesRef = useRef(breakMinutes);
   const isBreakRef = useRef(false);
 
-  // Keep refs in sync with state
   useEffect(() => { isRunningRef.current = isRunning; }, [isRunning]);
   useEffect(() => { onSessionCompleteRef.current = onSessionComplete; }, [onSessionComplete]);
   useEffect(() => { workMinutesRef.current = workMinutes; }, [workMinutes]);
@@ -44,14 +44,14 @@ export function TimerProvider({ children }) {
           }
           return prev - 1;
         });
-      }, 1000);
+      }, ONE_SECOND_MS);
     }
     return () => clearInterval(intervalRef.current);
   }, [isRunning, timeLeft]);
 
   useEffect(() => {
     if (isRunning && !isBreak) {
-      audioManager.play("https://files.catbox.moe/f0pwi6.mp3");
+      audioManager.play(AUDIO_URLS.focus_default);
     } else if (!isRunning) {
       audioManager.pause();
     }

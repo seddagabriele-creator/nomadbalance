@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles } from "lucide-react";
-import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { userSettingsService } from "../../api/services";
 import BreathingInstructions from "./BreathingInstructions";
 
 const TECHNIQUES = {
@@ -27,7 +27,7 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5, onCan
 
   const { data: settings = [] } = useQuery({
     queryKey: ["userSettings"],
-    queryFn: () => base44.entities.UserSettings.list(),
+    queryFn: () => userSettingsService.list(),
   });
 
   const technique = settings[0]?.breathing_technique || "4-7-8";
