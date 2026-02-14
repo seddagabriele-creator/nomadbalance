@@ -145,10 +145,17 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   const currentStep = step >= 0 ? STEPS[step] : STEPS[0];
 
   const handleNext = async () => {
-    // If using defaults, show fuel (step 1) then tasks (step 0)
+    // If using defaults, show fuel (step 1), then body (step 3) if manual exercises, then tasks (step 0)
     if (useDefaults) {
       if (step === 1) {
-        setStep(0); // Go to tasks
+        // If user chose "I'll choose in the wizard" for exercises, show body step
+        if (exerciseSelection === "manual") {
+          setStep(3);
+        } else {
+          setStep(0); // Skip body, go to tasks
+        }
+      } else if (step === 3) {
+        setStep(0); // Body done, go to tasks
       } else if (step === 0) {
         await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
       }
@@ -160,7 +167,20 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   };
 
   const handleBack = () => {
-    if (step > 0) {
+    if (useDefaults) {
+      if (step === 0) {
+        // From tasks, go back to body (if manual) or fuel
+        if (exerciseSelection === "manual") {
+          setStep(3);
+        } else {
+          setStep(1);
+        }
+      } else if (step === 3) {
+        setStep(1); // From body, go back to fuel
+      } else {
+        onCancel(); // From fuel (first step in defaults flow), cancel
+      }
+    } else if (step > 0) {
       setStep(step - 1);
     } else {
       onCancel();
@@ -342,7 +362,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
               <div>
                 {!useDefaults && <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>}
                 <h2 className="text-white font-bold text-lg">
-                  {useDefaults ? (step === 1 ? "Fuel Check" : "Today's Tasks") : currentStep.label}
+                  {useDefaults ? (step === 1 ? "Fuel Check" : step === 3 ? "Body Pledge" : "Today's Tasks") : currentStep.label}
                 </h2>
               </div>
             </div>
@@ -522,7 +542,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                 </motion.div>
               )}
 
-              {step === 3 && !useDefaults && (() => {
+              {step === 3 && (!useDefaults || exerciseSelection === "manual") && (() => {
                 const feasibility = analyzeBreakFeasibility({
                   breaksTarget: data.body_breaks_target,
                   workStart: data.work_start_today,
@@ -701,14 +721,14 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
               className="flex-1 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {step === 0 ? "Cancel" : "Back"}
+              {step === 0 && !useDefaults ? "Cancel" : "Back"}
             </Button>
             <Button
               onClick={handleNext}
               disabled={(step === 3 && exerciseSelection === "manual" && selectedGroups.length === 0)}
               className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-semibold disabled:opacity-50"
             >
-              {(useDefaults && step === 0) || step === 3 ? "Start!" : "Next"}
+              {(useDefaults && step === 0) || (!useDefaults && step === 3) ? "Start!" : "Next"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
