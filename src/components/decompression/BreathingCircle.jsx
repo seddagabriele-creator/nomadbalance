@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -24,6 +24,9 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5, onCan
   const [timeLeft, setTimeLeft] = useState(durationMinutes * 60);
   const [started, setStarted] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   const { data: settings = [] } = useQuery({
     queryKey: ["userSettings"],
@@ -40,7 +43,7 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5, onCan
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(sessionInterval);
-          setTimeout(onComplete, 1000);
+          setTimeout(() => onCompleteRef.current?.(), 1000);
           return 0;
         }
         return prev - 1;
@@ -48,7 +51,7 @@ export default function BreathingCircle({ onComplete, durationMinutes = 5, onCan
     }, 1000);
 
     return () => clearInterval(sessionInterval);
-  }, [started, onComplete]);
+  }, [started]);
 
   useEffect(() => {
     if (!started) return;
