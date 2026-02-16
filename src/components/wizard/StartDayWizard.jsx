@@ -54,7 +54,6 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   const [selectedGroups, setSelectedGroups] = useState(loadedDefaults?.selected_groups || []);
   const [data, setData] = useState({
     last_meal_time: loadedDefaults?.last_meal_time || "",
-    next_meal_time: loadedDefaults?.next_meal_time || "",
     fasting_preset: loadedDefaults?.fasting_preset || "16/8",
     focus_work_minutes: loadedDefaults?.focus_work_minutes || 45,
     focus_break_minutes: loadedDefaults?.focus_break_minutes || 5,
@@ -114,7 +113,6 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     const prevData = {
       ...data,
       last_meal_time: previousSession.last_meal_time || "",
-      next_meal_time: previousSession.next_meal_time || "",
       focus_work_minutes: previousSession.focus_work_minutes || 45,
       focus_break_minutes: previousSession.focus_break_minutes || 5,
       focus_sound: previousSession.focus_sound || "wind",
@@ -446,18 +444,6 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                       placeholder="Optional"
                     />
                   </div>
-                  {!useDefaults && (
-                    <div className="space-y-2">
-                      <Label className="text-white/70 text-sm">When is your next meal?</Label>
-                      <Input
-                        type="time"
-                        value={data.next_meal_time}
-                        onChange={(e) => setData({ ...data, next_meal_time: e.target.value })}
-                        className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                        placeholder="Optional"
-                      />
-                    </div>
-                  )}
                   {!data.last_meal_time && (
                     <div className="text-center py-4">
                       <p className="text-white/40 text-sm italic">Today I'll eat when I feel it 🍃</p>

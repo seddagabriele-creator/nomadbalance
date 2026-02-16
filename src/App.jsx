@@ -81,12 +81,16 @@ function App() {
             position="top-center"
             theme="dark"
             richColors
+            duration={2000}
+            className="!fixed !top-1/2 !-translate-y-1/2 !left-1/2 !-translate-x-1/2"
             toastOptions={{
+              className: "!pointer-events-none",
               style: {
-                background: "rgba(30, 41, 59, 0.95)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(30, 41, 59, 0.75)",
+                border: "1px solid rgba(255,255,255,0.08)",
                 color: "#f1f5f9",
                 backdropFilter: "blur(12px)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
               },
             }}
           />

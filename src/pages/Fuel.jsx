@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService } from "../api/services";
 import { ONE_HOUR_MS } from "../constants";
@@ -28,10 +28,22 @@ export default function Fuel() {
 
   const session = sessions[0] || null;
   const [lastMeal, setLastMeal] = useState(session?.last_meal_time || "");
-  const [nextMeal, setNextMeal] = useState(session?.next_meal_time || "");
   const [selectedPreset, setSelectedPreset] = useState(
-    PRESETS.findIndex((p) => p.label === session?.fasting_preset) || 0
+    Math.max(0, PRESETS.findIndex((p) => p.label === session?.fasting_preset))
   );
+
+  // Auto-calculate next meal from last meal + fasting window
+  const nextMeal = useMemo(() => {
+    const preset = PRESETS[selectedPreset];
+    if (!lastMeal || !preset?.fasting) return null;
+    const [h, m] = lastMeal.split(":").map(Number);
+    const nextDate = new Date();
+    nextDate.setHours(h, m, 0, 0);
+    nextDate.setHours(nextDate.getHours() + preset.fasting);
+    const nextH = String(nextDate.getHours()).padStart(2, "0");
+    const nextM = String(nextDate.getMinutes()).padStart(2, "0");
+    return `${nextH}:${nextM}`;
+  }, [lastMeal, selectedPreset]);
 
   const updateSession = useMutation({
     mutationFn: (data) => {
@@ -49,20 +61,9 @@ export default function Fuel() {
   const handleSave = () => {
     updateSession.mutate({
       last_meal_time: lastMeal,
-      next_meal_time: nextMeal,
+      next_meal_time: nextMeal || "",
       fasting_preset: PRESETS[selectedPreset]?.label || "Custom",
     });
-  };
-
-  const calculateNextMeal = (preset) => {
-    if (!lastMeal || !preset.fasting) return;
-    const [h, m] = lastMeal.split(":").map(Number);
-    const lastMealDate = new Date();
-    lastMealDate.setHours(h, m, 0, 0);
-    lastMealDate.setHours(lastMealDate.getHours() + preset.fasting);
-    const nextH = String(lastMealDate.getHours()).padStart(2, "0");
-    const nextM = String(lastMealDate.getMinutes()).padStart(2, "0");
-    setNextMeal(`${nextH}:${nextM}`);
   };
 
   return (
@@ -82,26 +83,15 @@ export default function Fuel() {
 
         <div className="space-y-6">
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold mb-4">Meal Times</h2>
-            <div className="space-y-4">
-              <div>
-                <Label className="text-white/70">Last Meal Time</Label>
-                <Input
-                  type="time"
-                  value={lastMeal}
-                  onChange={(e) => setLastMeal(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white mt-2"
-                />
-              </div>
-              <div>
-                <Label className="text-white/70">Next Meal Time</Label>
-                <Input
-                  type="time"
-                  value={nextMeal}
-                  onChange={(e) => setNextMeal(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white mt-2"
-                />
-              </div>
+            <h2 className="text-lg font-semibold mb-4">Last Meal</h2>
+            <div>
+              <Label className="text-white/70">When did you last eat?</Label>
+              <Input
+                type="time"
+                value={lastMeal}
+                onChange={(e) => setLastMeal(e.target.value)}
+                className="bg-white/5 border-white/10 text-white mt-2"
+              />
             </div>
           </div>
 
@@ -111,10 +101,7 @@ export default function Fuel() {
               {PRESETS.map((preset, idx) => (
                 <button
                   key={idx}
-                  onClick={() => {
-                    setSelectedPreset(idx);
-                    calculateNextMeal(preset);
-                  }}
+                  onClick={() => setSelectedPreset(idx)}
                   className={`py-3 rounded-xl border text-sm font-medium transition-all ${
                     selectedPreset === idx
                       ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
@@ -143,7 +130,7 @@ export default function Fuel() {
               </div>
               <div className="space-y-2 text-sm text-white/70">
                 <p>Last meal: {lastMeal}</p>
-                <p>Next meal: {nextMeal}</p>
+                <p>Next meal (auto): {nextMeal}</p>
                 <p className="text-emerald-300 font-medium mt-3">
                   {(() => {
                     const [lh, lm] = lastMeal.split(":").map(Number);
@@ -153,6 +140,7 @@ export default function Fuel() {
                     last.setHours(lh, lm, 0, 0);
                     const next = new Date();
                     next.setHours(nh, nm, 0, 0);
+                    if (next <= last) next.setDate(next.getDate() + 1);
                     const elapsed = Math.floor((now - last) / ONE_HOUR_MS);
                     const remaining = Math.floor((next - now) / ONE_HOUR_MS);
                     if (remaining > 0) {
