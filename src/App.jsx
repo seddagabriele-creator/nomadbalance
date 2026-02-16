@@ -86,11 +86,11 @@ function App() {
             toastOptions={{
               className: "!pointer-events-none",
               style: {
-                background: "rgba(30, 41, 59, 0.75)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "#f1f5f9",
-                backdropFilter: "blur(12px)",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                background: "rgba(30, 41, 59, 0.45)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                color: "rgba(241, 245, 249, 0.9)",
+                backdropFilter: "blur(16px)",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
               },
             }}
           />
