@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
@@ -76,6 +77,19 @@ function App() {
             <AuthenticatedApp />
           </Router>
           <Toaster />
+          <SonnerToaster
+            position="top-center"
+            theme="dark"
+            richColors
+            toastOptions={{
+              style: {
+                background: "rgba(30, 41, 59, 0.95)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#f1f5f9",
+                backdropFilter: "blur(12px)",
+              },
+            }}
+          />
         </QueryClientProvider>
       </AuthProvider>
     </ErrorBoundary>
