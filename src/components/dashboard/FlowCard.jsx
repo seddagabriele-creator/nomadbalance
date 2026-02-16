@@ -63,7 +63,7 @@ export default function FlowCard({ session, onSessionComplete }) {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-center gap-2 mt-4">
+      <div className="flex items-center justify-center gap-2 mt-3">
         <button
           onClick={(e) => {
             e.preventDefault();
