@@ -5,6 +5,7 @@ import { ONE_HOUR_MS } from "../constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { ArrowLeft, Droplets, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -31,19 +32,23 @@ export default function Fuel() {
   const [selectedPreset, setSelectedPreset] = useState(
     Math.max(0, PRESETS.findIndex((p) => p.label === session?.fasting_preset))
   );
+  const [customFasting, setCustomFasting] = useState(session?.custom_fasting_hours || 16);
+
+  // Get effective fasting hours (preset or custom)
+  const fastingHours = selectedPreset === 3 ? customFasting : PRESETS[selectedPreset]?.fasting;
+  const eatingHours = selectedPreset === 3 ? 24 - customFasting : PRESETS[selectedPreset]?.eating;
 
   // Auto-calculate next meal from last meal + fasting window
   const nextMeal = useMemo(() => {
-    const preset = PRESETS[selectedPreset];
-    if (!lastMeal || !preset?.fasting) return null;
+    if (!lastMeal || !fastingHours) return null;
     const [h, m] = lastMeal.split(":").map(Number);
     const nextDate = new Date();
     nextDate.setHours(h, m, 0, 0);
-    nextDate.setHours(nextDate.getHours() + preset.fasting);
+    nextDate.setHours(nextDate.getHours() + fastingHours);
     const nextH = String(nextDate.getHours()).padStart(2, "0");
     const nextM = String(nextDate.getMinutes()).padStart(2, "0");
     return `${nextH}:${nextM}`;
-  }, [lastMeal, selectedPreset]);
+  }, [lastMeal, fastingHours]);
 
   const updateSession = useMutation({
     mutationFn: (data) => {
@@ -63,6 +68,7 @@ export default function Fuel() {
       last_meal_time: lastMeal,
       next_meal_time: nextMeal || "",
       fasting_preset: PRESETS[selectedPreset]?.label || "Custom",
+      custom_fasting_hours: selectedPreset === 3 ? customFasting : null,
     });
   };
 
@@ -112,7 +118,27 @@ export default function Fuel() {
                 </button>
               ))}
             </div>
-            {selectedPreset < 3 && PRESETS[selectedPreset] && (
+            {selectedPreset === 3 ? (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-white/70 text-sm">Fasting hours: {customFasting}h</Label>
+                  <Slider
+                    value={[customFasting]}
+                    onValueChange={([v]) => setCustomFasting(v)}
+                    min={12}
+                    max={23}
+                    step={1}
+                    className="py-3"
+                  />
+                </div>
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
+                  <p className="text-emerald-300 text-sm">
+                    <strong>{customFasting} hours</strong> fasting,{" "}
+                    <strong>{24 - customFasting} hours</strong> eating window
+                  </p>
+                </div>
+              </div>
+            ) : (
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
                 <p className="text-emerald-300 text-sm">
                   <strong>{PRESETS[selectedPreset].fasting} hours</strong> fasting,{" "}

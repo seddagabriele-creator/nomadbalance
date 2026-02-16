@@ -1,27 +1,40 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { taskService } from "../../api/services";
+import { taskService, daySessionService } from "../../api/services";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarDays, CheckCircle2, Search, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function TaskHistoryCalendar() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Get all completed tasks from last 30 days
-  const { data: allTasks = [] } = useQuery({
+  // Get all completed tasks
+  const { data: completedTasksRaw = [] } = useQuery({
     queryKey: ["completedTasks"],
     queryFn: () => taskService.listCompleted(),
   });
 
-  const completedTasks = allTasks.filter(t => t.completed && t.completed_at);
+  // Get all tasks (for calendar dots)
+  const { data: allTasksList = [] } = useQuery({
+    queryKey: ["allTasksCalendar"],
+    queryFn: () => taskService.listAll(),
+  });
 
-  // Group tasks by date
+  // Get recent sessions (for date mapping)
+  const { data: sessions = [] } = useQuery({
+    queryKey: ["recentSessions"],
+    queryFn: () => daySessionService.listRecent(60),
+  });
+
+  const completedTasks = completedTasksRaw.filter(t => t.completed && t.completed_at);
+
+  // Group completed tasks by date (for task detail view)
   const tasksByDate = completedTasks.reduce((acc, task) => {
     const date = task.completed_at.split("T")[0];
     if (!acc[date]) acc[date] = [];
@@ -29,15 +42,48 @@ export default function TaskHistoryCalendar() {
     return acc;
   }, {});
 
+  // Build task completion status per date (for calendar dots)
+  const taskStatusByDate = useMemo(() => {
+    const sessionDateMap = {};
+    sessions.forEach(s => {
+      sessionDateMap[s.id] = s.date;
+    });
+
+    const byDate = {};
+    allTasksList.forEach(task => {
+      if (!task.session_id) return;
+      const date = sessionDateMap[task.session_id];
+      if (!date) return;
+      if (!byDate[date]) byDate[date] = { total: 0, completed: 0 };
+      byDate[date].total++;
+      if (task.completed) byDate[date].completed++;
+    });
+
+    return byDate;
+  }, [allTasksList, sessions]);
+
   // Get dates with completed tasks
   const datesWithTasks = Object.keys(tasksByDate).map(d => new Date(d));
+
+  // Dates for modifiers (green = all done, red = has incomplete)
+  const allDoneDates = [];
+  const incompleteDates = [];
+  Object.entries(taskStatusByDate).forEach(([dateStr, status]) => {
+    if (status.total === 0) return;
+    const d = new Date(dateStr);
+    if (status.completed === status.total) {
+      allDoneDates.push(d);
+    } else {
+      incompleteDates.push(d);
+    }
+  });
 
   // Get tasks for selected date
   const selectedDateTasks = selectedDate
     ? tasksByDate[format(selectedDate, "yyyy-MM-dd")] || []
     : [];
 
-  // Search results: filter completed tasks by keyword, grouped by date
+  // Search results
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return null;
@@ -46,7 +92,6 @@ export default function TaskHistoryCalendar() {
       t.title.toLowerCase().includes(q)
     );
 
-    // Group by date, sorted newest first
     const grouped = matching.reduce((acc, task) => {
       const date = task.completed_at.split("T")[0];
       if (!acc[date]) acc[date] = [];
@@ -57,6 +102,25 @@ export default function TaskHistoryCalendar() {
     const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
     return { grouped, sortedDates, total: matching.length };
   }, [searchQuery, completedTasks]);
+
+  // Custom DayContent to render dots
+  const DayContentWithDots = ({ date, displayMonth, activeModifiers }) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    const status = taskStatusByDate[dateStr];
+
+    return (
+      <div className="relative flex items-center justify-center w-full h-full">
+        <span>{date.getDate()}</span>
+        {status && status.total > 0 && (
+          <span
+            className={`absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${
+              status.completed === status.total ? "bg-green-400" : "bg-red-400"
+            }`}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl">
@@ -163,12 +227,23 @@ export default function TaskHistoryCalendar() {
                 }}
                 modifiers={{
                   hasTask: datesWithTasks,
+                  allDone: allDoneDates,
+                  hasIncomplete: incompleteDates,
                 }}
                 modifiersStyles={{
                   hasTask: {
                     backgroundColor: "rgba(34, 211, 238, 0.15)",
                     borderRadius: "8px",
                   },
+                }}
+                components={{
+                  IconLeft: ({ className, ...props }) => (
+                    <ChevronLeft className={cn("h-4 w-4", className)} {...props} />
+                  ),
+                  IconRight: ({ className, ...props }) => (
+                    <ChevronRight className={cn("h-4 w-4", className)} {...props} />
+                  ),
+                  DayContent: DayContentWithDots,
                 }}
                 className="rounded-xl"
                 classNames={{
@@ -194,6 +269,18 @@ export default function TaskHistoryCalendar() {
                   day_hidden: "invisible",
                 }}
               />
+
+              {/* Legend */}
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10 px-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-green-400" />
+                  <span className="text-xs text-white/50">All done</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-400" />
+                  <span className="text-xs text-white/50">Incomplete</span>
+                </div>
+              </div>
             </PopoverContent>
           </Popover>
 

@@ -17,12 +17,14 @@ export function TimerProvider({ children }) {
   const workMinutesRef = useRef(workMinutes);
   const breakMinutesRef = useRef(breakMinutes);
   const isBreakRef = useRef(false);
+  const timeLeftRef = useRef(0);
 
   useEffect(() => { isRunningRef.current = isRunning; }, [isRunning]);
   useEffect(() => { onSessionCompleteRef.current = onSessionComplete; }, [onSessionComplete]);
   useEffect(() => { workMinutesRef.current = workMinutes; }, [workMinutes]);
   useEffect(() => { breakMinutesRef.current = breakMinutes; }, [breakMinutes]);
   useEffect(() => { isBreakRef.current = isBreak; }, [isBreak]);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -79,7 +81,9 @@ export function TimerProvider({ children }) {
     setBreakMinutes(breakTime);
     if (callback) setOnSessionComplete(() => callback);
 
-    if (!isRunningRef.current) {
+    // Only set initial time if no session is active (timeLeft === 0)
+    // This prevents resetting a paused timer on re-renders
+    if (timeLeftRef.current === 0) {
       setTimeLeft(work * 60);
     }
   }, []);
