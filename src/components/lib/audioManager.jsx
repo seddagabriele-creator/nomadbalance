@@ -1,4 +1,4 @@
-// Global audio manager with Web Audio API for gapless looping
+// Global audio manager with Web Audio API and crossfade for seamless looping
 class AudioManager {
   constructor() {
     this.audioContext = null;
@@ -9,6 +9,7 @@ class AudioManager {
     this.currentUrl = null;
     this.loadRetries = 0;
     this.maxRetries = 2;
+    this.crossfadeDuration = 2; // seconds of crossfade at loop boundary
   }
 
   async play(url) {
@@ -37,7 +38,9 @@ class AudioManager {
         throw new Error(`Audio fetch failed: ${response.status} ${response.statusText}`);
       }
       const arrayBuffer = await response.arrayBuffer();
-      this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      const rawBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      // Build a crossfaded buffer so loop = true has zero gap
+      this.audioBuffer = this.createCrossfadeBuffer(rawBuffer);
       this.currentUrl = url;
       this.loadRetries = 0;
     } catch (err) {
@@ -52,8 +55,54 @@ class AudioManager {
     }
   }
 
+  /**
+   * Creates a new AudioBuffer where the tail of the track is crossfaded into
+   * the head, eliminating any audible seam when Web Audio loops the buffer.
+   *
+   * The last `fadeSamples` of the original are blended (fade-out) with the
+   * first `fadeSamples` (fade-in), then the tail is trimmed so the buffer
+   * is shorter by exactly `fadeSamples`. When `loop = true` replays from
+   * sample 0, the transition is perfectly smooth.
+   */
+  createCrossfadeBuffer(buffer) {
+    const sampleRate = buffer.sampleRate;
+    const channels = buffer.numberOfChannels;
+    const fadeSamples = Math.floor(sampleRate * this.crossfadeDuration);
+    const originalLength = buffer.length;
+
+    // Need at least twice the fade region to make a meaningful crossfade
+    if (originalLength < fadeSamples * 3) return buffer;
+
+    const newLength = originalLength - fadeSamples;
+    const newBuffer = this.audioContext.createBuffer(channels, newLength, sampleRate);
+
+    for (let ch = 0; ch < channels; ch++) {
+      const oldData = buffer.getChannelData(ch);
+      const newData = newBuffer.getChannelData(ch);
+
+      // Crossfade region: blend original start (fade-in) with original tail (fade-out)
+      for (let i = 0; i < fadeSamples; i++) {
+        const fadeIn = i / fadeSamples;
+        const fadeOut = 1 - fadeIn;
+        newData[i] = oldData[i] * fadeIn + oldData[newLength + i] * fadeOut;
+      }
+
+      // Remainder: copy unchanged
+      for (let i = fadeSamples; i < newLength; i++) {
+        newData[i] = oldData[i];
+      }
+    }
+
+    return newBuffer;
+  }
+
   startPlayback() {
     if (!this.audioBuffer || !this.audioContext) return;
+
+    // Resume context if suspended (browser autoplay policy)
+    if (this.audioContext.state === "suspended") {
+      this.audioContext.resume();
+    }
 
     this.source = this.audioContext.createBufferSource();
     this.source.buffer = this.audioBuffer;
