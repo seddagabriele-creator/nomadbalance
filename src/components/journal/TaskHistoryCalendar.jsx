@@ -9,6 +9,7 @@ import { format } from "date-fns";
 
 export default function TaskHistoryCalendar() {
   const [selectedDate, setSelectedDate] = useState(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Get all completed tasks from last 30 days
   const { data: allTasks = [] } = useQuery({
@@ -48,7 +49,7 @@ export default function TaskHistoryCalendar() {
         </div>
       </div>
 
-      <Popover>
+      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
@@ -62,7 +63,10 @@ export default function TaskHistoryCalendar() {
           <Calendar
             mode="single"
             selected={selectedDate}
-            onSelect={setSelectedDate}
+            onSelect={(date) => {
+              setSelectedDate(date);
+              setCalendarOpen(false);
+            }}
             modifiers={{
               hasTask: datesWithTasks,
             }}
