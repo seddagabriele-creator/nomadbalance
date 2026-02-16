@@ -22,6 +22,7 @@ export default function Journal() {
   const [showWorkDayTasks, setShowWorkDayTasks] = useState(true);
   const [editingAlarm, setEditingAlarm] = useState(null);
   const [alarmTime, setAlarmTime] = useState("");
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
@@ -173,12 +174,12 @@ export default function Journal() {
           <div className="flex items-center gap-2">
             {previousUncompletedTasks.length > 0 && isInWorkDay && (
               <Button
-                onClick={() => completeAllPreviousTasks.mutate()}
+                onClick={() => setShowCompleteConfirm(true)}
                 variant="ghost"
                 className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
-                Complete {previousUncompletedTasks.length} old tasks
+                Complete {previousUncompletedTasks.length} old
               </Button>
             )}
             {!isInWorkDay && (
@@ -487,6 +488,52 @@ export default function Journal() {
           <TaskHistoryCalendar />
         </div>
       </div>
+
+      {/* Confirmation dialog for completing all old tasks */}
+      {showCompleteConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-amber-400" />
+              </div>
+              <h3 className="text-white font-bold text-lg">Complete old tasks?</h3>
+            </div>
+            <p className="text-white/60 text-sm mb-2">
+              This will mark <strong className="text-white">{previousUncompletedTasks.length} task{previousUncompletedTasks.length > 1 ? "s" : ""}</strong> as completed:
+            </p>
+            <div className="bg-white/5 rounded-xl p-3 border border-white/10 mb-6 space-y-1.5 max-h-40 overflow-y-auto">
+              {previousUncompletedTasks.slice(0, 5).map((task, i) => (
+                <div key={task.id} className="flex items-center gap-2 text-sm">
+                  <Circle className="w-3.5 h-3.5 text-amber-400/60 shrink-0" />
+                  <span className="text-white/70 truncate">{task.title}</span>
+                </div>
+              ))}
+              {previousUncompletedTasks.length > 5 && (
+                <p className="text-white/30 text-xs pl-5">...and {previousUncompletedTasks.length - 5} more</p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => setShowCompleteConfirm(false)}
+                className="flex-1 h-11 rounded-xl text-white/50 hover:text-white hover:bg-white/10"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  completeAllPreviousTasks.mutate();
+                  setShowCompleteConfirm(false);
+                }}
+                className="flex-1 h-11 rounded-xl bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400"
+              >
+                Complete all
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
