@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService, taskService } from "../api/services";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export default function Journal() {
   const [editingAlarm, setEditingAlarm] = useState(null);
   const [alarmTime, setAlarmTime] = useState("");
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [expandedTaskId, setExpandedTaskId] = useState(null);
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
@@ -237,118 +239,117 @@ export default function Journal() {
           </div>
 
           {sortedTodayTasks.length > 0 && (
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-              <h2 className="text-lg font-semibold mb-4">Today's Tasks</h2>
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
+              <h2 className="text-lg font-semibold mb-3">Today's Tasks</h2>
               <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="today">
                   {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                    <div {...provided.droppableProps} ref={provided.innerRef} className="flex flex-col gap-1.5">
                       {sortedTodayTasks.map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={`flex items-center gap-3 p-3 rounded-xl border overflow-hidden transition-colors ${
-                                snapshot.isDragging
-                                  ? "bg-white/15 border-cyan-500/50"
-                                  : "bg-white/5 border-white/10"
-                              }`}
-                            >
-                              <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0">
-                                <GripVertical className="w-4 h-4" />
-                              </div>
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold shrink-0">
+                          {(provided, snapshot) => {
+                            const isExpanded = expandedTaskId === task.id && !snapshot.isDragging;
+                            const taskRow = (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`flex items-start gap-1.5 px-2 py-1.5 rounded-xl border transition-colors ${
+                                  snapshot.isDragging
+                                    ? "bg-slate-900 border-cyan-500/50 shadow-lg shadow-cyan-500/10"
+                                    : "bg-white/5 border-white/10"
+                                }`}
+                              >
+                                <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0 pt-0.5">
+                                  <GripVertical className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold shrink-0 mt-px">
                                   {index + 1}
                                 </div>
                                 <button
                                   onClick={() => handleToggleComplete(task)}
-                                  className="text-white/40 hover:text-white transition-colors shrink-0"
+                                  className="text-white/40 hover:text-white transition-colors shrink-0 mt-px"
                                 >
                                   {task.completed ? (
-                                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                    <CheckCircle2 className="w-4 h-4 text-green-400" />
                                   ) : (
-                                    <Circle className="w-5 h-5" />
+                                    <Circle className="w-4 h-4" />
                                   )}
                                 </button>
-                                <div className="flex-1 flex items-center gap-2 min-w-0">
+                                <div
+                                  className="flex-1 min-w-0 cursor-pointer"
+                                  onClick={() => setExpandedTaskId(prev => prev === task.id ? null : task.id)}
+                                >
                                   <span
-                                    className={`flex-1 truncate ${
-                                      task.completed ? "text-white/40 line-through" : "text-white"
-                                    }`}
+                                    className={`text-sm leading-5 ${
+                                      isExpanded ? "whitespace-normal break-words" : "block truncate"
+                                    } ${task.completed ? "text-white/40 line-through" : "text-white"}`}
                                   >
                                     {task.title}
                                   </span>
-                                  {task.alarm_time && (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs shrink-0">
-                                      <Clock className="w-3 h-3" />
-                                      <span>{task.alarm_time}</span>
+                                  {isExpanded && (
+                                    <div className="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-white/10">
+                                      {task.alarm_time && (
+                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs">
+                                          <Clock className="w-3 h-3" />
+                                          <span>{task.alarm_time}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex-1" />
+                                      <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
+                                        if (!open) { setEditingAlarm(null); setAlarmTime(""); }
+                                      }}>
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingAlarm(task.id);
+                                              setAlarmTime(task.alarm_time || "");
+                                            }}
+                                            className={`h-7 w-7 ${task.alarm_time ? 'text-cyan-400' : 'text-white/40'} hover:text-cyan-300 hover:bg-cyan-500/10`}
+                                          >
+                                            <Clock className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
+                                          <div className="space-y-2">
+                                            <Input
+                                              type="time"
+                                              value={alarmTime}
+                                              onChange={(e) => setAlarmTime(e.target.value)}
+                                              className="bg-white/5 border-white/10 text-white"
+                                            />
+                                            <div className="flex gap-2">
+                                              {task.alarm_time && (
+                                                <Button size="sm" variant="ghost" onClick={() => handleRemoveAlarm(task)} className="flex-1 text-red-400 hover:text-red-300">Remove</Button>
+                                              )}
+                                              <Button size="sm" onClick={() => handleSetAlarm(task)} className="flex-1 bg-cyan-600 hover:bg-cyan-700">Set</Button>
+                                            </div>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => { e.stopPropagation(); deleteTask.mutate(task.id); }}
+                                        className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
                                     </div>
                                   )}
                                 </div>
+                                {!isExpanded && task.alarm_time && (
+                                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] shrink-0 mt-px">
+                                    <Clock className="w-2.5 h-2.5" />
+                                    <span>{task.alarm_time}</span>
+                                  </div>
+                                )}
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
-                                  if (!open) {
-                                    setEditingAlarm(null);
-                                    setAlarmTime("");
-                                  }
-                                }}>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => {
-                                        setEditingAlarm(task.id);
-                                        setAlarmTime(task.alarm_time || "");
-                                      }}
-                                      className={`${task.alarm_time ? 'text-cyan-400' : 'text-white/40'} hover:text-cyan-300 hover:bg-cyan-500/10`}
-                                    >
-                                      <Clock className="w-4 h-4" />
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
-                                    <div className="space-y-2">
-                                      <Input
-                                        type="time"
-                                        value={alarmTime}
-                                        onChange={(e) => setAlarmTime(e.target.value)}
-                                        className="bg-white/5 border-white/10 text-white"
-                                      />
-                                      <div className="flex gap-2">
-                                        {task.alarm_time && (
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => handleRemoveAlarm(task)}
-                                            className="flex-1 text-red-400 hover:text-red-300"
-                                          >
-                                            Remove
-                                          </Button>
-                                        )}
-                                        <Button
-                                          size="sm"
-                                          onClick={() => handleSetAlarm(task)}
-                                          className="flex-1 bg-cyan-600 hover:bg-cyan-700"
-                                        >
-                                          Set
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => deleteTask.mutate(task.id)}
-                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                                </div>
-                            </div>
-                          )}
+                            );
+                            return snapshot.isDragging ? createPortal(taskRow, document.body) : taskRow;
+                          }}
                         </Draggable>
                       ))}
                       {provided.placeholder}
@@ -360,114 +361,117 @@ export default function Journal() {
           )}
 
           {sortedPreviousTasks.length > 0 && (
-            <div className="bg-amber-500/5 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-6">
-              <h2 className="text-lg font-semibold mb-4 text-amber-400">Previous Tasks</h2>
+            <div className="bg-amber-500/5 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-4">
+              <h2 className="text-lg font-semibold mb-3 text-amber-400">Previous Tasks</h2>
               <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="previous">
                   {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                    <div {...provided.droppableProps} ref={provided.innerRef} className="flex flex-col gap-1.5">
                       {sortedPreviousTasks.map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={`flex items-center gap-3 p-3 rounded-xl border overflow-hidden transition-colors ${
-                                snapshot.isDragging
-                                  ? "bg-amber-500/15 border-amber-500/50"
-                                  : "bg-amber-500/5 border-amber-500/20"
-                              }`}
-                            >
-                              <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0">
-                                <GripVertical className="w-4 h-4" />
-                              </div>
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold shrink-0">
+                          {(provided, snapshot) => {
+                            const isExpanded = expandedTaskId === task.id && !snapshot.isDragging;
+                            const taskRow = (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`flex items-start gap-1.5 px-2 py-1.5 rounded-xl border transition-colors ${
+                                  snapshot.isDragging
+                                    ? "bg-slate-900 border-amber-500/50 shadow-lg shadow-amber-500/10"
+                                    : "bg-amber-500/5 border-amber-500/20"
+                                }`}
+                              >
+                                <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0 pt-0.5">
+                                  <GripVertical className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold shrink-0 mt-px">
                                   {index + 1}
                                 </div>
                                 <button
                                   onClick={() => handleToggleComplete(task)}
-                                  className="text-white/40 hover:text-white transition-colors shrink-0"
+                                  className="text-white/40 hover:text-white transition-colors shrink-0 mt-px"
                                 >
                                   {task.completed ? (
-                                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                    <CheckCircle2 className="w-4 h-4 text-green-400" />
                                   ) : (
-                                    <Circle className="w-5 h-5" />
+                                    <Circle className="w-4 h-4" />
                                   )}
                                 </button>
-                                <div className="flex-1 flex items-center gap-2 min-w-0">
-                                  <span className={`flex-1 truncate ${task.completed ? "text-white/40 line-through" : "text-white"}`}>
+                                <div
+                                  className="flex-1 min-w-0 cursor-pointer"
+                                  onClick={() => setExpandedTaskId(prev => prev === task.id ? null : task.id)}
+                                >
+                                  <span
+                                    className={`text-sm leading-5 ${
+                                      isExpanded ? "whitespace-normal break-words" : "block truncate"
+                                    } ${task.completed ? "text-white/40 line-through" : "text-white"}`}
+                                  >
                                     {task.title}
                                   </span>
-                                  {task.alarm_time && (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs shrink-0">
-                                      <Clock className="w-3 h-3" />
-                                      <span>{task.alarm_time}</span>
+                                  {isExpanded && (
+                                    <div className="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-amber-500/20">
+                                      {task.alarm_time && (
+                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs">
+                                          <Clock className="w-3 h-3" />
+                                          <span>{task.alarm_time}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex-1" />
+                                      <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
+                                        if (!open) { setEditingAlarm(null); setAlarmTime(""); }
+                                      }}>
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingAlarm(task.id);
+                                              setAlarmTime(task.alarm_time || "");
+                                            }}
+                                            className={`h-7 w-7 ${task.alarm_time ? 'text-amber-400' : 'text-white/40'} hover:text-amber-300 hover:bg-amber-500/10`}
+                                          >
+                                            <Clock className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
+                                          <div className="space-y-2">
+                                            <Input
+                                              type="time"
+                                              value={alarmTime}
+                                              onChange={(e) => setAlarmTime(e.target.value)}
+                                              className="bg-white/5 border-white/10 text-white"
+                                            />
+                                            <div className="flex gap-2">
+                                              {task.alarm_time && (
+                                                <Button size="sm" variant="ghost" onClick={() => handleRemoveAlarm(task)} className="flex-1 text-red-400 hover:text-red-300">Remove</Button>
+                                              )}
+                                              <Button size="sm" onClick={() => handleSetAlarm(task)} className="flex-1 bg-amber-600 hover:bg-amber-700">Set</Button>
+                                            </div>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => { e.stopPropagation(); deleteTask.mutate(task.id); }}
+                                        className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
                                     </div>
                                   )}
                                 </div>
+                                {!isExpanded && task.alarm_time && (
+                                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] shrink-0 mt-px">
+                                    <Clock className="w-2.5 h-2.5" />
+                                    <span>{task.alarm_time}</span>
+                                  </div>
+                                )}
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
-                                  if (!open) {
-                                    setEditingAlarm(null);
-                                    setAlarmTime("");
-                                  }
-                                }}>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => {
-                                        setEditingAlarm(task.id);
-                                        setAlarmTime(task.alarm_time || "");
-                                      }}
-                                      className={`${task.alarm_time ? 'text-amber-400' : 'text-white/40'} hover:text-amber-300 hover:bg-amber-500/10`}
-                                    >
-                                      <Clock className="w-4 h-4" />
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
-                                    <div className="space-y-2">
-                                      <Input
-                                        type="time"
-                                        value={alarmTime}
-                                        onChange={(e) => setAlarmTime(e.target.value)}
-                                        className="bg-white/5 border-white/10 text-white"
-                                      />
-                                      <div className="flex gap-2">
-                                        {task.alarm_time && (
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => handleRemoveAlarm(task)}
-                                            className="flex-1 text-red-400 hover:text-red-300"
-                                          >
-                                            Remove
-                                          </Button>
-                                        )}
-                                        <Button
-                                          size="sm"
-                                          onClick={() => handleSetAlarm(task)}
-                                          className="flex-1 bg-amber-600 hover:bg-amber-700"
-                                        >
-                                          Set
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => deleteTask.mutate(task.id)}
-                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          )}
+                            );
+                            return snapshot.isDragging ? createPortal(taskRow, document.body) : taskRow;
+                          }}
                         </Draggable>
                       ))}
                       {provided.placeholder}
