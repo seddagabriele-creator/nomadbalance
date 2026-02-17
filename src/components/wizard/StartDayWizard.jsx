@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock } from "lucide-react";
-import { analyzeBreakFeasibility } from "../../utils/breakFeasibility";
+import { analyzeBreakFeasibility, calculateSessionConflict } from "../../utils/breakFeasibility";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -547,6 +547,21 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                 });
                 const isLateStart = nowFeasibility.remainingWorkMinutes < feasibility.totalWorkMinutes - 30;
 
+                // Smart conflict detection
+                const conflict = calculateSessionConflict({
+                  breaksTarget: data.body_breaks_target,
+                  focusWorkMinutes: data.focus_work_minutes,
+                  focusBreakMinutes: data.focus_break_minutes,
+                  remainingMinutes: nowFeasibility.remainingWorkMinutes,
+                  workEndTime: data.work_end_today,
+                });
+
+                const remainingH = Math.floor(nowFeasibility.remainingWorkMinutes / 60);
+                const remainingM = nowFeasibility.remainingWorkMinutes % 60;
+                const remainingLabel = remainingH > 0
+                  ? `${remainingH}h${remainingM > 0 ? ` ${remainingM}min` : ""}`
+                  : `${remainingM} min`;
+
                 return (
                 <motion.div key="body" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
                   <p className="text-white/50 text-sm">How many active breaks today?</p>
@@ -590,22 +605,93 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     })}
                   </div>
 
-                  {/* Late start warning */}
-                  {isLateStart && nowFeasibility.level !== "good" && (
+                  {/* Smart conflict resolution */}
+                  {isLateStart && conflict && (
+                    <div className="space-y-3 p-4 rounded-2xl border bg-amber-500/5 border-amber-500/20">
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                          <AlertTriangle className="w-4 h-4 text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-amber-300 font-semibold text-sm">Not enough time</p>
+                          <p className="text-white/50 text-xs mt-1 leading-relaxed">
+                            Your workday ends at <strong className="text-white/70">{data.work_end_today}</strong> ({remainingLabel} left).
+                            With <strong className="text-white/70">{data.focus_work_minutes}+{data.focus_break_minutes} min</strong> rhythm,{" "}
+                            <strong className="text-white/70">{data.body_breaks_target} sessions</strong> need{" "}
+                            <strong className="text-white/70">{Math.floor(conflict.totalNeededMinutes / 60)}h{conflict.totalNeededMinutes % 60 > 0 ? ` ${conflict.totalNeededMinutes % 60}min` : ""}</strong>.
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-white/40 text-[10px] uppercase tracking-widest font-medium pl-1">Choose how to adapt</p>
+
+                      <div className="space-y-2">
+                        {/* Option A: Compress sessions */}
+                        {conflict.compress.viable && (
+                          <button
+                            onClick={() => setData({
+                              ...data,
+                              focus_work_minutes: conflict.compress.focusMinutes,
+                              focus_break_minutes: conflict.compress.breakMinutes,
+                            })}
+                            className="w-full p-3 rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 transition-all text-left group"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <Timer className="w-3.5 h-3.5 text-violet-400" />
+                              <p className="text-violet-300 font-medium text-sm">Compress sessions</p>
+                            </div>
+                            <p className="text-white/40 text-xs leading-relaxed">
+                              Keep {data.body_breaks_target} sessions, shorten rhythm to{" "}
+                              <strong className="text-white/60">{conflict.compress.focusMinutes}+{conflict.compress.breakMinutes} min</strong>{" "}
+                              (instead of {data.focus_work_minutes}+{data.focus_break_minutes})
+                            </p>
+                          </button>
+                        )}
+
+                        {/* Option B: Reduce breaks */}
+                        {conflict.reduce.breaks < data.body_breaks_target && (
+                          <button
+                            onClick={() => setData({ ...data, body_breaks_target: conflict.reduce.breaks })}
+                            className="w-full p-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 transition-all text-left group"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <Activity className="w-3.5 h-3.5 text-cyan-400" />
+                              <p className="text-cyan-300 font-medium text-sm">Reduce to {conflict.reduce.breaks} session{conflict.reduce.breaks > 1 ? "s" : ""}</p>
+                            </div>
+                            <p className="text-white/40 text-xs leading-relaxed">
+                              Keep your <strong className="text-white/60">{data.focus_work_minutes}+{data.focus_break_minutes} min</strong> rhythm,
+                              do {conflict.reduce.breaks} session{conflict.reduce.breaks > 1 ? "s" : ""} before {data.work_end_today}
+                            </p>
+                          </button>
+                        )}
+
+                        {/* Option C: Extend workday */}
+                        <button
+                          onClick={() => setData({ ...data, work_end_today: conflict.extend.newEndTime })}
+                          className="w-full p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all text-left group"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                            <p className="text-emerald-300 font-medium text-sm">Extend to {conflict.extend.newEndTime}</p>
+                          </div>
+                          <p className="text-white/40 text-xs leading-relaxed">
+                            Do all {data.body_breaks_target} sessions with normal rhythm.
+                            Work <strong className="text-white/60">+{conflict.extend.extraMinutes} min</strong> longer (until {conflict.extend.newEndTime})
+                          </p>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Simple late start hint (when no full conflict) */}
+                  {isLateStart && !conflict && nowFeasibility.level !== "good" && (
                     <div className="flex items-start gap-2 p-3 rounded-xl border bg-amber-500/10 border-amber-500/20 text-amber-300 text-xs">
                       <Clock className="w-4 h-4 mt-0.5 shrink-0" />
                       <div>
-                        <p className="font-medium">Starting late!</p>
+                        <p className="font-medium">Starting late</p>
                         <p className="text-white/40 mt-0.5">
-                          Only {Math.round(nowFeasibility.remainingWorkMinutes / 60)}h left until {data.work_end_today}.
-                          Suggested: {nowFeasibility.suggestedTarget} breaks.
+                          {remainingLabel} left until {data.work_end_today} — schedule is tight but doable.
                         </p>
-                        <button
-                          onClick={() => setData({ ...data, body_breaks_target: nowFeasibility.suggestedTarget })}
-                          className="mt-2 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-xs transition-all"
-                        >
-                          Adjust to {nowFeasibility.suggestedTarget}
-                        </button>
                       </div>
                     </div>
                   )}
@@ -660,39 +746,33 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                   )}
 
                   {/* Smart plan summary */}
-                  <div className={`rounded-xl p-4 border ${
-                    feasibility.level === "good"
-                      ? "bg-white/5 border-white/10"
-                      : feasibility.level === "tight"
-                        ? "bg-amber-500/5 border-amber-500/20"
-                        : "bg-red-500/5 border-red-500/20"
-                  }`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      {feasibility.level === "good" ? (
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <AlertTriangle className={`w-3.5 h-3.5 ${feasibility.level === "tight" ? "text-amber-400" : "text-red-400"}`} />
-                      )}
-                      <p className="text-white/40 text-xs">Plan</p>
+                  {!conflict && (
+                    <div className={`rounded-xl p-4 border ${
+                      nowFeasibility.level === "good" || feasibility.level === "good"
+                        ? "bg-white/5 border-white/10"
+                        : feasibility.level === "tight"
+                          ? "bg-amber-500/5 border-amber-500/20"
+                          : "bg-red-500/5 border-red-500/20"
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        {(nowFeasibility.level === "good" || feasibility.level === "good") ? (
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <AlertTriangle className={`w-3.5 h-3.5 ${feasibility.level === "tight" ? "text-amber-400" : "text-red-400"}`} />
+                        )}
+                        <p className="text-white/40 text-xs">Plan</p>
+                      </div>
+                      <p className="text-white font-semibold">
+                        {data.body_breaks_target} active breaks during the day
+                      </p>
+                      <p className="text-white/40 text-xs mt-1">
+                        {isLateStart ? nowFeasibility.message : feasibility.message}
+                      </p>
+                      <p className="text-white/30 text-xs mt-0.5">
+                        {isLateStart ? nowFeasibility.totalCycles : feasibility.totalCycles} focus cycles &middot; {data.focus_work_minutes}+{data.focus_break_minutes} min rhythm
+                      </p>
                     </div>
-                    <p className="text-white font-semibold">
-                      {data.body_breaks_target} active breaks during the day
-                    </p>
-                    <p className="text-white/40 text-xs mt-1">
-                      {feasibility.message}
-                    </p>
-                    <p className="text-white/30 text-xs mt-0.5">
-                      {feasibility.totalCycles} focus cycles &middot; {data.focus_work_minutes}+{data.focus_break_minutes} min rhythm
-                    </p>
-                    {feasibility.level === "unrealistic" && (
-                      <button
-                        onClick={() => setData({ ...data, body_breaks_target: feasibility.suggestedTarget })}
-                        className="mt-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-xs transition-all"
-                      >
-                        Use suggested: {feasibility.suggestedTarget} breaks
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </motion.div>
                 );
               })()}

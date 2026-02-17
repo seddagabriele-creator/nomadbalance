@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
@@ -266,17 +267,22 @@ export default function Settings() {
                   ))}
                 </div>
                 {localDefaults.fasting_preset === "custom" && (
-                  <div>
-                    <Label htmlFor="custom-fasting" className="text-white/60 text-xs">Fasting duration (hours)</Label>
-                    <Input
-                      id="custom-fasting"
-                      type="number"
-                      min="8"
-                      max="24"
-                      value={localDefaults.custom_fasting_hours || 16}
-                      onChange={(e) => setLocalDefaults({ ...localDefaults, custom_fasting_hours: parseInt(e.target.value) })}
-                      className="bg-white/5 border-white/10 text-white mt-1 h-10"
+                  <div className="space-y-2">
+                    <Label className="text-white/60 text-xs">Fasting duration: {localDefaults.custom_fasting_hours || 16}h</Label>
+                    <Slider
+                      value={[localDefaults.custom_fasting_hours || 16]}
+                      onValueChange={([v]) => setLocalDefaults({ ...localDefaults, custom_fasting_hours: v })}
+                      min={12}
+                      max={23}
+                      step={1}
+                      className="py-3"
                     />
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                      <p className="text-emerald-300 text-xs">
+                        <strong>{localDefaults.custom_fasting_hours || 16}h</strong> fasting,{" "}
+                        <strong>{24 - (localDefaults.custom_fasting_hours || 16)}h</strong> eating window
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
