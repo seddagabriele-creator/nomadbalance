@@ -249,7 +249,7 @@ export default function Journal() {
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`flex items-center gap-3 p-3 rounded-xl border overflow-hidden transition-all ${
+                              className={`flex items-center gap-3 p-3 rounded-xl border overflow-hidden transition-colors ${
                                 snapshot.isDragging
                                   ? "bg-white/15 border-cyan-500/50"
                                   : "bg-white/5 border-white/10"
@@ -372,7 +372,7 @@ export default function Journal() {
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`flex items-center gap-3 p-3 rounded-xl border overflow-hidden transition-all ${
+                              className={`flex items-center gap-3 p-3 rounded-xl border overflow-hidden transition-colors ${
                                 snapshot.isDragging
                                   ? "bg-amber-500/15 border-amber-500/50"
                                   : "bg-amber-500/5 border-amber-500/20"

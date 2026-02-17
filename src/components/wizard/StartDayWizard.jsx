@@ -39,29 +39,49 @@ const GROUP_LABELS = {
   "hips_legs": "Hips & Legs"
 };
 
-export default function StartDayWizard({ onComplete, onCancel, userSettings, useDefaults = false }) {
+export default function StartDayWizard({ onComplete, onCancel, userSettings, useDefaults = false, resumeSession = null }) {
   const queryClient = useQueryClient();
-  
+
   // Load daily defaults if using them
   const loadedDefaults = useDefaults ? getDailyDefaults() : null;
 
-  const [step, setStep] = useState(useDefaults ? 1 : -1); // Start at fuel check if using defaults
+  // When resuming, pre-fill from existing session
+  const resumeDefaults = resumeSession ? {
+    last_meal_time: resumeSession.last_meal_time || "",
+    fasting_preset: resumeSession.fasting_preset || "16/8",
+    focus_work_minutes: resumeSession.focus_work_minutes || 45,
+    focus_break_minutes: resumeSession.focus_break_minutes || 5,
+    focus_sound: resumeSession.focus_sound || "wind",
+    relax_sound: resumeSession.relax_sound || "wind",
+    body_breaks_target: resumeSession.body_breaks_target || 6,
+    work_start_today: resumeSession.work_start_today || userSettings?.morning_work_start || "10:00",
+    work_end_today: resumeSession.work_end_today || userSettings?.afternoon_work_end || "19:00",
+  } : null;
+
+  const defaults = resumeDefaults || loadedDefaults;
+
+  const [step, setStep] = useState(useDefaults ? 1 : resumeSession ? 0 : -1);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [tasks, setTasks] = useState([]);
   const [showPreviousSettings, setShowPreviousSettings] = useState(false);
   const [showTasksDialog, setShowTasksDialog] = useState(false);
-  const [exerciseSelection, setExerciseSelection] = useState(loadedDefaults?.exercise_selection || "auto");
-  const [selectedGroups, setSelectedGroups] = useState(loadedDefaults?.selected_groups || []);
+  const [exerciseSelection, setExerciseSelection] = useState(
+    resumeSession?.selected_exercise_groups?.length > 0 ? "manual" :
+    defaults?.exercise_selection || "auto"
+  );
+  const [selectedGroups, setSelectedGroups] = useState(
+    resumeSession?.selected_exercise_groups || defaults?.selected_groups || []
+  );
   const [data, setData] = useState({
-    last_meal_time: loadedDefaults?.last_meal_time || "",
-    fasting_preset: loadedDefaults?.fasting_preset || "16/8",
-    focus_work_minutes: loadedDefaults?.focus_work_minutes || 45,
-    focus_break_minutes: loadedDefaults?.focus_break_minutes || 5,
-    focus_sound: loadedDefaults?.focus_sound || "wind",
-    relax_sound: loadedDefaults?.relax_sound || "wind",
-    body_breaks_target: loadedDefaults?.body_breaks_target || 6,
-    work_start_today: userSettings?.morning_work_start || "10:00",
-    work_end_today: userSettings?.afternoon_work_end || "19:00",
+    last_meal_time: defaults?.last_meal_time || "",
+    fasting_preset: defaults?.fasting_preset || "16/8",
+    focus_work_minutes: defaults?.focus_work_minutes || 45,
+    focus_break_minutes: defaults?.focus_break_minutes || 5,
+    focus_sound: defaults?.focus_sound || "wind",
+    relax_sound: defaults?.relax_sound || "wind",
+    body_breaks_target: defaults?.body_breaks_target || 6,
+    work_start_today: defaults?.work_start_today || userSettings?.morning_work_start || "10:00",
+    work_end_today: defaults?.work_end_today || userSettings?.afternoon_work_end || "19:00",
   });
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [needsWorkHours, setNeedsWorkHours] = useState(!userSettings?.morning_work_start);
@@ -94,11 +114,11 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   const previousSession = previousSessions[0];
 
   useEffect(() => {
-    // Skip dialogs if using defaults
-    if (useDefaults) {
+    // Skip dialogs if using defaults or resuming
+    if (useDefaults || resumeSession) {
       return;
     }
-    
+
     // Check for existing pre-day tasks
     if (existingTasks.length > 0 && step === -1) {
       setShowTasksDialog(true);
@@ -107,7 +127,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     } else if (step === -1) {
       setStep(0);
     }
-  }, [existingTasks, previousSession, step, useDefaults]);
+  }, [existingTasks, previousSession, step, useDefaults, resumeSession]);
 
   const loadPreviousSettings = async () => {
     const prevData = {
