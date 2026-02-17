@@ -135,24 +135,45 @@ export default function Journal() {
     toast.success("Alarm removed");
   };
 
-  const handleDragEnd = (result) => {
+  const handleDragEnd = async (result) => {
     if (!result.destination) return;
+    if (result.source.index === result.destination.index) return;
 
     const listId = result.source.droppableId;
     const tasksList = listId === "today" ? sortedTodayTasks : sortedPreviousTasks;
-    
+
     const reordered = Array.from(tasksList);
     const [moved] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, moved);
 
+    // Build order map for optimistic update
+    const orderMap = new Map();
     reordered.forEach((task, index) => {
-      if (task.order !== index + 1) {
-        updateTask.mutate({
-          id: task.id,
-          data: { order: index + 1 },
-        });
-      }
+      orderMap.set(task.id, index + 1);
     });
+
+    // Optimistic update — instantly reflect new order in UI
+    queryClient.setQueryData(["allTasks", session?.id], (old) => {
+      if (!old) return old;
+      return old.map(task => {
+        const newOrder = orderMap.get(task.id);
+        return newOrder !== undefined ? { ...task, order: newOrder } : task;
+      });
+    });
+
+    // Persist to backend (bypass mutation to avoid per-item invalidation)
+    const updates = reordered
+      .filter((task, index) => task.order !== index + 1)
+      .map((task, index) => {
+        const newOrder = orderMap.get(task.id);
+        return taskService.update(task.id, { order: newOrder });
+      });
+
+    try {
+      await Promise.all(updates);
+    } finally {
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+    }
   };
 
   return (
@@ -228,22 +249,22 @@ export default function Journal() {
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                              className={`flex items-center gap-3 p-3 rounded-xl border overflow-hidden transition-all ${
                                 snapshot.isDragging
                                   ? "bg-white/15 border-cyan-500/50"
                                   : "bg-white/5 border-white/10"
                               }`}
                             >
-                              <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60">
+                              <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0">
                                 <GripVertical className="w-4 h-4" />
                               </div>
-                              <div className="flex items-center gap-2 flex-1">
-                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold shrink-0">
                                   {index + 1}
                                 </div>
                                 <button
                                   onClick={() => handleToggleComplete(task)}
-                                  className="text-white/40 hover:text-white transition-colors"
+                                  className="text-white/40 hover:text-white transition-colors shrink-0"
                                 >
                                   {task.completed ? (
                                     <CheckCircle2 className="w-5 h-5 text-green-400" />
@@ -251,23 +272,23 @@ export default function Journal() {
                                     <Circle className="w-5 h-5" />
                                   )}
                                 </button>
-                                <div className="flex-1 flex items-center gap-2">
+                                <div className="flex-1 flex items-center gap-2 min-w-0">
                                   <span
-                                    className={`flex-1 ${
+                                    className={`flex-1 truncate ${
                                       task.completed ? "text-white/40 line-through" : "text-white"
                                     }`}
                                   >
                                     {task.title}
                                   </span>
                                   {task.alarm_time && (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs">
+                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs shrink-0">
                                       <Clock className="w-3 h-3" />
                                       <span>{task.alarm_time}</span>
                                     </div>
                                   )}
                                 </div>
-                                </div>
-                                <div className="flex items-center gap-1">
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
                                 <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
                                   if (!open) {
                                     setEditingAlarm(null);
@@ -351,22 +372,22 @@ export default function Journal() {
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                              className={`flex items-center gap-3 p-3 rounded-xl border overflow-hidden transition-all ${
                                 snapshot.isDragging
                                   ? "bg-amber-500/15 border-amber-500/50"
                                   : "bg-amber-500/5 border-amber-500/20"
                               }`}
                             >
-                              <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60">
+                              <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0">
                                 <GripVertical className="w-4 h-4" />
                               </div>
-                              <div className="flex items-center gap-2 flex-1">
-                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold shrink-0">
                                   {index + 1}
                                 </div>
                                 <button
                                   onClick={() => handleToggleComplete(task)}
-                                  className="text-white/40 hover:text-white transition-colors"
+                                  className="text-white/40 hover:text-white transition-colors shrink-0"
                                 >
                                   {task.completed ? (
                                     <CheckCircle2 className="w-5 h-5 text-green-400" />
@@ -374,19 +395,19 @@ export default function Journal() {
                                     <Circle className="w-5 h-5" />
                                   )}
                                 </button>
-                                <div className="flex-1 flex items-center gap-2">
-                                  <span className={`flex-1 ${task.completed ? "text-white/40 line-through" : "text-white"}`}>
+                                <div className="flex-1 flex items-center gap-2 min-w-0">
+                                  <span className={`flex-1 truncate ${task.completed ? "text-white/40 line-through" : "text-white"}`}>
                                     {task.title}
                                   </span>
                                   {task.alarm_time && (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs">
+                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs shrink-0">
                                       <Clock className="w-3 h-3" />
                                       <span>{task.alarm_time}</span>
                                     </div>
                                   )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 shrink-0">
                                 <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
                                   if (!open) {
                                     setEditingAlarm(null);
