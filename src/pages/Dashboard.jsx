@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw } from "lucide-react";
+import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Play, Pencil } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -38,6 +38,8 @@ export default function Dashboard() {
   const [showMeetingDialog, setShowMeetingDialog] = useState(false);
   const [showDefaultsDialog, setShowDefaultsDialog] = useState(false);
   const [useDefaults, setUseDefaults] = useState(false);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const [resumeWithWizard, setResumeWithWizard] = useState(false);
   const [userName, setUserName] = useState("");
   const [greeting, setGreeting] = useState("");
 
@@ -343,6 +345,23 @@ export default function Dashboard() {
     }
   };
 
+  const handleResumeDay = () => {
+    // Just reactivate the same session with same settings
+    if (session) {
+      updateSession.mutate({ status: "active" });
+      toast.success("Day resumed!");
+    }
+  };
+
+  const handleResumeWithChanges = () => {
+    // Reset the session to standby, then open wizard with current settings pre-filled
+    if (session) {
+      setShowResumeDialog(false);
+      setResumeWithWizard(true);
+      setShowWizard(true);
+    }
+  };
+
   const isActive = session?.status === "active";
   const isCompleted = session?.status === "completed";
 
@@ -519,16 +538,11 @@ export default function Dashboard() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => {
-                if (window.confirm("Start a new day now?")) {
-                  handleResetDay();
-                  setShowWizard(true);
-                }
-              }}
-              className="mt-3 w-full h-12 rounded-2xl bg-white/10 border border-white/10 text-white/70 hover:text-white hover:bg-white/15 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+              onClick={() => setShowResumeDialog(true)}
+              className="mt-3 w-full h-14 rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
             >
-              <Sun className="w-4 h-4" />
-              Start a new day now
+              <Play className="w-5 h-5" />
+              Resume Day
             </motion.button>
           </>
         )}
@@ -554,17 +568,109 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
+      {/* Resume Day Dialog */}
+      <AnimatePresence>
+        {showResumeDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-sm bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <Play className="w-5 h-5 text-emerald-400" />
+                </div>
+                <h3 className="text-white font-bold text-lg">Resume Day</h3>
+              </div>
+              <p className="text-white/60 text-sm mb-6">
+                Your day was ended earlier. Want to pick up where you left off?
+              </p>
+
+              <div className="space-y-3 mb-6">
+                {/* Quick summary of current settings */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-white/40">Focus rhythm</span>
+                    <span className="text-white">{session?.focus_work_minutes || 45}/{session?.focus_break_minutes || 5} min</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/40">Active breaks</span>
+                    <span className="text-white">{session?.body_breaks_done || 0}/{session?.body_breaks_target || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/40">Work hours</span>
+                    <span className="text-white">{session?.work_start_today} — {session?.work_end_today}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Button
+                  onClick={() => {
+                    setShowResumeDialog(false);
+                    handleResumeDay();
+                  }}
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 font-semibold"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Resume with same settings
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleResumeWithChanges}
+                  className="w-full h-12 rounded-xl text-white/70 hover:text-white hover:bg-white/10"
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Modify settings first
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowResumeDialog(false)}
+                  className="w-full h-10 rounded-xl text-white/30 hover:text-white/50 hover:bg-white/5 text-sm"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Wizard Overlay */}
       <AnimatePresence>
         {showWizard && (
-          <StartDayWizard 
-            onComplete={handleStartDay} 
+          <StartDayWizard
+            onComplete={resumeWithWizard ? async (wizardData, tasks, selectedGroups) => {
+              // When resuming with changes, update the existing session instead of creating a new one
+              if (session) {
+                await daySessionService.update(session.id, {
+                  ...wizardData,
+                  status: "active",
+                  started_at: new Date().toTimeString().slice(0, 5),
+                  selected_exercise_groups: selectedGroups,
+                });
+                queryClient.invalidateQueries({ queryKey: ["daySession"] });
+                queryClient.invalidateQueries({ queryKey: ["tasks"] });
+              }
+              setShowWizard(false);
+              setResumeWithWizard(false);
+              toast.success("Day resumed with new settings!");
+            } : handleStartDay}
             onCancel={() => {
               setShowWizard(false);
               setUseDefaults(false);
+              setResumeWithWizard(false);
             }}
             userSettings={userSettings}
             useDefaults={useDefaults}
+            resumeSession={resumeWithWizard ? session : null}
           />
         )}
       </AnimatePresence>

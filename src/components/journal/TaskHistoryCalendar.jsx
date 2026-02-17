@@ -1,26 +1,22 @@
 import React, { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskService, daySessionService } from "../../api/services";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarDays, CheckCircle2, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, CheckCircle2, Circle, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function TaskHistoryCalendar() {
+  const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Get all completed tasks
-  const { data: completedTasksRaw = [] } = useQuery({
-    queryKey: ["completedTasks"],
-    queryFn: () => taskService.listCompleted(),
-  });
-
-  // Get all tasks (for calendar dots)
+  // Get all tasks (for calendar dots AND detail view)
   const { data: allTasksList = [] } = useQuery({
     queryKey: ["allTasksCalendar"],
     queryFn: () => taskService.listAll(),
@@ -32,23 +28,26 @@ export default function TaskHistoryCalendar() {
     queryFn: () => daySessionService.listRecent(60),
   });
 
-  const completedTasks = completedTasksRaw.filter(t => t.completed && t.completed_at);
+  // Build session -> date map
+  const sessionDateMap = useMemo(() => {
+    const map = {};
+    sessions.forEach(s => {
+      map[s.id] = s.date;
+    });
+    return map;
+  }, [sessions]);
 
-  // Group completed tasks by date (for task detail view)
-  const tasksByDate = completedTasks.reduce((acc, task) => {
-    const date = task.completed_at.split("T")[0];
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(task);
-    return acc;
-  }, {});
+  // Build date -> session id map (reverse)
+  const dateSessionMap = useMemo(() => {
+    const map = {};
+    sessions.forEach(s => {
+      map[s.date] = s.id;
+    });
+    return map;
+  }, [sessions]);
 
   // Build task completion status per date (for calendar dots)
   const taskStatusByDate = useMemo(() => {
-    const sessionDateMap = {};
-    sessions.forEach(s => {
-      sessionDateMap[s.id] = s.date;
-    });
-
     const byDate = {};
     allTasksList.forEach(task => {
       if (!task.session_id) return;
@@ -58,12 +57,28 @@ export default function TaskHistoryCalendar() {
       byDate[date].total++;
       if (task.completed) byDate[date].completed++;
     });
-
     return byDate;
-  }, [allTasksList, sessions]);
+  }, [allTasksList, sessionDateMap]);
 
-  // Get dates with completed tasks
-  const datesWithTasks = Object.keys(tasksByDate).map(d => new Date(d));
+  // Group ALL tasks by date (via session)
+  const allTasksByDate = useMemo(() => {
+    const byDate = {};
+    allTasksList.forEach(task => {
+      if (!task.session_id) return;
+      const date = sessionDateMap[task.session_id];
+      if (!date) return;
+      if (!byDate[date]) byDate[date] = [];
+      byDate[date].push(task);
+    });
+    // Sort each date's tasks by order
+    Object.keys(byDate).forEach(date => {
+      byDate[date].sort((a, b) => a.order - b.order);
+    });
+    return byDate;
+  }, [allTasksList, sessionDateMap]);
+
+  // Completed tasks for search
+  const completedTasks = allTasksList.filter(t => t.completed && t.completed_at);
 
   // Dates for modifiers (green = all done, red = has incomplete)
   const allDoneDates = [];
@@ -78,10 +93,33 @@ export default function TaskHistoryCalendar() {
     }
   });
 
+  // Dates with any tasks (for calendar highlights)
+  const datesWithTasks = Object.keys(allTasksByDate).map(d => new Date(d));
+
   // Get tasks for selected date
-  const selectedDateTasks = selectedDate
-    ? tasksByDate[format(selectedDate, "yyyy-MM-dd")] || []
-    : [];
+  const selectedDateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
+  const selectedDateTasks = selectedDateStr ? (allTasksByDate[selectedDateStr] || []) : [];
+  const selectedDateStatus = selectedDateStr ? taskStatusByDate[selectedDateStr] : null;
+
+  // Toggle task completion
+  const updateTask = useMutation({
+    mutationFn: ({ id, data }) => taskService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allTasksCalendar"] });
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+    },
+  });
+
+  const handleToggleComplete = (task) => {
+    updateTask.mutate({
+      id: task.id,
+      data: {
+        completed: !task.completed,
+        completed_at: !task.completed ? new Date().toISOString() : null,
+      },
+    });
+    toast.success(task.completed ? "Task reopened" : "Task completed!");
+  };
 
   // Search results
   const searchResults = useMemo(() => {
@@ -132,7 +170,7 @@ export default function TaskHistoryCalendar() {
           <h2 className="text-xl font-bold text-white">Task History</h2>
         </div>
         <div className="px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/30">
-          <span className="text-cyan-400 font-semibold text-sm">{completedTasks.length} total</span>
+          <span className="text-cyan-400 font-semibold text-sm">{completedTasks.length} completed</span>
         </div>
       </div>
 
@@ -290,6 +328,11 @@ export default function TaskHistoryCalendar() {
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                 <p className="text-sm text-cyan-400 font-medium">
                   {selectedDateTasks.length} task{selectedDateTasks.length > 1 ? "s" : ""} on {format(selectedDate, "MMM d")}
+                  {selectedDateStatus && selectedDateStatus.completed < selectedDateStatus.total && (
+                    <span className="text-red-400 ml-1">
+                      ({selectedDateStatus.total - selectedDateStatus.completed} incomplete)
+                    </span>
+                  )}
                 </p>
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
               </div>
@@ -297,18 +340,40 @@ export default function TaskHistoryCalendar() {
                 {selectedDateTasks.map((task, index) => (
                   <div
                     key={task.id}
-                    className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-green-500/10 to-cyan-500/10 border border-green-500/20 hover:border-green-500/30 transition-all group"
+                    className={`flex items-start gap-3 p-3 rounded-xl border transition-colors group ${
+                      task.completed
+                        ? "bg-gradient-to-r from-green-500/10 to-cyan-500/10 border-green-500/20 hover:border-green-500/30"
+                        : "bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/20 hover:border-red-500/30"
+                    }`}
                   >
-                    <div className="mt-0.5">
-                      <CheckCircle2 className="w-5 h-5 text-green-400 group-hover:text-green-300 transition-colors" />
-                    </div>
+                    <button
+                      onClick={() => handleToggleComplete(task)}
+                      className="mt-0.5 transition-colors"
+                    >
+                      {task.completed ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-400 group-hover:text-green-300" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-red-400 group-hover:text-red-300" />
+                      )}
+                    </button>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-white block">{task.title}</span>
+                      <span className={`text-sm font-medium block ${
+                        task.completed ? "text-white" : "text-white"
+                      }`}>
+                        {task.title}
+                      </span>
                       <span className="text-xs text-white/50 mt-1 block">
-                        Completed at {new Date(task.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {task.completed && task.completed_at
+                          ? `Completed at ${new Date(task.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                          : "Not completed — tap to complete"
+                        }
                       </span>
                     </div>
-                    <div className="px-2 py-1 rounded-md bg-green-500/20 text-green-400 text-xs font-semibold">
+                    <div className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                      task.completed
+                        ? "bg-green-500/20 text-green-400"
+                        : "bg-red-500/20 text-red-400"
+                    }`}>
                       #{index + 1}
                     </div>
                   </div>
@@ -320,7 +385,7 @@ export default function TaskHistoryCalendar() {
           {selectedDate && selectedDateTasks.length === 0 && (
             <div className="mt-6 text-center py-8 rounded-xl bg-white/5 border border-white/10">
               <CalendarDays className="w-12 h-12 text-white/20 mx-auto mb-3" />
-              <p className="text-sm text-white/40">No tasks completed on this date</p>
+              <p className="text-sm text-white/40">No tasks on this date</p>
             </div>
           )}
         </>
