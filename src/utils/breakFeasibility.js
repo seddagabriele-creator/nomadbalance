@@ -163,3 +163,64 @@ export function analyzeBreakFeasibility({
     breaksTarget,
   };
 }
+
+/**
+ * Calculate session conflict details when selected breaks don't fit
+ * in remaining work time with current focus rhythm.
+ *
+ * Returns null if no conflict, otherwise returns three resolution options:
+ * - compress: shorter focus cycles to fit all breaks
+ * - reduce: fewer breaks with normal rhythm
+ * - extend: keep everything, but extend workday
+ */
+export function calculateSessionConflict({
+  breaksTarget,
+  focusWorkMinutes = 45,
+  focusBreakMinutes = 5,
+  remainingMinutes,
+  workEndTime,
+}) {
+  const cycleLength = focusWorkMinutes + focusBreakMinutes;
+  const totalNeeded = breaksTarget * cycleLength;
+
+  if (totalNeeded <= remainingMinutes || remainingMinutes <= 0) {
+    return null;
+  }
+
+  // Option A: Compress — fit all breaks in remaining time
+  const compressedCycle = Math.floor(remainingMinutes / breaksTarget);
+  const compressedFocus = Math.max(10, compressedCycle - focusBreakMinutes);
+  const compressedBreak = Math.min(focusBreakMinutes, Math.max(2, compressedCycle - compressedFocus));
+  const compressViable = compressedFocus >= 10;
+
+  // Option B: Reduce — fewer breaks with normal rhythm
+  const reducedBreaks = Math.max(1, Math.floor(remainingMinutes / cycleLength));
+
+  // Option C: Extend — keep all breaks & rhythm, push workday end
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const newEndMinutes = nowMinutes + totalNeeded;
+  const newEndH = Math.floor(newEndMinutes / 60) % 24;
+  const newEndM = newEndMinutes % 60;
+  const newEndTime = `${String(newEndH).padStart(2, "0")}:${String(newEndM).padStart(2, "0")}`;
+  const extraMinutes = totalNeeded - remainingMinutes;
+
+  return {
+    totalNeededMinutes: totalNeeded,
+    remainingMinutes,
+    cycleLength,
+    compress: {
+      focusMinutes: compressedFocus,
+      breakMinutes: compressedBreak,
+      cycleMinutes: compressedFocus + compressedBreak,
+      viable: compressViable,
+    },
+    reduce: {
+      breaks: reducedBreaks,
+    },
+    extend: {
+      newEndTime,
+      extraMinutes,
+    },
+  };
+}
