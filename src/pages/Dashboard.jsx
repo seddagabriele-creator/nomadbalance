@@ -8,7 +8,7 @@ import { createPageUrl } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService, authService } from "../api/services";
 import { hasDailyDefaults } from "../hooks/useDailyDefaults";
-import { ONE_HOUR_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, getEatingHours, calculateEatingWindowEnd, calculateMealPlan } from "../constants";
+import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, getEatingHours, calculateEatingWindowEnd, calculateMealPlan } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -19,6 +19,8 @@ import BreathingCircle from "../components/decompression/BreathingCircle";
 import MotivationalQuote from "../components/MotivationalQuote";
 import MeetingModeDialog from "../components/MeetingModeDialog";
 import UseDefaultsDialog from "../components/wizard/UseDefaultsDialog";
+import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
+import BreakNotification from "../components/body/BreakNotification";
 import { useTimer } from "../components/lib/TimerContext";
 
 import { Button } from "@/components/ui/button";
@@ -42,6 +44,11 @@ export default function Dashboard() {
   const [resumeWithWizard, setResumeWithWizard] = useState(false);
   const [userName, setUserName] = useState("");
   const [greeting, setGreeting] = useState("");
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem("nomadbalance_onboarding_completed");
+  });
+  const [activeBreakNotification, setActiveBreakNotification] = useState(null);
+  const breakCheckRef = React.useRef(null);
 
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
@@ -92,6 +99,88 @@ export default function Dashboard() {
     }, ONE_HOUR_MS);
     return () => clearInterval(interval);
   }, [session]);
+
+  // Check for due body breaks every minute
+  useEffect(() => {
+    if (!session || session.status !== "active" || session.meeting_mode) return;
+    const checkBreaks = () => {
+      if (activeBreakNotification) return; // already showing one
+      const schedule = session.body_break_schedule || [];
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const dueBreak = schedule.find(
+        (b) => !b.completed && toMinutes(b.time) <= nowMinutes
+      );
+      if (dueBreak) {
+        setActiveBreakNotification(dueBreak);
+      }
+    };
+    checkBreaks(); // check immediately
+    breakCheckRef.current = setInterval(checkBreaks, ONE_MINUTE_MS);
+    return () => clearInterval(breakCheckRef.current);
+  }, [session, activeBreakNotification]);
+
+  const toMinutes = (t) => {
+    const [h, m] = (t || "00:00").split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  const activeExercise = React.useMemo(() => {
+    if (!activeBreakNotification) return null;
+    return exercises.find((e) => e.id === activeBreakNotification.exercise_id) || null;
+  }, [activeBreakNotification, exercises]);
+
+  const handleBreakStart = () => {
+    // Just marks the beginning — exercise view is shown via phase change
+  };
+
+  const handleBreakSnooze = (minutes) => {
+    if (!session || !activeBreakNotification) return;
+    const now = new Date();
+    const snoozedMinutes = now.getHours() * 60 + now.getMinutes() + minutes;
+    const newTime = `${String(Math.floor(snoozedMinutes / 60) % 24).padStart(2, "0")}:${String(snoozedMinutes % 60).padStart(2, "0")}`;
+    const updatedSchedule = (session.body_break_schedule || []).map((b) =>
+      b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
+        ? { ...b, time: newTime }
+        : b
+    );
+    updateSession.mutate({ body_break_schedule: updatedSchedule });
+    setActiveBreakNotification(null);
+    toast("Break snoozed " + minutes + " min", { icon: "⏰" });
+  };
+
+  const handleBreakSkip = () => {
+    if (!session || !activeBreakNotification) return;
+    const updatedSchedule = (session.body_break_schedule || []).map((b) =>
+      b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
+        ? { ...b, completed: true }
+        : b
+    );
+    updateSession.mutate({ body_break_schedule: updatedSchedule });
+    setActiveBreakNotification(null);
+  };
+
+  const handleBreakComplete = () => {
+    if (!session || !activeBreakNotification) return;
+    const updatedSchedule = (session.body_break_schedule || []).map((b) =>
+      b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
+        ? { ...b, completed: true }
+        : b
+    );
+    const exercisesDoneToday = [...(session.exercises_done_today || []), activeBreakNotification.exercise_id];
+    updateSession.mutate({
+      body_break_schedule: updatedSchedule,
+      body_breaks_done: (session.body_breaks_done || 0) + 1,
+      exercises_done_today: exercisesDoneToday,
+    });
+    setActiveBreakNotification(null);
+    toast.success("Break completed!");
+  };
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem("nomadbalance_onboarding_completed", "true");
+    setShowOnboarding(false);
+  };
 
   const createSession = useMutation({
     mutationFn: (data) => daySessionService.create({ ...data, date: today, status: "active", started_at: new Date().toTimeString().slice(0, 5) }),
@@ -310,7 +399,6 @@ export default function Dashboard() {
     if (session) {
       updateSession.mutate({
         focus_sessions_completed: (session.focus_sessions_completed || 0) + 1,
-        body_breaks_done: (session.body_breaks_done || 0) + 1,
       });
     }
   };
@@ -722,6 +810,27 @@ export default function Dashboard() {
             onConfirm={handleMeetingConfirm}
             onCancel={() => setShowMeetingDialog(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Break Notification Overlay */}
+      <AnimatePresence>
+        {activeBreakNotification && (
+          <BreakNotification
+            breakItem={activeBreakNotification}
+            exercise={activeExercise}
+            onStart={handleBreakStart}
+            onSnooze={handleBreakSnooze}
+            onSkip={handleBreakSkip}
+            onComplete={handleBreakComplete}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Onboarding Tutorial */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingTutorial onComplete={handleOnboardingComplete} />
         )}
       </AnimatePresence>
     </div>

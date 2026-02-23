@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -493,6 +493,31 @@ export default function Settings() {
               </div>
             </div>
 
+          </section>
+
+          {/* Tutorial Replay */}
+          <section className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6" aria-label="Tutorial">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-indigo-400" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-white">App Tutorial</h2>
+                  <p className="text-xs text-white/40">Replay the getting started guide</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  localStorage.removeItem("nomadbalance_onboarding_completed");
+                  window.location.href = createPageUrl("Dashboard");
+                }}
+                className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 text-sm"
+              >
+                Replay
+              </Button>
+            </div>
           </section>
 
           <Button
