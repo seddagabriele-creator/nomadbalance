@@ -12,7 +12,7 @@ import { createPageUrl } from "../utils";
 import { toast } from "sonner";
 import { userSettingsService } from "../api/services";
 import useDailyDefaults from "../hooks/useDailyDefaults";
-import { DEFAULT_WORK_HOURS } from "../constants";
+import { DEFAULT_WORK_HOURS, FASTING_PRESETS, calculateEatingWindowEnd } from "../constants";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -243,48 +243,99 @@ export default function Settings() {
             </div>
 
             <div className="space-y-4">
-              {/* Fasting */}
+              {/* Eating Window */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Droplets className="w-4 h-4 text-emerald-400" />
-                  <Label className="text-white/90 font-medium">Fasting Preset</Label>
+                  <Label className="text-white/90 font-medium">Eating Window</Label>
                 </div>
-                <div className="flex gap-2" role="radiogroup" aria-label="Fasting preset">
-                  {["14/10", "16/8", "18/6", "custom"].map(preset => (
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Fasting preset">
+                  {FASTING_PRESETS.map(preset => (
                     <button
-                      key={preset}
-                      onClick={() => setLocalDefaults({ ...localDefaults, fasting_preset: preset })}
+                      key={preset.label}
+                      onClick={() => setLocalDefaults({ ...localDefaults, fasting_preset: preset.label === "Custom" ? "custom" : preset.label })}
                       role="radio"
-                      aria-checked={localDefaults.fasting_preset === preset}
-                      className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
-                        localDefaults.fasting_preset === preset
+                      aria-checked={localDefaults.fasting_preset === (preset.label === "Custom" ? "custom" : preset.label)}
+                      className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
+                        localDefaults.fasting_preset === (preset.label === "Custom" ? "custom" : preset.label)
                           ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
                           : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
                       }`}
                     >
-                      {preset === "custom" ? "Custom" : preset}
+                      {preset.label}
                     </button>
                   ))}
                 </div>
                 {localDefaults.fasting_preset === "custom" && (
                   <div className="space-y-2">
-                    <Label className="text-white/60 text-xs">Fasting duration: {localDefaults.custom_fasting_hours || 16}h</Label>
+                    <Label className="text-white/60 text-xs">Fasting: {localDefaults.custom_fasting_hours || 16}h / Eating: {24 - (localDefaults.custom_fasting_hours || 16)}h</Label>
                     <Slider
                       value={[localDefaults.custom_fasting_hours || 16]}
                       onValueChange={([v]) => setLocalDefaults({ ...localDefaults, custom_fasting_hours: v })}
-                      min={12}
+                      min={10}
                       max={23}
                       step={1}
                       className="py-3"
                     />
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
-                      <p className="text-emerald-300 text-xs">
-                        <strong>{localDefaults.custom_fasting_hours || 16}h</strong> fasting,{" "}
-                        <strong>{24 - (localDefaults.custom_fasting_hours || 16)}h</strong> eating window
-                      </p>
-                    </div>
                   </div>
                 )}
+
+                {/* Eating window start time */}
+                <div>
+                  <Label className="text-white/60 text-xs">Window starts at</Label>
+                  <Input
+                    type="time"
+                    value={localDefaults.eating_window_start || "12:00"}
+                    onChange={(e) => setLocalDefaults({ ...localDefaults, eating_window_start: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white mt-1 h-10"
+                  />
+                </div>
+
+                {/* Window summary */}
+                {(() => {
+                  const preset = FASTING_PRESETS.find(p => p.label === localDefaults.fasting_preset);
+                  const eatingHours = preset?.eating ?? (24 - (localDefaults.custom_fasting_hours || 16));
+                  const windowEnd = calculateEatingWindowEnd(localDefaults.eating_window_start || "12:00", eatingHours);
+                  return (
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                      <p className="text-emerald-300 text-xs">
+                        <strong>{localDefaults.eating_window_start || "12:00"}</strong> — <strong>{windowEnd}</strong> ({eatingHours}h eating window)
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                {/* Max meals */}
+                <div>
+                  <Label className="text-white/60 text-xs mb-1 block">Max meals per day</Label>
+                  <div className="flex gap-2">
+                    {[2, 3, 4].map(n => (
+                      <button
+                        key={n}
+                        onClick={() => setLocalDefaults({ ...localDefaults, max_meals: n })}
+                        className={`flex-1 py-2 rounded-lg border text-sm font-bold transition-all ${
+                          (localDefaults.max_meals || 3) === n
+                            ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                            : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Snack-free toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+                  <div>
+                    <p className="text-white text-sm font-medium">Snack-free mode</p>
+                    <p className="text-white/40 text-xs">Space meals evenly, avoid snacking</p>
+                  </div>
+                  <Switch
+                    checked={localDefaults.snack_free_mode || false}
+                    onCheckedChange={(checked) => setLocalDefaults({ ...localDefaults, snack_free_mode: checked })}
+                  />
+                </div>
               </div>
 
               {/* Focus */}

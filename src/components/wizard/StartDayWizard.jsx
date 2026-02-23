@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { analyzeBreakFeasibility, calculateSessionConflict } from "../../utils/breakFeasibility";
+import { FASTING_PRESETS, getEatingHours, calculateEatingWindowEnd } from "../../constants";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -47,8 +48,11 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
 
   // When resuming, pre-fill from existing session
   const resumeDefaults = resumeSession ? {
-    last_meal_time: resumeSession.last_meal_time || "",
     fasting_preset: resumeSession.fasting_preset || "16/8",
+    eating_window_start: resumeSession.eating_window_start || "12:00",
+    custom_fasting_hours: resumeSession.custom_fasting_hours || null,
+    max_meals: resumeSession.max_meals || 3,
+    snack_free_mode: resumeSession.snack_free_mode || false,
     focus_work_minutes: resumeSession.focus_work_minutes || 45,
     focus_break_minutes: resumeSession.focus_break_minutes || 5,
     focus_sound: resumeSession.focus_sound || "wind",
@@ -73,8 +77,11 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     resumeSession?.selected_exercise_groups || defaults?.selected_groups || []
   );
   const [data, setData] = useState({
-    last_meal_time: defaults?.last_meal_time || "",
     fasting_preset: defaults?.fasting_preset || "16/8",
+    eating_window_start: defaults?.eating_window_start || "12:00",
+    custom_fasting_hours: defaults?.custom_fasting_hours || null,
+    max_meals: defaults?.max_meals || 3,
+    snack_free_mode: defaults?.snack_free_mode || false,
     focus_work_minutes: defaults?.focus_work_minutes || 45,
     focus_break_minutes: defaults?.focus_break_minutes || 5,
     focus_sound: defaults?.focus_sound || "wind",
@@ -132,7 +139,11 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   const loadPreviousSettings = async () => {
     const prevData = {
       ...data,
-      last_meal_time: previousSession.last_meal_time || "",
+      fasting_preset: previousSession.fasting_preset || data.fasting_preset,
+      eating_window_start: previousSession.eating_window_start || data.eating_window_start,
+      custom_fasting_hours: previousSession.custom_fasting_hours || data.custom_fasting_hours,
+      max_meals: previousSession.max_meals || data.max_meals,
+      snack_free_mode: previousSession.snack_free_mode || false,
       focus_work_minutes: previousSession.focus_work_minutes || 45,
       focus_break_minutes: previousSession.focus_break_minutes || 5,
       focus_sound: previousSession.focus_sound || "wind",
@@ -452,26 +463,136 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                 </motion.div>
               )}
 
-              {step === 1 && (
+              {step === 1 && (() => {
+                const eatingHours = getEatingHours(data.fasting_preset, data.custom_fasting_hours);
+                const windowEnd = calculateEatingWindowEnd(data.eating_window_start, eatingHours);
+                const presetIdx = FASTING_PRESETS.findIndex(p => p.label === data.fasting_preset || (data.fasting_preset === "custom" && p.label === "Custom"));
+                const now = new Date();
+                const nowMinutes = now.getHours() * 60 + now.getMinutes();
+                const [sh, sm] = (data.eating_window_start || "12:00").split(":").map(Number);
+                const startMin = sh * 60 + sm;
+                const isBeforeWindow = nowMinutes < startMin;
+
+                return (
                 <motion.div key="fuel" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label className="text-white/70 text-sm">When did you last eat?</Label>
-                    <Input
-                      type="time"
-                      value={data.last_meal_time}
-                      onChange={(e) => setData({ ...data, last_meal_time: e.target.value })}
-                      className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                      placeholder="Optional"
-                    />
+                  {/* Current status hint */}
+                  <div className={`flex items-center gap-2 p-3 rounded-xl border ${
+                    isBeforeWindow
+                      ? "bg-white/5 border-white/10"
+                      : "bg-emerald-500/10 border-emerald-500/20"
+                  }`}>
+                    {isBeforeWindow ? (
+                      <Droplets className="w-4 h-4 text-white/50 shrink-0" />
+                    ) : (
+                      <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
+                    )}
+                    <p className={`text-xs ${isBeforeWindow ? "text-white/50" : "text-emerald-300"}`}>
+                      {isBeforeWindow
+                        ? `You're fasting \u2014 window opens at ${data.eating_window_start}`
+                        : `Eating window: ${data.eating_window_start} \u2014 ${windowEnd}`
+                      }
+                    </p>
                   </div>
-                  {!data.last_meal_time && (
-                    <div className="text-center py-4">
-                      <p className="text-white/40 text-sm italic">Today I'll eat when I feel it 🍃</p>
+
+                  {/* Preset selector */}
+                  <div className="space-y-2">
+                    <Label className="text-white/70 text-sm">Fasting plan</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {FASTING_PRESETS.map((p, idx) => (
+                        <button
+                          key={p.label}
+                          onClick={() => setData({
+                            ...data,
+                            fasting_preset: p.label === "Custom" ? "custom" : p.label,
+                          })}
+                          className={`py-2 px-3 rounded-xl border text-xs font-medium transition-all ${
+                            (presetIdx === idx)
+                              ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                              : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Custom slider */}
+                  {data.fasting_preset === "custom" && (
+                    <div className="space-y-2">
+                      <Label className="text-white/60 text-xs">
+                        Fasting: {data.custom_fasting_hours || 16}h / Eating: {24 - (data.custom_fasting_hours || 16)}h
+                      </Label>
+                      <Slider
+                        value={[data.custom_fasting_hours || 16]}
+                        onValueChange={([v]) => setData({ ...data, custom_fasting_hours: v })}
+                        min={10}
+                        max={23}
+                        step={1}
+                        className="py-3"
+                      />
                     </div>
                   )}
+
+                  {/* Window start */}
+                  <div className="space-y-2">
+                    <Label className="text-white/70 text-sm">Window starts at</Label>
+                    <Input
+                      type="time"
+                      value={data.eating_window_start}
+                      onChange={(e) => setData({ ...data, eating_window_start: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
+                    />
+                  </div>
+
+                  {/* Window summary */}
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                    <p className="text-emerald-300 text-sm font-medium">
+                      {data.eating_window_start} — {windowEnd}
+                    </p>
+                    <p className="text-emerald-300/60 text-xs mt-0.5">
+                      {eatingHours}h eating · {data.max_meals} meals max{data.snack_free_mode ? " · snack-free" : ""}
+                    </p>
+                  </div>
+
+                  {/* Max meals + snack-free (compact) */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-white/60 text-xs">Meals</Label>
+                      <div className="flex gap-1.5">
+                        {[2, 3, 4].map(n => (
+                          <button
+                            key={n}
+                            onClick={() => setData({ ...data, max_meals: n })}
+                            className={`flex-1 py-2 rounded-lg border text-xs font-bold transition-all ${
+                              data.max_meals === n
+                                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                                : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 pt-3">
+                      <Label className="text-white/60 text-[10px]">No snack</Label>
+                      <button
+                        onClick={() => setData({ ...data, snack_free_mode: !data.snack_free_mode })}
+                        className={`w-10 h-10 rounded-xl border text-xs font-bold transition-all ${
+                          data.snack_free_mode
+                            ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                            : "bg-white/5 border-white/10 text-white/30 hover:bg-white/10"
+                        }`}
+                      >
+                        {data.snack_free_mode ? "ON" : "OFF"}
+                      </button>
+                    </div>
+                  </div>
+
                   {!useDefaults && needsWorkHours && (
                     <>
-                      <div className="h-px bg-white/10 my-4" />
+                      <div className="h-px bg-white/10 my-2" />
                       <div className="space-y-2">
                         <Label className="text-white/70 text-sm">Today's work start time</Label>
                         <Input
@@ -493,7 +614,8 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     </>
                   )}
                 </motion.div>
-              )}
+                );
+              })()}
 
               {step === 2 && !useDefaults && (
                 <motion.div key="focus" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">

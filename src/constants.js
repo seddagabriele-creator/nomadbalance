@@ -12,9 +12,11 @@ export const DEFAULT_WORK_MINUTES = 45;
 export const DEFAULT_BREAK_MINUTES = 5;
 export const DEFAULT_BODY_BREAKS_TARGET = 6;
 
-// Fasting defaults
+// Fasting / Eating window defaults
 export const DEFAULT_FASTING_PRESET = "16/8";
 export const DEFAULT_FASTING_HOURS = 16;
+export const DEFAULT_EATING_WINDOW_START = "12:00";
+export const DEFAULT_MAX_MEALS = 3;
 
 // Audio URLs
 export const AUDIO_URLS = {
@@ -32,11 +34,29 @@ export const DEFAULT_WORK_HOURS = {
 
 // Fasting presets
 export const FASTING_PRESETS = [
+  { label: "12/12", fasting: 12, eating: 12 },
   { label: "14/10", fasting: 14, eating: 10 },
   { label: "16/8", fasting: 16, eating: 8 },
   { label: "18/6", fasting: 18, eating: 6 },
   { label: "Custom", fasting: null, eating: null },
 ];
+
+// Get eating hours from preset
+export function getEatingHours(preset, customFastingHours) {
+  const found = FASTING_PRESETS.find(p => p.label === preset);
+  if (found && found.eating !== null) return found.eating;
+  if (preset === "custom" && customFastingHours) return 24 - customFastingHours;
+  return 8;
+}
+
+// Calculate eating window end time from start + eating hours
+export function calculateEatingWindowEnd(startTime, eatingHours) {
+  const [h, m] = (startTime || "12:00").split(":").map(Number);
+  const totalMinutes = h * 60 + m + eatingHours * 60;
+  const endH = Math.floor(totalMinutes / 60) % 24;
+  const endM = totalMinutes % 60;
+  return `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+}
 
 // Exercise muscle group labels
 export const GROUP_LABELS = {
@@ -50,8 +70,10 @@ export const GROUP_LABELS = {
 // Daily defaults initial values
 export const INITIAL_DAILY_DEFAULTS = {
   fasting_preset: DEFAULT_FASTING_PRESET,
-  last_meal_time: "",
-  next_meal_time: "",
+  eating_window_start: DEFAULT_EATING_WINDOW_START,
+  custom_fasting_hours: null,
+  max_meals: DEFAULT_MAX_MEALS,
+  snack_free_mode: false,
   focus_work_minutes: DEFAULT_WORK_MINUTES,
   focus_break_minutes: DEFAULT_BREAK_MINUTES,
   focus_sound: "wind",
