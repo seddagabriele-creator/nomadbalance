@@ -4,8 +4,13 @@ import { motion } from "framer-motion";
 import { ONE_MINUTE_MS } from "../../constants";
 
 function getSmartFuelStatus(session) {
-  if (!session?.eating_window_start || !session?.eating_window_end) {
+  if (!session) {
     return { label: "No data", detail: "Start your day", icon: "clock", extra: null };
+  }
+
+  if (!session.eating_window_start || !session.eating_window_end) {
+    const preset = session.fasting_preset || "16/8";
+    return { label: "Fasting", detail: "Tap Fuel to start eating", icon: "droplets", extra: `${preset} protocol` };
   }
 
   const now = new Date();

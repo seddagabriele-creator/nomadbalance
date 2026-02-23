@@ -8,7 +8,7 @@ import { createPageUrl } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService, authService } from "../api/services";
 import { hasDailyDefaults } from "../hooks/useDailyDefaults";
-import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, getEatingHours, calculateEatingWindowEnd, calculateMealPlan } from "../constants";
+import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -295,24 +295,13 @@ export default function Dashboard() {
         });
       }
 
-      // Calculate eating window end from preset + start
-      const eatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
-      const eatingWindowEnd = calculateEatingWindowEnd(wizardData.eating_window_start || "12:00", eatingHours);
-
-      // Calculate smart meal plan based on work hours
-      const mealPlan = calculateMealPlan({
-        morningEnd: userSettings.morning_work_end || DEFAULT_WORK_HOURS.morning_end,
-        afternoonEnd: userSettings.afternoon_work_end || DEFAULT_WORK_HOURS.afternoon_end,
-        windowStart: wizardData.eating_window_start || "12:00",
-        windowEnd: eatingWindowEnd,
-        maxMeals: wizardData.max_meals || 3,
-      });
-
+      // Eating window is now dynamic - set when user taps "Start eating" in Fuel page
       const newSession = await daySessionService.create({
         ...wizardData,
-        eating_window_end: eatingWindowEnd,
-        meal_plan: mealPlan.mainMeals,
-        snacks_allowed: mealPlan.snacksAllowed,
+        eating_window_start: null,
+        eating_window_end: null,
+        meal_plan: [],
+        snacks_allowed: 0,
         meals_logged: [],
         body_breaks_target: breaksCount,
         date: today,
@@ -755,20 +744,16 @@ export default function Dashboard() {
             onComplete={resumeWithWizard ? async (wizardData, tasks, selectedGroups) => {
               // When resuming with changes, update the existing session instead of creating a new one
               if (session) {
-                const eatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
-                const eatingWindowEnd = calculateEatingWindowEnd(wizardData.eating_window_start || "12:00", eatingHours);
-                const resumeMealPlan = calculateMealPlan({
-                  morningEnd: userSettings.morning_work_end || DEFAULT_WORK_HOURS.morning_end,
-                  afternoonEnd: userSettings.afternoon_work_end || DEFAULT_WORK_HOURS.afternoon_end,
-                  windowStart: wizardData.eating_window_start || "12:00",
-                  windowEnd: eatingWindowEnd,
-                  maxMeals: wizardData.max_meals || 3,
-                });
+                // Keep existing eating window if already opened, otherwise leave null
+                const updateData = { ...wizardData };
+                if (!session.eating_window_start) {
+                  updateData.eating_window_start = null;
+                  updateData.eating_window_end = null;
+                  updateData.meal_plan = [];
+                  updateData.snacks_allowed = 0;
+                }
                 await daySessionService.update(session.id, {
-                  ...wizardData,
-                  eating_window_end: eatingWindowEnd,
-                  meal_plan: resumeMealPlan.mainMeals,
-                  snacks_allowed: resumeMealPlan.snacksAllowed,
+                  ...updateData,
                   status: "active",
                   started_at: new Date().toTimeString().slice(0, 5),
                   selected_exercise_groups: selectedGroups,
