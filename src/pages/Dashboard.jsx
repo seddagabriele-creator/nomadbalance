@@ -8,7 +8,7 @@ import { createPageUrl } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService, authService } from "../api/services";
 import { hasDailyDefaults } from "../hooks/useDailyDefaults";
-import { ONE_HOUR_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES } from "../constants";
+import { ONE_HOUR_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, getEatingHours, calculateEatingWindowEnd } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -206,8 +206,14 @@ export default function Dashboard() {
         });
       }
 
+      // Calculate eating window end from preset + start
+      const eatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
+      const eatingWindowEnd = calculateEatingWindowEnd(wizardData.eating_window_start || "12:00", eatingHours);
+
       const newSession = await daySessionService.create({
         ...wizardData,
+        eating_window_end: eatingWindowEnd,
+        meals_logged: [],
         body_breaks_target: breaksCount,
         date: today,
         status: "active",
@@ -650,8 +656,11 @@ export default function Dashboard() {
             onComplete={resumeWithWizard ? async (wizardData, tasks, selectedGroups) => {
               // When resuming with changes, update the existing session instead of creating a new one
               if (session) {
+                const eatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
+                const eatingWindowEnd = calculateEatingWindowEnd(wizardData.eating_window_start || "12:00", eatingHours);
                 await daySessionService.update(session.id, {
                   ...wizardData,
+                  eating_window_end: eatingWindowEnd,
                   status: "active",
                   started_at: new Date().toTimeString().slice(0, 5),
                   selected_exercise_groups: selectedGroups,

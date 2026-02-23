@@ -1,61 +1,60 @@
 import React, { useState, useEffect } from "react";
 import { Droplets, Utensils, Clock } from "lucide-react";
 import { motion } from "framer-motion";
-import { getDailyDefaults } from "../../hooks/useDailyDefaults";
-import { DEFAULT_FASTING_HOURS, ONE_MINUTE_MS, ONE_HOUR_MS } from "../../constants";
+import { ONE_MINUTE_MS } from "../../constants";
 
-const FASTING_HOURS_MAP = {
-  "14/10": 14,
-  "16/8": 16,
-  "18/6": 18,
-};
-
-function getFastingHours() {
-  const defaults = getDailyDefaults();
-  if (defaults.fasting_preset === "custom") {
-    return defaults.custom_fasting_hours || DEFAULT_FASTING_HOURS;
+function getWindowStatus(session) {
+  if (!session?.eating_window_start || !session?.eating_window_end) {
+    return { label: "No data", detail: "Start your day", icon: "clock" };
   }
-  return FASTING_HOURS_MAP[defaults.fasting_preset] || DEFAULT_FASTING_HOURS;
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const [sh, sm] = session.eating_window_start.split(":").map(Number);
+  const [eh, em] = session.eating_window_end.split(":").map(Number);
+  const startMin = sh * 60 + sm;
+  const endMin = eh * 60 + em;
+
+  const mealsLogged = (session.meals_logged || []).length;
+  const maxMeals = session.max_meals || 3;
+
+  if (nowMinutes < startMin) {
+    // Fasting - before eating window
+    const remaining = startMin - nowMinutes;
+    const rH = Math.floor(remaining / 60);
+    const rM = remaining % 60;
+    return {
+      label: "Fasting",
+      detail: `Window opens in ${rH}h ${rM}m`,
+      icon: "droplets",
+    };
+  } else if (nowMinutes < endMin) {
+    // Eating window open
+    const remaining = endMin - nowMinutes;
+    const rH = Math.floor(remaining / 60);
+    const rM = remaining % 60;
+    return {
+      label: `Eating window`,
+      detail: `${mealsLogged}/${maxMeals} meals \u00b7 closes in ${rH}h ${rM}m`,
+      icon: "utensils",
+    };
+  } else {
+    // Fasting - after eating window
+    return {
+      label: "Fasting",
+      detail: `Window opens tomorrow at ${session.eating_window_start}`,
+      icon: "droplets",
+    };
+  }
 }
 
 export default function FuelCard({ session }) {
-  const [fuelStatus, setFuelStatus] = useState({ label: "", detail: "", icon: "droplets" });
+  const [fuelStatus, setFuelStatus] = useState(() => getWindowStatus(session));
 
   useEffect(() => {
-    if (!session || !session.last_meal_time) {
-      setFuelStatus({ label: "No data", detail: "Start your day", icon: "clock" });
-      return;
-    }
-
-    const updateStatus = () => {
-      const now = new Date();
-      const [lh, lm] = session.last_meal_time.split(":").map(Number);
-      const lastMeal = new Date();
-      lastMeal.setHours(lh, lm, 0, 0);
-
-      const fastingHours = getFastingHours();
-      const nextMeal = new Date(lastMeal.getTime() + fastingHours * ONE_HOUR_MS);
-      const untilNext = nextMeal - now;
-
-      if (untilNext > 0) {
-        const untilH = Math.floor(untilNext / ONE_HOUR_MS);
-        const untilM = Math.floor((untilNext % ONE_HOUR_MS) / ONE_MINUTE_MS);
-        setFuelStatus({
-          label: "Fasting window active",
-          detail: `${untilH}h ${untilM}m until next meal`,
-          icon: "droplets",
-        });
-      } else {
-        setFuelStatus({
-          label: "Eating window open",
-          detail: "Nourish your body with real, healthy food",
-          icon: "utensils",
-        });
-      }
-    };
-
-    updateStatus();
-    const interval = setInterval(updateStatus, ONE_MINUTE_MS);
+    setFuelStatus(getWindowStatus(session));
+    const interval = setInterval(() => setFuelStatus(getWindowStatus(session)), ONE_MINUTE_MS);
     return () => clearInterval(interval);
   }, [session]);
 
@@ -68,7 +67,7 @@ export default function FuelCard({ session }) {
       transition={{ delay: 0.1 }}
       className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 flex flex-col justify-between h-full"
       role="region"
-      aria-label="Fasting status"
+      aria-label="Fuel status"
     >
       <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-400/10 rounded-full -translate-y-6 translate-x-6" />
       <div className="flex items-center gap-2 mb-4">
