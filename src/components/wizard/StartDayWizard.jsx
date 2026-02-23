@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock, RotateCcw } from "lucide-react";
 import { analyzeBreakFeasibility, calculateSessionConflict } from "../../utils/breakFeasibility";
 import { FASTING_PRESETS, getEatingHours } from "../../constants";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -90,6 +90,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   });
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [needsWorkHours, setNeedsWorkHours] = useState(!userSettings?.morning_work_start);
+  const [conflictResolution, setConflictResolution] = useState(null);
 
   const { data: previousSessions = [] } = useQuery({
     queryKey: ["previousSession"],
@@ -673,7 +674,14 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                       return (
                         <button
                           key={n}
-                          onClick={() => setData({ ...data, body_breaks_target: n })}
+                          onClick={() => {
+                            // If a conflict resolution was applied, revert to original values first
+                            const base = conflictResolution
+                              ? { ...data, ...conflictResolution.originalData }
+                              : data;
+                            setConflictResolution(null);
+                            setData({ ...base, body_breaks_target: n });
+                          }}
                           className={`relative w-14 h-14 rounded-2xl border text-lg font-bold transition-all ${
                             data.body_breaks_target === n
                               ? isUnrealistic
@@ -722,11 +730,23 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                         {/* Option A: Compress sessions */}
                         {conflict.compress.viable && (
                           <button
-                            onClick={() => setData({
-                              ...data,
-                              focus_work_minutes: conflict.compress.focusMinutes,
-                              focus_break_minutes: conflict.compress.breakMinutes,
-                            })}
+                            onClick={() => {
+                              setConflictResolution({
+                                type: "compress",
+                                label: `Compressed to ${conflict.compress.focusMinutes}+${conflict.compress.breakMinutes} min`,
+                                originalData: {
+                                  focus_work_minutes: data.focus_work_minutes,
+                                  focus_break_minutes: data.focus_break_minutes,
+                                  body_breaks_target: data.body_breaks_target,
+                                  work_end_today: data.work_end_today,
+                                },
+                              });
+                              setData({
+                                ...data,
+                                focus_work_minutes: conflict.compress.focusMinutes,
+                                focus_break_minutes: conflict.compress.breakMinutes,
+                              });
+                            }}
                             className="w-full p-3 rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 transition-all text-left group"
                           >
                             <div className="flex items-center gap-2 mb-1">
@@ -744,7 +764,19 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                         {/* Option B: Reduce breaks */}
                         {conflict.reduce.breaks < data.body_breaks_target && (
                           <button
-                            onClick={() => setData({ ...data, body_breaks_target: conflict.reduce.breaks })}
+                            onClick={() => {
+                              setConflictResolution({
+                                type: "reduce",
+                                label: `Reduced to ${conflict.reduce.breaks} session${conflict.reduce.breaks > 1 ? "s" : ""}`,
+                                originalData: {
+                                  focus_work_minutes: data.focus_work_minutes,
+                                  focus_break_minutes: data.focus_break_minutes,
+                                  body_breaks_target: data.body_breaks_target,
+                                  work_end_today: data.work_end_today,
+                                },
+                              });
+                              setData({ ...data, body_breaks_target: conflict.reduce.breaks });
+                            }}
                             className="w-full p-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 transition-all text-left group"
                           >
                             <div className="flex items-center gap-2 mb-1">
@@ -760,7 +792,19 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
 
                         {/* Option C: Extend workday */}
                         <button
-                          onClick={() => setData({ ...data, work_end_today: conflict.extend.newEndTime })}
+                          onClick={() => {
+                            setConflictResolution({
+                              type: "extend",
+                              label: `Extended to ${conflict.extend.newEndTime}`,
+                              originalData: {
+                                focus_work_minutes: data.focus_work_minutes,
+                                focus_break_minutes: data.focus_break_minutes,
+                                body_breaks_target: data.body_breaks_target,
+                                work_end_today: data.work_end_today,
+                              },
+                            });
+                            setData({ ...data, work_end_today: conflict.extend.newEndTime });
+                          }}
                           className="w-full p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all text-left group"
                         >
                           <div className="flex items-center gap-2 mb-1">
@@ -776,8 +820,28 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     </div>
                   )}
 
+                  {/* Show applied resolution with option to change */}
+                  {conflictResolution && !conflict && (
+                    <div className="flex items-center justify-between p-3 rounded-xl border bg-emerald-500/10 border-emerald-500/20">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <p className="text-emerald-300 text-sm font-medium">{conflictResolution.label}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setData({ ...data, ...conflictResolution.originalData });
+                          setConflictResolution(null);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all text-white/50 hover:text-white/70 text-xs font-medium"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Change
+                      </button>
+                    </div>
+                  )}
+
                   {/* Simple late start hint (when no full conflict) */}
-                  {isLateStart && !conflict && nowFeasibility.level !== "good" && (
+                  {isLateStart && !conflict && !conflictResolution && nowFeasibility.level !== "good" && (
                     <div className="flex items-start gap-2 p-3 rounded-xl border bg-amber-500/10 border-amber-500/20 text-amber-300 text-xs">
                       <Clock className="w-4 h-4 mt-0.5 shrink-0" />
                       <div>
