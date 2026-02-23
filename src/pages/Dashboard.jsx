@@ -90,6 +90,16 @@ export default function Dashboard() {
 
   const topTask = tasks.sort((a, b) => a.order - b.order).find((t) => !t.completed) || null;
 
+  const { data: exercises = [] } = useQuery({
+    queryKey: ["exercises"],
+    queryFn: () => exerciseService.listAll(),
+  });
+
+  const { data: allPreviousSessions = [] } = useQuery({
+    queryKey: ["allSessions"],
+    queryFn: () => daySessionService.listRecent(),
+  });
+
   // Show motivational quote every hour
   useEffect(() => {
     if (!session || session.status !== "active") return;
@@ -198,16 +208,6 @@ export default function Dashboard() {
       toast.error("Failed to update session");
       console.error("Update session error:", error);
     },
-  });
-
-  const { data: exercises = [] } = useQuery({
-    queryKey: ["exercises"],
-    queryFn: () => exerciseService.listAll(),
-  });
-
-  const { data: allPreviousSessions = [] } = useQuery({
-    queryKey: ["allSessions"],
-    queryFn: () => daySessionService.listRecent(),
   });
 
   const taskUpdateMutation = useMutation({
