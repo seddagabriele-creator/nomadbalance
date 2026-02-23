@@ -1,13 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { daySessionService } from "../api/services";
-import { FASTING_PRESETS, calculateEatingWindowEnd } from "../constants";
+import { daySessionService, userSettingsService } from "../api/services";
+import { FASTING_PRESETS, calculateEatingWindowEnd, calculateMealPlan, DEFAULT_WORK_HOURS } from "../constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Droplets, Utensils, Clock, Plus, X, Ban } from "lucide-react";
+import { ArrowLeft, Droplets, Utensils, Clock, Check, Coffee, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
@@ -21,7 +20,13 @@ export default function Fuel() {
     queryFn: () => daySessionService.getByDate(today),
   });
 
+  const { data: settingsArr = [] } = useQuery({
+    queryKey: ["userSettings"],
+    queryFn: () => userSettingsService.list(),
+  });
+
   const session = sessions[0] || null;
+  const userSettings = settingsArr[0] || {};
 
   const [selectedPreset, setSelectedPreset] = useState(() => {
     const idx = FASTING_PRESETS.findIndex((p) => p.label === session?.fasting_preset);
@@ -30,12 +35,14 @@ export default function Fuel() {
   const [customFasting, setCustomFasting] = useState(session?.custom_fasting_hours || 16);
   const [windowStart, setWindowStart] = useState(session?.eating_window_start || "12:00");
   const [maxMeals, setMaxMeals] = useState(session?.max_meals || 3);
-  const [snackFree, setSnackFree] = useState(session?.snack_free_mode || false);
 
   const preset = FASTING_PRESETS[selectedPreset];
   const eatingHours = preset?.eating !== null ? preset.eating : 24 - customFasting;
   const windowEnd = useMemo(() => calculateEatingWindowEnd(windowStart, eatingHours), [windowStart, eatingHours]);
 
+  // Meal plan from session
+  const mealPlan = session?.meal_plan || [];
+  const snacksAllowed = session?.snacks_allowed || 0;
   const mealsLogged = session?.meals_logged || [];
 
   // Current status
@@ -49,22 +56,10 @@ export default function Fuel() {
   const isEatingWindow = nowMinutes >= startMin && nowMinutes < endMin;
   const isBeforeWindow = nowMinutes < startMin;
 
-  // Snack-free: suggest next meal time
-  const suggestedNextMeal = useMemo(() => {
-    if (!snackFree || mealsLogged.length === 0) return null;
-    const gap = Math.floor((eatingHours * 60) / maxMeals);
-    const lastMealTime = mealsLogged[mealsLogged.length - 1]?.time;
-    if (!lastMealTime) return null;
-    const [lh, lm] = lastMealTime.split(":").map(Number);
-    const nextMin = lh * 60 + lm + gap;
-    if (nextMin >= endMin) return null;
-    const nH = Math.floor(nextMin / 60) % 24;
-    const nM = nextMin % 60;
-    return `${String(nH).padStart(2, "0")}:${String(nM).padStart(2, "0")}`;
-  }, [snackFree, mealsLogged, eatingHours, maxMeals, endMin]);
-
-  const canLogMeal = isEatingWindow && mealsLogged.length < maxMeals;
-  const isTooSoonForMeal = snackFree && suggestedNextMeal && nowMinutes < (parseInt(suggestedNextMeal.split(":")[0]) * 60 + parseInt(suggestedNextMeal.split(":")[1]));
+  // Logged counts
+  const loggedMainTypes = mealsLogged.filter((m) => m.type !== "snack").map((m) => m.type);
+  const snacksLogged = mealsLogged.filter((m) => m.type === "snack").length;
+  const snacksLeft = Math.max(0, snacksAllowed - snacksLogged);
 
   const updateSession = useMutation({
     mutationFn: (data) => {
@@ -78,11 +73,18 @@ export default function Fuel() {
     },
   });
 
-  const handleLogMeal = () => {
+  const handleLogMainMeal = (mealType) => {
     const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const updated = [...mealsLogged, { time: timeStr }];
+    const updated = [...mealsLogged, { time: timeStr, type: mealType }];
     updateSession.mutate({ meals_logged: updated });
     toast.success(`Meal logged at ${timeStr}`);
+  };
+
+  const handleLogSnack = () => {
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const updated = [...mealsLogged, { time: timeStr, type: "snack" }];
+    updateSession.mutate({ meals_logged: updated });
+    toast.success(`Snack logged at ${timeStr}`);
   };
 
   const handleRemoveMeal = (index) => {
@@ -91,20 +93,30 @@ export default function Fuel() {
   };
 
   const handleSaveSettings = () => {
+    const newWindowEnd = calculateEatingWindowEnd(windowStart, eatingHours);
+    const newMealPlan = calculateMealPlan({
+      morningEnd: userSettings.morning_work_end || DEFAULT_WORK_HOURS.morning_end,
+      afternoonEnd: userSettings.afternoon_work_end || DEFAULT_WORK_HOURS.afternoon_end,
+      windowStart: windowStart,
+      windowEnd: newWindowEnd,
+      maxMeals: maxMeals,
+    });
+
     updateSession.mutate({
       fasting_preset: preset?.label || "Custom",
       custom_fasting_hours: selectedPreset === FASTING_PRESETS.length - 1 ? customFasting : null,
       eating_window_start: windowStart,
-      eating_window_end: windowEnd,
+      eating_window_end: newWindowEnd,
       max_meals: maxMeals,
-      snack_free_mode: snackFree,
+      meal_plan: newMealPlan.mainMeals,
+      snacks_allowed: newMealPlan.snacksAllowed,
     });
     toast.success("Fuel settings updated");
   };
 
   // Timeline calculations
-  const timelineStartMin = startMin - 120; // 2h before window
-  const timelineEndMin = endMin + 120; // 2h after window
+  const timelineStartMin = startMin - 120;
+  const timelineEndMin = endMin + 120;
   const timelineRange = timelineEndMin - timelineStartMin;
   const windowStartPct = ((startMin - timelineStartMin) / timelineRange) * 100;
   const windowWidthPct = ((endMin - startMin) / timelineRange) * 100;
@@ -146,7 +158,7 @@ export default function Fuel() {
                   {isBeforeWindow
                     ? `Window opens at ${windowStart}`
                     : isEatingWindow
-                      ? `${mealsLogged.length}/${maxMeals} meals \u00b7 closes at ${windowEnd}`
+                      ? `${windowStart} — ${windowEnd} · closes at ${windowEnd}`
                       : `Window opens tomorrow at ${windowStart}`
                   }
                 </p>
@@ -160,17 +172,34 @@ export default function Fuel() {
                 className="absolute top-0 h-full bg-emerald-500/20 rounded-full"
                 style={{ left: `${windowStartPct}%`, width: `${windowWidthPct}%` }}
               />
-              {/* Meal dots */}
-              {mealsLogged.map((meal, i) => {
-                const [mh, mm] = meal.time.split(":").map(Number);
-                const mealMin = mh * 60 + mm;
-                const mealPct = Math.max(0, Math.min(100, ((mealMin - timelineStartMin) / timelineRange) * 100));
+              {/* Planned meal markers (hollow) */}
+              {mealPlan.map((meal) => {
+                const mealPct = Math.max(0, Math.min(100, ((meal.minutes - timelineStartMin) / timelineRange) * 100));
+                const isLogged = loggedMainTypes.includes(meal.type);
                 return (
                   <div
-                    key={i}
-                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-emerald-400 border-2 border-emerald-600"
+                    key={meal.type}
+                    className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 ${
+                      isLogged
+                        ? "bg-emerald-400 border-emerald-600"
+                        : "bg-transparent border-emerald-400/50"
+                    }`}
                     style={{ left: `${mealPct}%` }}
-                    title={`Meal at ${meal.time}`}
+                    title={`${meal.label} at ${meal.time}`}
+                  />
+                );
+              })}
+              {/* Logged snack dots */}
+              {mealsLogged.filter(m => m.type === "snack").map((snack, i) => {
+                const [mh, mm] = snack.time.split(":").map(Number);
+                const snackMin = mh * 60 + mm;
+                const snackPct = Math.max(0, Math.min(100, ((snackMin - timelineStartMin) / timelineRange) * 100));
+                return (
+                  <div
+                    key={`snack-${i}`}
+                    className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-amber-400"
+                    style={{ left: `${snackPct}%` }}
+                    title={`Snack at ${snack.time}`}
                   />
                 );
               })}
@@ -188,72 +217,134 @@ export default function Fuel() {
             </div>
           </div>
 
-          {/* Log Meal */}
+          {/* Meal Plan */}
           {session && (
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-              <h2 className="text-lg font-semibold mb-4">Meals Today</h2>
+              <h2 className="text-lg font-semibold mb-4">Your Meals</h2>
 
-              {mealsLogged.length > 0 ? (
-                <div className="space-y-2 mb-4">
-                  {mealsLogged.map((meal, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                          <span className="text-emerald-400 text-sm font-bold">{i + 1}</span>
-                        </div>
-                        <div>
-                          <p className="text-white text-sm font-medium">Meal {i + 1}</p>
-                          <p className="text-white/40 text-xs">{meal.time}</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveMeal(i)}
-                        className="text-white/20 hover:text-red-400 transition-colors"
+              {mealPlan.length > 0 ? (
+                <div className="space-y-3 mb-4">
+                  {mealPlan.map((meal, i) => {
+                    const isLogged = loggedMainTypes.includes(meal.type);
+                    const loggedEntry = mealsLogged.find((m) => m.type === meal.type);
+                    const diff = meal.minutes - nowMinutes;
+                    const isNow = isEatingWindow && diff <= 5 && diff > -30;
+
+                    return (
+                      <div
+                        key={meal.type}
+                        className={`flex items-center justify-between p-4 rounded-xl border ${
+                          isLogged
+                            ? "bg-emerald-500/10 border-emerald-500/20"
+                            : isNow
+                              ? "bg-emerald-500/5 border-emerald-500/30 ring-1 ring-emerald-500/20"
+                              : "bg-white/5 border-white/10"
+                        }`}
                       >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            isLogged ? "bg-emerald-500/20" : "bg-white/10"
+                          }`}>
+                            {isLogged ? (
+                              <Check className="w-4 h-4 text-emerald-400" />
+                            ) : (
+                              <span className="text-white/40 text-sm font-bold">{i + 1}</span>
+                            )}
+                          </div>
+                          <div>
+                            <p className={`text-sm font-medium ${isLogged ? "text-emerald-300" : isNow ? "text-emerald-200" : "text-white"}`}>
+                              {meal.label}
+                              {isNow && !isLogged && <span className="text-emerald-400 ml-2 text-xs">now!</span>}
+                            </p>
+                            <p className="text-white/40 text-xs">
+                              {isLogged ? `Logged at ${loggedEntry.time}` : `Planned at ${meal.time}`}
+                            </p>
+                          </div>
+                        </div>
+                        {!isLogged && isEatingWindow ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleLogMainMeal(meal.type)}
+                            disabled={updateSession.isPending}
+                            className="bg-emerald-600/80 hover:bg-emerald-500 text-white"
+                          >
+                            Log
+                          </Button>
+                        ) : isLogged ? (
+                          <button
+                            onClick={() => {
+                              const idx = mealsLogged.findIndex((m) => m.type === meal.type);
+                              if (idx >= 0) handleRemoveMeal(idx);
+                            }}
+                            className="text-white/20 hover:text-red-400 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="text-white/30 text-sm mb-4 italic">No meals logged yet</p>
+                <p className="text-white/30 text-sm mb-4 italic">No meal plan yet. Save settings to generate one.</p>
               )}
 
-              {canLogMeal ? (
-                <>
-                  {isTooSoonForMeal && (
-                    <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-3">
-                      <Ban className="w-4 h-4 text-amber-400 shrink-0" />
-                      <p className="text-amber-300 text-xs">
-                        Snack-free: next meal suggested at <strong>{suggestedNextMeal}</strong>
-                      </p>
-                    </div>
+              {/* Snacks section */}
+              {snacksAllowed > 0 && (
+                <div className="mt-4 pt-4 border-t border-white/10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Coffee className="w-4 h-4 text-amber-400" />
+                    <span className="text-white/70 text-sm font-medium">Snacks</span>
+                    <span className="text-white/30 text-xs">{snacksLogged}/{snacksAllowed}</span>
+                  </div>
+
+                  {mealsLogged.filter((m) => m.type === "snack").map((snack, i) => {
+                    const snackIndices = mealsLogged.reduce((acc, m, idx) => (m.type === "snack" ? [...acc, idx] : acc), []);
+                    return (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 mb-2">
+                        <div className="flex items-center gap-3">
+                          <Coffee className="w-4 h-4 text-amber-400" />
+                          <div>
+                            <p className="text-amber-300 text-sm font-medium">Snack {i + 1}</p>
+                            <p className="text-white/40 text-xs">{snack.time}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveMeal(snackIndices[i])}
+                          className="text-white/20 hover:text-red-400 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  {isEatingWindow && snacksLeft > 0 && (
+                    <Button
+                      onClick={handleLogSnack}
+                      disabled={updateSession.isPending}
+                      variant="outline"
+                      className="w-full h-10 border-amber-500/20 text-amber-300 hover:bg-amber-500/10"
+                    >
+                      <Coffee className="w-4 h-4 mr-2" />
+                      Log Snack ({snacksLogged + 1}/{snacksAllowed})
+                    </Button>
                   )}
-                  <Button
-                    onClick={handleLogMeal}
-                    disabled={updateSession.isPending}
-                    className="w-full h-12 bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Log Meal ({mealsLogged.length + 1}/{maxMeals})
-                  </Button>
-                </>
-              ) : isEatingWindow && mealsLogged.length >= maxMeals ? (
-                <div className="flex items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
-                  <Clock className="w-5 h-5 text-white/40" />
-                  <p className="text-white/50 text-sm">All {maxMeals} meals logged. Window closes at {windowEnd}.</p>
                 </div>
-              ) : !isEatingWindow ? (
-                <div className="flex items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+              )}
+
+              {/* Status messages when outside window */}
+              {!isEatingWindow && (
+                <div className="flex items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 mt-4">
                   <Droplets className="w-5 h-5 text-white/40" />
                   <p className="text-white/50 text-sm">
                     {isBeforeWindow
                       ? `Eating window opens at ${windowStart}`
-                      : "Eating window is closed for today"
+                      : "Eating window closed for today"
                     }
                   </p>
                 </div>
-              ) : null}
+              )}
             </div>
           )}
 
@@ -309,11 +400,14 @@ export default function Fuel() {
               <p className="text-emerald-300 text-sm">
                 <strong>{windowStart}</strong> — <strong>{windowEnd}</strong> ({eatingHours}h eating window)
               </p>
+              <p className="text-emerald-300/50 text-xs mt-1">
+                {maxMeals} meals: {Math.min(2, maxMeals)} main + {Math.max(0, maxMeals - 2)} snack{maxMeals - 2 !== 1 ? "s" : ""}
+              </p>
             </div>
 
             {/* Max meals */}
             <div className="mb-4">
-              <Label className="text-white/70 text-sm mb-2 block">Max meals</Label>
+              <Label className="text-white/70 text-sm mb-2 block">Max meals per day</Label>
               <div className="flex gap-2">
                 {[2, 3, 4].map((n) => (
                   <button
@@ -329,18 +423,9 @@ export default function Fuel() {
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Snack-free toggle */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 mb-4">
-              <div>
-                <p className="text-white text-sm font-medium">Snack-free mode</p>
-                <p className="text-white/40 text-xs">Space meals evenly, avoid snacking</p>
-              </div>
-              <Switch
-                checked={snackFree}
-                onCheckedChange={setSnackFree}
-              />
+              <p className="text-white/30 text-xs mt-2">
+                2 main meals (lunch + after work) + {Math.max(0, maxMeals - 2)} snack{maxMeals - 2 !== 1 ? "s" : ""}
+              </p>
             </div>
 
             <Button

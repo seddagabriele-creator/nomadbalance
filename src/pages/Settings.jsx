@@ -325,16 +325,11 @@ export default function Settings() {
                   </div>
                 </div>
 
-                {/* Snack-free toggle */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-                  <div>
-                    <p className="text-white text-sm font-medium">Snack-free mode</p>
-                    <p className="text-white/40 text-xs">Space meals evenly, avoid snacking</p>
-                  </div>
-                  <Switch
-                    checked={localDefaults.snack_free_mode || false}
-                    onCheckedChange={(checked) => setLocalDefaults({ ...localDefaults, snack_free_mode: checked })}
-                  />
+                {/* Meal breakdown info */}
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-white/40 text-xs">
+                    2 main meals (lunch + after work) + {Math.max(0, (localDefaults.max_meals || 3) - 2)} snack{(localDefaults.max_meals || 3) - 2 !== 1 ? "s" : ""}
+                  </p>
                 </div>
               </div>
 

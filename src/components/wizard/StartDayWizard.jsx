@@ -52,7 +52,6 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     eating_window_start: resumeSession.eating_window_start || "12:00",
     custom_fasting_hours: resumeSession.custom_fasting_hours || null,
     max_meals: resumeSession.max_meals || 3,
-    snack_free_mode: resumeSession.snack_free_mode || false,
     focus_work_minutes: resumeSession.focus_work_minutes || 45,
     focus_break_minutes: resumeSession.focus_break_minutes || 5,
     focus_sound: resumeSession.focus_sound || "wind",
@@ -81,7 +80,6 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     eating_window_start: defaults?.eating_window_start || "12:00",
     custom_fasting_hours: defaults?.custom_fasting_hours || null,
     max_meals: defaults?.max_meals || 3,
-    snack_free_mode: defaults?.snack_free_mode || false,
     focus_work_minutes: defaults?.focus_work_minutes || 45,
     focus_break_minutes: defaults?.focus_break_minutes || 5,
     focus_sound: defaults?.focus_sound || "wind",
@@ -143,7 +141,6 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
       eating_window_start: previousSession.eating_window_start || data.eating_window_start,
       custom_fasting_hours: previousSession.custom_fasting_hours || data.custom_fasting_hours,
       max_meals: previousSession.max_meals || data.max_meals,
-      snack_free_mode: previousSession.snack_free_mode || false,
       focus_work_minutes: previousSession.focus_work_minutes || 45,
       focus_break_minutes: previousSession.focus_break_minutes || 5,
       focus_sound: previousSession.focus_sound || "wind",
@@ -551,43 +548,31 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                       {data.eating_window_start} — {windowEnd}
                     </p>
                     <p className="text-emerald-300/60 text-xs mt-0.5">
-                      {eatingHours}h eating · {data.max_meals} meals max{data.snack_free_mode ? " · snack-free" : ""}
+                      {eatingHours}h eating · {data.max_meals} meals ({Math.min(2, data.max_meals)} main + {Math.max(0, data.max_meals - 2)} snack{data.max_meals - 2 !== 1 ? "s" : ""})
                     </p>
                   </div>
 
-                  {/* Max meals + snack-free (compact) */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 space-y-1">
-                      <Label className="text-white/60 text-xs">Meals</Label>
-                      <div className="flex gap-1.5">
-                        {[2, 3, 4].map(n => (
-                          <button
-                            key={n}
-                            onClick={() => setData({ ...data, max_meals: n })}
-                            className={`flex-1 py-2 rounded-lg border text-xs font-bold transition-all ${
-                              data.max_meals === n
-                                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
-                                : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
-                            }`}
-                          >
-                            {n}
-                          </button>
-                        ))}
-                      </div>
+                  {/* Max meals */}
+                  <div className="space-y-1">
+                    <Label className="text-white/60 text-xs">Meals per day</Label>
+                    <div className="flex gap-1.5">
+                      {[2, 3, 4].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setData({ ...data, max_meals: n })}
+                          className={`flex-1 py-2 rounded-lg border text-xs font-bold transition-all ${
+                            data.max_meals === n
+                              ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                              : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
                     </div>
-                    <div className="flex flex-col items-center gap-1 pt-3">
-                      <Label className="text-white/60 text-[10px]">No snack</Label>
-                      <button
-                        onClick={() => setData({ ...data, snack_free_mode: !data.snack_free_mode })}
-                        className={`w-10 h-10 rounded-xl border text-xs font-bold transition-all ${
-                          data.snack_free_mode
-                            ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
-                            : "bg-white/5 border-white/10 text-white/30 hover:bg-white/10"
-                        }`}
-                      >
-                        {data.snack_free_mode ? "ON" : "OFF"}
-                      </button>
-                    </div>
+                    <p className="text-white/30 text-[10px]">
+                      {Math.min(2, data.max_meals)} main (lunch + after work) + {Math.max(0, data.max_meals - 2)} snack{data.max_meals - 2 !== 1 ? "s" : ""}
+                    </p>
                   </div>
 
                   {!useDefaults && needsWorkHours && (
