@@ -8,7 +8,7 @@ import { createPageUrl } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService, authService } from "../api/services";
 import { hasDailyDefaults } from "../hooks/useDailyDefaults";
-import { ONE_HOUR_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, getEatingHours, calculateEatingWindowEnd } from "../constants";
+import { ONE_HOUR_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, getEatingHours, calculateEatingWindowEnd, calculateMealPlan } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -210,9 +210,20 @@ export default function Dashboard() {
       const eatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
       const eatingWindowEnd = calculateEatingWindowEnd(wizardData.eating_window_start || "12:00", eatingHours);
 
+      // Calculate smart meal plan based on work hours
+      const mealPlan = calculateMealPlan({
+        morningEnd: userSettings.morning_work_end || DEFAULT_WORK_HOURS.morning_end,
+        afternoonEnd: userSettings.afternoon_work_end || DEFAULT_WORK_HOURS.afternoon_end,
+        windowStart: wizardData.eating_window_start || "12:00",
+        windowEnd: eatingWindowEnd,
+        maxMeals: wizardData.max_meals || 3,
+      });
+
       const newSession = await daySessionService.create({
         ...wizardData,
         eating_window_end: eatingWindowEnd,
+        meal_plan: mealPlan.mainMeals,
+        snacks_allowed: mealPlan.snacksAllowed,
         meals_logged: [],
         body_breaks_target: breaksCount,
         date: today,
@@ -658,9 +669,18 @@ export default function Dashboard() {
               if (session) {
                 const eatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
                 const eatingWindowEnd = calculateEatingWindowEnd(wizardData.eating_window_start || "12:00", eatingHours);
+                const resumeMealPlan = calculateMealPlan({
+                  morningEnd: userSettings.morning_work_end || DEFAULT_WORK_HOURS.morning_end,
+                  afternoonEnd: userSettings.afternoon_work_end || DEFAULT_WORK_HOURS.afternoon_end,
+                  windowStart: wizardData.eating_window_start || "12:00",
+                  windowEnd: eatingWindowEnd,
+                  maxMeals: wizardData.max_meals || 3,
+                });
                 await daySessionService.update(session.id, {
                   ...wizardData,
                   eating_window_end: eatingWindowEnd,
+                  meal_plan: resumeMealPlan.mainMeals,
+                  snacks_allowed: resumeMealPlan.snacksAllowed,
                   status: "active",
                   started_at: new Date().toTimeString().slice(0, 5),
                   selected_exercise_groups: selectedGroups,
