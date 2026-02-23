@@ -12,7 +12,7 @@ import { createPageUrl } from "../utils";
 import { toast } from "sonner";
 import { userSettingsService } from "../api/services";
 import useDailyDefaults from "../hooks/useDailyDefaults";
-import { DEFAULT_WORK_HOURS, FASTING_PRESETS, calculateEatingWindowEnd } from "../constants";
+import { DEFAULT_WORK_HOURS, FASTING_PRESETS } from "../constants";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -280,26 +280,17 @@ export default function Settings() {
                   </div>
                 )}
 
-                {/* Eating window start time */}
-                <div>
-                  <Label className="text-white/60 text-xs">Window starts at</Label>
-                  <Input
-                    type="time"
-                    value={localDefaults.eating_window_start || "12:00"}
-                    onChange={(e) => setLocalDefaults({ ...localDefaults, eating_window_start: e.target.value })}
-                    className="bg-white/5 border-white/10 text-white mt-1 h-10"
-                  />
-                </div>
-
                 {/* Window summary */}
                 {(() => {
                   const preset = FASTING_PRESETS.find(p => p.label === localDefaults.fasting_preset);
                   const eatingHours = preset?.eating ?? (24 - (localDefaults.custom_fasting_hours || 16));
-                  const windowEnd = calculateEatingWindowEnd(localDefaults.eating_window_start || "12:00", eatingHours);
                   return (
                     <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
                       <p className="text-emerald-300 text-xs">
-                        <strong>{localDefaults.eating_window_start || "12:00"}</strong> — <strong>{windowEnd}</strong> ({eatingHours}h eating window)
+                        <strong>{24 - eatingHours}h fasting</strong> / <strong>{eatingHours}h eating</strong>
+                      </p>
+                      <p className="text-emerald-300/50 text-[10px] mt-1">
+                        Window starts when you tap "Start eating" in Fuel
                       </p>
                     </div>
                   );

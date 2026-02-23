@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { analyzeBreakFeasibility, calculateSessionConflict } from "../../utils/breakFeasibility";
-import { FASTING_PRESETS, getEatingHours, calculateEatingWindowEnd } from "../../constants";
+import { FASTING_PRESETS, getEatingHours } from "../../constants";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -49,7 +49,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   // When resuming, pre-fill from existing session
   const resumeDefaults = resumeSession ? {
     fasting_preset: resumeSession.fasting_preset || "16/8",
-    eating_window_start: resumeSession.eating_window_start || "12:00",
+    eating_window_start: null,
     custom_fasting_hours: resumeSession.custom_fasting_hours || null,
     max_meals: resumeSession.max_meals || 3,
     focus_work_minutes: resumeSession.focus_work_minutes || 45,
@@ -77,7 +77,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   );
   const [data, setData] = useState({
     fasting_preset: defaults?.fasting_preset || "16/8",
-    eating_window_start: defaults?.eating_window_start || "12:00",
+    eating_window_start: null,
     custom_fasting_hours: defaults?.custom_fasting_hours || null,
     max_meals: defaults?.max_meals || 3,
     focus_work_minutes: defaults?.focus_work_minutes || 45,
@@ -138,7 +138,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     const prevData = {
       ...data,
       fasting_preset: previousSession.fasting_preset || data.fasting_preset,
-      eating_window_start: previousSession.eating_window_start || data.eating_window_start,
+      eating_window_start: null,
       custom_fasting_hours: previousSession.custom_fasting_hours || data.custom_fasting_hours,
       max_meals: previousSession.max_meals || data.max_meals,
       focus_work_minutes: previousSession.focus_work_minutes || 45,
@@ -462,34 +462,11 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
 
               {step === 1 && (() => {
                 const eatingHours = getEatingHours(data.fasting_preset, data.custom_fasting_hours);
-                const windowEnd = calculateEatingWindowEnd(data.eating_window_start, eatingHours);
                 const presetIdx = FASTING_PRESETS.findIndex(p => p.label === data.fasting_preset || (data.fasting_preset === "custom" && p.label === "Custom"));
-                const now = new Date();
-                const nowMinutes = now.getHours() * 60 + now.getMinutes();
-                const [sh, sm] = (data.eating_window_start || "12:00").split(":").map(Number);
-                const startMin = sh * 60 + sm;
-                const isBeforeWindow = nowMinutes < startMin;
 
                 return (
                 <motion.div key="fuel" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                  {/* Current status hint */}
-                  <div className={`flex items-center gap-2 p-3 rounded-xl border ${
-                    isBeforeWindow
-                      ? "bg-white/5 border-white/10"
-                      : "bg-emerald-500/10 border-emerald-500/20"
-                  }`}>
-                    {isBeforeWindow ? (
-                      <Droplets className="w-4 h-4 text-white/50 shrink-0" />
-                    ) : (
-                      <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
-                    )}
-                    <p className={`text-xs ${isBeforeWindow ? "text-white/50" : "text-emerald-300"}`}>
-                      {isBeforeWindow
-                        ? `You're fasting \u2014 window opens at ${data.eating_window_start}`
-                        : `Eating window: ${data.eating_window_start} \u2014 ${windowEnd}`
-                      }
-                    </p>
-                  </div>
+                  <p className="text-white/50 text-sm">Choose your fasting plan. The eating window starts when you log your first meal.</p>
 
                   {/* Preset selector */}
                   <div className="space-y-2">
@@ -531,27 +508,6 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     </div>
                   )}
 
-                  {/* Window start */}
-                  <div className="space-y-2">
-                    <Label className="text-white/70 text-sm">Window starts at</Label>
-                    <Input
-                      type="time"
-                      value={data.eating_window_start}
-                      onChange={(e) => setData({ ...data, eating_window_start: e.target.value })}
-                      className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                    />
-                  </div>
-
-                  {/* Window summary */}
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
-                    <p className="text-emerald-300 text-sm font-medium">
-                      {data.eating_window_start} — {windowEnd}
-                    </p>
-                    <p className="text-emerald-300/60 text-xs mt-0.5">
-                      {eatingHours}h eating · {data.max_meals} meals ({Math.min(2, data.max_meals)} main + {Math.max(0, data.max_meals - 2)} snack{data.max_meals - 2 !== 1 ? "s" : ""})
-                    </p>
-                  </div>
-
                   {/* Max meals */}
                   <div className="space-y-1">
                     <Label className="text-white/60 text-xs">Meals per day</Label>
@@ -572,6 +528,16 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     </div>
                     <p className="text-white/30 text-[10px]">
                       {Math.min(2, data.max_meals)} main (lunch + after work) + {Math.max(0, data.max_meals - 2)} snack{data.max_meals - 2 !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                    <p className="text-emerald-300 text-sm font-medium">
+                      {24 - eatingHours}h fasting / {eatingHours}h eating
+                    </p>
+                    <p className="text-emerald-300/60 text-xs mt-0.5">
+                      {data.max_meals} meals · window starts when you eat
                     </p>
                   </div>
 
