@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen } from "lucide-react";
+import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen, Bell, BellOff } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -37,6 +37,16 @@ export default function Settings() {
     notification_start_time: userSettings.notification_start_time || DEFAULT_WORK_HOURS.morning_start,
     notification_end_time: userSettings.notification_end_time || DEFAULT_WORK_HOURS.afternoon_end,
   });
+
+  const [browserPermission, setBrowserPermission] = useState(
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
+  );
+
+  const requestBrowserPermission = async () => {
+    if (typeof Notification === "undefined") return;
+    const result = await Notification.requestPermission();
+    setBrowserPermission(result);
+  };
 
   const saveMutation = useMutation({
     mutationFn: (data) => userSettingsService.save(data, userSettings.id),
@@ -200,32 +210,59 @@ export default function Settings() {
                 <Switch
                   id="notifications-toggle"
                   checked={formData.notifications_enabled}
-                  onCheckedChange={(checked) => setFormData({ ...formData, notifications_enabled: checked })}
+                  onCheckedChange={(checked) => {
+                    setFormData({ ...formData, notifications_enabled: checked });
+                    if (checked && browserPermission !== "granted") {
+                      requestBrowserPermission();
+                    }
+                  }}
                 />
               </div>
               {formData.notifications_enabled && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="notif-start" className="text-white/70 text-sm">Start Time</Label>
-                    <Input
-                      id="notif-start"
-                      type="time"
-                      value={formData.notification_start_time}
-                      onChange={(e) => setFormData({ ...formData, notification_start_time: e.target.value })}
-                      className="bg-white/5 border-white/10 text-white mt-2"
-                    />
+                <>
+                  {/* Browser permission status */}
+                  {browserPermission === "granted" ? (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <Bell className="w-4 h-4 text-emerald-400" />
+                      <p className="text-emerald-300 text-xs">Browser notifications enabled — you'll be notified even with the tab in background</p>
+                    </div>
+                  ) : browserPermission === "denied" ? (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                      <BellOff className="w-4 h-4 text-red-400" />
+                      <p className="text-red-300 text-xs">Browser notifications blocked. Enable them in your browser settings to receive break reminders in background.</p>
+                    </div>
+                  ) : browserPermission !== "unsupported" ? (
+                    <button
+                      onClick={requestBrowserPermission}
+                      className="w-full flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15 transition-all"
+                    >
+                      <Bell className="w-4 h-4 text-amber-400" />
+                      <p className="text-amber-300 text-xs text-left">Click to enable browser notifications — get break reminders even with the tab in background</p>
+                    </button>
+                  ) : null}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="notif-start" className="text-white/70 text-sm">Start Time</Label>
+                      <Input
+                        id="notif-start"
+                        type="time"
+                        value={formData.notification_start_time}
+                        onChange={(e) => setFormData({ ...formData, notification_start_time: e.target.value })}
+                        className="bg-white/5 border-white/10 text-white mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="notif-end" className="text-white/70 text-sm">End Time</Label>
+                      <Input
+                        id="notif-end"
+                        type="time"
+                        value={formData.notification_end_time}
+                        onChange={(e) => setFormData({ ...formData, notification_end_time: e.target.value })}
+                        className="bg-white/5 border-white/10 text-white mt-2"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="notif-end" className="text-white/70 text-sm">End Time</Label>
-                    <Input
-                      id="notif-end"
-                      type="time"
-                      value={formData.notification_end_time}
-                      onChange={(e) => setFormData({ ...formData, notification_end_time: e.target.value })}
-                      className="bg-white/5 border-white/10 text-white mt-2"
-                    />
-                  </div>
-                </div>
+                </>
               )}
             </div>
           </section>
