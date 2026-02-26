@@ -6,7 +6,8 @@ import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
-import { daySessionService, taskService, exerciseService, userSettingsService, authService } from "../api/services";
+import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
+import { useAuth } from "../lib/AuthContext";
 import { hasDailyDefaults } from "../hooks/useDailyDefaults";
 import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS } from "../constants";
 
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
   const { pauseTimer, resumeTimer } = useTimer();
+  const { user: authUser } = useAuth();
 
   const { data: settings = [] } = useQuery({
     queryKey: ["userSettings"],
@@ -76,9 +78,8 @@ export default function Dashboard() {
     else if (hour < 18) setGreeting("Good afternoon");
     else setGreeting("Good evening");
 
-    authService.me().then((user) => {
-      setUserName(userSettings.display_name || user?.full_name?.split(" ")[0] || "");
-    }).catch(() => {});
+    const fallbackName = authUser?.user_metadata?.full_name?.split(" ")[0] || authUser?.email?.split("@")[0] || "";
+    setUserName(userSettings.display_name || fallbackName);
   }, [userSettings]);
 
   const { data: sessions = [], isLoading } = useQuery({
