@@ -123,22 +123,40 @@ export default function Dashboard() {
   // Check for due body breaks every minute
   useEffect(() => {
     if (!session || session.status !== "active" || session.meeting_mode) return;
+    // Respect notifications_enabled setting
+    if (userSettings.notifications_enabled === false) return;
+
     const checkBreaks = () => {
       if (activeBreakNotification) return; // already showing one
-      const schedule = session.body_break_schedule || [];
+
+      // Respect notification time window
       const now = new Date();
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const startMinutes = toMinutes(userSettings.notification_start_time || DEFAULT_WORK_HOURS.morning_start);
+      const endMinutes = toMinutes(userSettings.notification_end_time || DEFAULT_WORK_HOURS.afternoon_end);
+      if (nowMinutes < startMinutes || nowMinutes > endMinutes) return;
+
+      const schedule = session.body_break_schedule || [];
       const dueBreak = schedule.find(
         (b) => !b.completed && toMinutes(b.time) <= nowMinutes
       );
       if (dueBreak) {
         setActiveBreakNotification(dueBreak);
+        // Send browser notification if tab is not visible
+        if (document.hidden && Notification.permission === "granted") {
+          const exercise = exercises.find((e) => e.id === dueBreak.exercise_id);
+          new Notification("Time for a break!", {
+            body: exercise?.name || dueBreak.exercise_name || "Move your body, clear your mind",
+            icon: "/favicon.ico",
+            tag: "nomadbalance-break",
+          });
+        }
       }
     };
     checkBreaks(); // check immediately
     breakCheckRef.current = setInterval(checkBreaks, ONE_MINUTE_MS);
     return () => clearInterval(breakCheckRef.current);
-  }, [session, activeBreakNotification]);
+  }, [session, activeBreakNotification, userSettings, exercises]);
 
   const toMinutes = (t) => {
     const [h, m] = (t || "00:00").split(":").map(Number);
