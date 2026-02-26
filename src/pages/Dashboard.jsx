@@ -6,7 +6,8 @@ import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
-import { daySessionService, taskService, exerciseService, userSettingsService, authService } from "../api/services";
+import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
+import { useAuth } from "../lib/AuthContext";
 import { hasDailyDefaults } from "../hooks/useDailyDefaults";
 import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS } from "../constants";
 
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [userName, setUserName] = useState("");
   const [greeting, setGreeting] = useState("");
   const [showOnboarding, setShowOnboarding] = useState(() => {
+    // Check localStorage first for instant response; backend check comes via useEffect
     return !localStorage.getItem("nomadbalance_onboarding_completed");
   });
   const [activeBreakNotification, setActiveBreakNotification] = useState(null);
@@ -53,6 +55,7 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
   const { pauseTimer, resumeTimer } = useTimer();
+  const { user: authUser } = useAuth();
 
   const { data: settings = [] } = useQuery({
     queryKey: ["userSettings"],
@@ -61,15 +64,22 @@ export default function Dashboard() {
 
   const userSettings = settings[0] || {};
 
+  // Sync onboarding state from backend: if backend says completed, dismiss onboarding and sync localStorage
+  useEffect(() => {
+    if (userSettings.onboarding_completed && showOnboarding) {
+      localStorage.setItem("nomadbalance_onboarding_completed", "true");
+      setShowOnboarding(false);
+    }
+  }, [userSettings.onboarding_completed, showOnboarding]);
+
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) setGreeting("Good morning");
     else if (hour < 18) setGreeting("Good afternoon");
     else setGreeting("Good evening");
 
-    authService.me().then((user) => {
-      setUserName(userSettings.display_name || user?.full_name?.split(" ")[0] || "");
-    }).catch(() => {});
+    const fallbackName = authUser?.user_metadata?.full_name?.split(" ")[0] || authUser?.email?.split("@")[0] || "";
+    setUserName(userSettings.display_name || fallbackName);
   }, [userSettings]);
 
   const { data: sessions = [], isLoading } = useQuery({
@@ -190,6 +200,12 @@ export default function Dashboard() {
   const handleOnboardingComplete = () => {
     localStorage.setItem("nomadbalance_onboarding_completed", "true");
     setShowOnboarding(false);
+    // Persist to backend so it survives browser data clears
+    userSettingsService.save(
+      { ...userSettings, onboarding_completed: true },
+      userSettings.id
+    ).then(() => queryClient.invalidateQueries({ queryKey: ["userSettings"] }))
+     .catch(() => {}); // localStorage already set as fallback
   };
 
   const createSession = useMutation({
