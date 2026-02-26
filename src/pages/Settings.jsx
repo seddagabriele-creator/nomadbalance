@@ -502,6 +502,13 @@ export default function Settings() {
                 variant="ghost"
                 onClick={() => {
                   localStorage.removeItem("nomadbalance_onboarding_completed");
+                  // Also clear backend flag
+                  if (userSettings.id) {
+                    userSettingsService.save(
+                      { ...userSettings, onboarding_completed: false },
+                      userSettings.id
+                    ).catch(() => {});
+                  }
                   window.location.href = createPageUrl("Dashboard");
                 }}
                 className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 text-sm"

@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [userName, setUserName] = useState("");
   const [greeting, setGreeting] = useState("");
   const [showOnboarding, setShowOnboarding] = useState(() => {
+    // Check localStorage first for instant response; backend check comes via useEffect
     return !localStorage.getItem("nomadbalance_onboarding_completed");
   });
   const [activeBreakNotification, setActiveBreakNotification] = useState(null);
@@ -60,6 +61,14 @@ export default function Dashboard() {
   });
 
   const userSettings = settings[0] || {};
+
+  // Sync onboarding state from backend: if backend says completed, dismiss onboarding and sync localStorage
+  useEffect(() => {
+    if (userSettings.onboarding_completed && showOnboarding) {
+      localStorage.setItem("nomadbalance_onboarding_completed", "true");
+      setShowOnboarding(false);
+    }
+  }, [userSettings.onboarding_completed, showOnboarding]);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -190,6 +199,12 @@ export default function Dashboard() {
   const handleOnboardingComplete = () => {
     localStorage.setItem("nomadbalance_onboarding_completed", "true");
     setShowOnboarding(false);
+    // Persist to backend so it survives browser data clears
+    userSettingsService.save(
+      { ...userSettings, onboarding_completed: true },
+      userSettings.id
+    ).then(() => queryClient.invalidateQueries({ queryKey: ["userSettings"] }))
+     .catch(() => {}); // localStorage already set as fallback
   };
 
   const createSession = useMutation({
