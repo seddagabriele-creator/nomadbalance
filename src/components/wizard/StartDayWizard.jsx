@@ -63,7 +63,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
 
   const defaults = resumeDefaults || loadedDefaults;
 
-  const [step, setStep] = useState(useDefaults ? 1 : resumeSession ? 0 : -1);
+  const [step, setStep] = useState(useDefaults ? 0 : resumeSession ? 0 : -1);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [tasks, setTasks] = useState([]);
   const [showPreviousSettings, setShowPreviousSettings] = useState(false);
@@ -172,18 +172,16 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   const currentStep = step >= 0 ? STEPS[step] : STEPS[0];
 
   const handleNext = async () => {
-    // If using defaults, show fuel (step 1), then body (step 3) if manual exercises, then tasks (step 0)
+    // If using defaults, show only tasks (step 0), then body (step 3) if manual exercises, then complete
     if (useDefaults) {
-      if (step === 1) {
-        // If user chose "I'll choose in the wizard" for exercises, show body step
+      if (step === 0) {
+        // If user chose manual exercises, show body step; otherwise complete
         if (exerciseSelection === "manual") {
           setStep(3);
         } else {
-          setStep(0); // Skip body, go to tasks
+          await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
         }
       } else if (step === 3) {
-        setStep(0); // Body done, go to tasks
-      } else if (step === 0) {
         await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
       }
     } else if (step < 3) {
@@ -196,16 +194,9 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   const handleBack = () => {
     if (useDefaults) {
       if (step === 0) {
-        // From tasks, go back to body (if manual) or fuel
-        if (exerciseSelection === "manual") {
-          setStep(3);
-        } else {
-          setStep(1);
-        }
+        onCancel(); // From tasks (first step in defaults flow), cancel
       } else if (step === 3) {
-        setStep(1); // From body, go back to fuel
-      } else {
-        onCancel(); // From fuel (first step in defaults flow), cancel
+        setStep(0); // From body, go back to tasks
       }
     } else if (step > 0) {
       setStep(step - 1);
@@ -389,7 +380,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
               <div>
                 {!useDefaults && <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>}
                 <h2 className="text-white font-bold text-lg">
-                  {useDefaults ? (step === 1 ? "Fuel Check" : step === 3 ? "Body Pledge" : "Today's Tasks") : currentStep.label}
+                  {useDefaults ? (step === 3 ? "Body Pledge" : "Today's Tasks") : currentStep.label}
                 </h2>
               </div>
             </div>
