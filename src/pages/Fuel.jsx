@@ -99,7 +99,6 @@ export default function Fuel() {
       fasting_preset: preset?.label || "Custom",
       custom_fasting_hours: selectedPreset === FASTING_PRESETS.length - 1 ? customFasting : null,
       max_meals: maxMeals,
-      eating_window_start_time: windowStartEdit,
       eating_window_start: windowStartEdit,
       eating_window_end: newEnd,
     });

@@ -339,8 +339,11 @@ export default function Dashboard() {
       const windowStartTime = wizardData.eating_window_start_time || "12:00";
       const windowEndTime = calculateEatingWindowEnd(windowStartTime, eatingHours);
 
+      // Strip client-only fields before sending to Supabase
+      const { eating_window_start_time: _ewst, ...sessionData } = wizardData;
+
       const newSession = await daySessionService.create({
-        ...wizardData,
+        ...sessionData,
         eating_window_start: windowStartTime,
         eating_window_end: windowEndTime,
         meals_logged: [],
@@ -800,13 +803,13 @@ export default function Dashboard() {
               // When resuming with changes, update the existing session instead of creating a new one
               if (session) {
                 // Recalculate eating window from new settings
-                const updateData = { ...wizardData };
+                const { eating_window_start_time: _ewst2, ...resumeData } = wizardData;
                 const resumeEatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
                 const resumeWindowStart = wizardData.eating_window_start_time || session.eating_window_start || "12:00";
-                updateData.eating_window_start = resumeWindowStart;
-                updateData.eating_window_end = calculateEatingWindowEnd(resumeWindowStart, resumeEatingHours);
+                resumeData.eating_window_start = resumeWindowStart;
+                resumeData.eating_window_end = calculateEatingWindowEnd(resumeWindowStart, resumeEatingHours);
                 await daySessionService.update(session.id, {
-                  ...updateData,
+                  ...resumeData,
                   status: "active",
                   started_at: new Date().toTimeString().slice(0, 5),
                   selected_exercise_groups: selectedGroups,
