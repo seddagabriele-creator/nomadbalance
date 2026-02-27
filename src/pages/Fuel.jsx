@@ -541,7 +541,7 @@ export default function Fuel() {
                     </p>
                   )}
                   <p className="text-emerald-300/50 text-xs mt-1">
-                    {maxMeals} meals: {Math.min(2, maxMeals)} main + {Math.max(0, maxMeals - 2)} snack{maxMeals - 2 !== 1 ? "s" : ""}
+                    {maxMeals === 2 ? "Lunch & Dinner" : maxMeals === 3 ? "Breakfast, Lunch & Dinner" : `Breakfast, Lunch, Dinner + ${maxMeals - 3} snack${maxMeals - 3 !== 1 ? "s" : ""}`}
                   </p>
                 </div>
 

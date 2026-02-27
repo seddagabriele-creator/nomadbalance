@@ -356,7 +356,7 @@ export default function Settings() {
                 {/* Meal breakdown info */}
                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
                   <p className="text-white/40 text-xs">
-                    2 main meals (lunch + after work) + {Math.max(0, (localDefaults.max_meals || 3) - 2)} snack{(localDefaults.max_meals || 3) - 2 !== 1 ? "s" : ""}
+                    {(localDefaults.max_meals || 3) === 2 ? "Lunch & Dinner" : (localDefaults.max_meals || 3) === 3 ? "Breakfast, Lunch & Dinner" : `Breakfast, Lunch, Dinner + ${(localDefaults.max_meals || 3) - 3} snack${(localDefaults.max_meals || 3) - 3 !== 1 ? "s" : ""}`}
                   </p>
                 </div>
               </div>

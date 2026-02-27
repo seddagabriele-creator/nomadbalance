@@ -519,7 +519,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                       ))}
                     </div>
                     <p className="text-white/30 text-[10px]">
-                      {Math.min(2, data.max_meals)} main (lunch + after work) + {Math.max(0, data.max_meals - 2)} snack{data.max_meals - 2 !== 1 ? "s" : ""}
+                      {data.max_meals === 2 ? "Lunch & Dinner" : data.max_meals === 3 ? "Breakfast, Lunch & Dinner" : `Breakfast, Lunch, Dinner + ${data.max_meals - 3} snack${data.max_meals - 3 !== 1 ? "s" : ""}`}
                     </p>
                   </div>
 
