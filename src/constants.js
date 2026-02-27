@@ -71,7 +71,7 @@ export const GROUP_LABELS = {
 // Daily defaults initial values
 export const INITIAL_DAILY_DEFAULTS = {
   fasting_preset: DEFAULT_FASTING_PRESET,
-  eating_window_start: null,
+  eating_window_start_time: DEFAULT_EATING_WINDOW_START,
   custom_fasting_hours: null,
   max_meals: DEFAULT_MAX_MEALS,
   focus_work_minutes: DEFAULT_WORK_MINUTES,

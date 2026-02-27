@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
 import { useAuth } from "../lib/AuthContext";
 import { hasDailyDefaults } from "../hooks/useDailyDefaults";
-import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS } from "../constants";
+import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, getEatingHours, calculateEatingWindowEnd } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -334,11 +334,15 @@ export default function Dashboard() {
         });
       }
 
-      // Eating window is now dynamic - set when user taps "Start eating" in Fuel page
+      // Auto-calculate eating window from default start time
+      const eatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
+      const windowStartTime = wizardData.eating_window_start_time || "12:00";
+      const windowEndTime = calculateEatingWindowEnd(windowStartTime, eatingHours);
+
       const newSession = await daySessionService.create({
         ...wizardData,
-        eating_window_start: null,
-        eating_window_end: null,
+        eating_window_start: windowStartTime,
+        eating_window_end: windowEndTime,
         meals_logged: [],
         body_breaks_target: breaksCount,
         date: today,
@@ -795,12 +799,12 @@ export default function Dashboard() {
             onComplete={resumeWithWizard ? async (wizardData, tasks, selectedGroups) => {
               // When resuming with changes, update the existing session instead of creating a new one
               if (session) {
-                // Keep existing eating window if already opened, otherwise leave null
+                // Recalculate eating window from new settings
                 const updateData = { ...wizardData };
-                if (!session.eating_window_start) {
-                  updateData.eating_window_start = null;
-                  updateData.eating_window_end = null;
-                }
+                const resumeEatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
+                const resumeWindowStart = wizardData.eating_window_start_time || session.eating_window_start || "12:00";
+                updateData.eating_window_start = resumeWindowStart;
+                updateData.eating_window_end = calculateEatingWindowEnd(resumeWindowStart, resumeEatingHours);
                 await daySessionService.update(session.id, {
                   ...updateData,
                   status: "active",
