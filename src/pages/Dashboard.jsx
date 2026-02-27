@@ -575,18 +575,32 @@ export default function Dashboard() {
 
         {/* Grid */}
         <div className="grid grid-cols-2 gap-4">
-          <Link to={createPageUrl("Fuel")} className="h-[170px]">
-            <FuelCard session={session} />
-          </Link>
-          <Link to={createPageUrl("Flow")} className="h-[170px]">
-            <FlowCard session={session} onSessionComplete={handleSessionComplete} />
-          </Link>
-          <Link to={createPageUrl("Body")} className="h-[170px]">
-            <BodyCard session={session} />
-          </Link>
-          <Link to={createPageUrl("Journal")} className="h-[170px]">
-            <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />
-          </Link>
+          {isLoading ? (
+            <>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="h-[170px] rounded-2xl bg-white/5 border border-white/10 animate-pulse p-5">
+                  <div className="w-8 h-8 rounded-xl bg-white/10 mb-3" />
+                  <div className="w-20 h-3 rounded bg-white/10 mb-2" />
+                  <div className="w-28 h-2 rounded bg-white/5" />
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <Link to={createPageUrl("Fuel")} className="h-[170px]">
+                <FuelCard session={session} />
+              </Link>
+              <Link to={createPageUrl("Flow")} className="h-[170px]">
+                <FlowCard session={session} onSessionComplete={handleSessionComplete} />
+              </Link>
+              <Link to={createPageUrl("Body")} className="h-[170px]">
+                <BodyCard session={session} />
+              </Link>
+              <Link to={createPageUrl("Journal")} className="h-[170px]">
+                <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Action Buttons */}
