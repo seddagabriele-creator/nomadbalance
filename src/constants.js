@@ -45,7 +45,7 @@ export const FASTING_PRESETS = [
 export function getEatingHours(preset, customFastingHours) {
   const found = FASTING_PRESETS.find(p => p.label === preset);
   if (found && found.eating !== null) return found.eating;
-  if (preset === "custom" && customFastingHours) return 24 - customFastingHours;
+  if (customFastingHours) return 24 - customFastingHours;
   return 8;
 }
 

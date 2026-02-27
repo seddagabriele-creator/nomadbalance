@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Waves, Wind, Check, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils";
+import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 import { daySessionService } from "../api/services";
 import useDailyDefaults from "../hooks/useDailyDefaults";
@@ -33,7 +33,7 @@ const RELAX_SOUNDS = [
 
 export default function Flow() {
   const queryClient = useQueryClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
   const { updateDefaults } = useDailyDefaults();
 
   const { data: sessions = [] } = useQuery({

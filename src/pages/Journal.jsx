@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils";
+import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
@@ -18,7 +18,7 @@ import TaskHistoryCalendar from "../components/journal/TaskHistoryCalendar";
 
 export default function Journal() {
   const queryClient = useQueryClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showWorkDayTasks, setShowWorkDayTasks] = useState(true);
   const [editingAlarm, setEditingAlarm] = useState(null);

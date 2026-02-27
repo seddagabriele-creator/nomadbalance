@@ -33,7 +33,16 @@ function getSmartFuelStatus(session) {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 
-  if (nowMinutes < startMin) {
+  // Handle midnight wraparound (e.g. 20:00 — 04:00)
+  const crossesMidnight = endMin <= startMin;
+  const isEating = crossesMidnight
+    ? (nowMinutes >= startMin || nowMinutes < endMin)
+    : (nowMinutes >= startMin && nowMinutes < endMin);
+  const isBefore = crossesMidnight
+    ? (!isEating && nowMinutes < startMin)
+    : (nowMinutes < startMin);
+
+  if (isBefore) {
     const remaining = startMin - nowMinutes;
     return {
       icon: "droplets",
@@ -41,9 +50,11 @@ function getSmartFuelStatus(session) {
       detail: `Window opens in ${fmtRemaining(remaining)}`,
       extra: `${mealsTarget} meals planned`,
     };
-  } else if (nowMinutes < endMin) {
+  } else if (isEating) {
+    const windowRemaining = crossesMidnight
+      ? (nowMinutes >= startMin ? (1440 - nowMinutes + endMin) : (endMin - nowMinutes))
+      : (endMin - nowMinutes);
     if (mealsLeft > 0) {
-      const windowRemaining = endMin - nowMinutes;
       return {
         icon: "utensils",
         label: `${mealsLogged.length}/${mealsTarget} meals`,
@@ -52,7 +63,6 @@ function getSmartFuelStatus(session) {
       };
     }
 
-    const windowRemaining = endMin - nowMinutes;
     return {
       icon: "check",
       label: "All meals done",
