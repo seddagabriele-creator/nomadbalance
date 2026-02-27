@@ -5,7 +5,7 @@ import { GROUP_LABELS } from "../constants";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Activity, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils";
+import { createPageUrl, getLocalDateString } from "../utils";
 import { AnimatePresence } from "framer-motion";
 import ExerciseDetail from "../components/body/ExerciseDetail";
 
@@ -21,7 +21,7 @@ const GROUP_OBJECTIVES = {
 
 export default function Body() {
   const [selectedExercise, setSelectedExercise] = useState(null);
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
 
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises"],

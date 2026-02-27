@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Play, Pencil } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils";
+import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
 import { useAuth } from "../lib/AuthContext";
@@ -53,7 +53,7 @@ export default function Dashboard() {
   const breakCheckRef = React.useRef(null);
 
   const queryClient = useQueryClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
   const { pauseTimer, resumeTimer } = useTimer();
   const { user: authUser } = useAuth();
 
@@ -267,7 +267,8 @@ export default function Dashboard() {
       // Select exercises based on user choice
       let availableExercises = exercises;
       if (selectedGroups && selectedGroups.length > 0) {
-        availableExercises = exercises.filter(ex => selectedGroups.includes(ex.group));
+        const filtered = exercises.filter(ex => selectedGroups.includes(ex.group));
+        if (filtered.length > 0) availableExercises = filtered;
       }
 
       // Smart: check feasibility with remaining time and auto-adjust
@@ -288,8 +289,12 @@ export default function Dashboard() {
       // Use actual start time (now or scheduled start, whichever is later)
       const now = new Date();
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const workStartMinutes = parseInt(wizardData.work_start_today.split(":")[0]) * 60 + parseInt(wizardData.work_start_today.split(":")[1]);
-      const workEndMinutes = parseInt(wizardData.work_end_today.split(":")[0]) * 60 + parseInt(wizardData.work_end_today.split(":")[1]);
+      const parseTime = (t, fallback) => {
+        const parts = (t || fallback).split(":");
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      };
+      const workStartMinutes = parseTime(wizardData.work_start_today, "10:00");
+      const workEndMinutes = parseTime(wizardData.work_end_today, "19:00");
       const effectiveStart = Math.max(nowMinutes, workStartMinutes);
       const effectiveDuration = workEndMinutes - effectiveStart;
 
@@ -309,6 +314,7 @@ export default function Dashboard() {
         const preferredExercises = exercisePool.filter(ex => !usedGroups.includes(ex.group));
         const finalPool = preferredExercises.length > 0 ? preferredExercises : exercisePool;
 
+        if (finalPool.length === 0) continue;
         const exercise = finalPool[Math.floor(Math.random() * finalPool.length)];
 
         // Evenly space breaks from effective start to end

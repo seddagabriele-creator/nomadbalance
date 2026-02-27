@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock, RotateCcw } from "lucide-react";
 import { analyzeBreakFeasibility, calculateSessionConflict } from "../../utils/breakFeasibility";
+import { getLocalDateString } from "../../utils";
 import { FASTING_PRESETS, getEatingHours, calculateEatingWindowEnd } from "../../constants";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -97,7 +98,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     queryFn: async () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split("T")[0];
+      const yesterdayStr = getLocalDateString(yesterday);
       return daySessionService.getByDate(yesterdayStr);
     },
   });

@@ -8,12 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { ArrowLeft, Droplets, Utensils, Check, X, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils";
+import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 
 export default function Fuel() {
   const queryClient = useQueryClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
@@ -31,7 +31,7 @@ export default function Fuel() {
   });
   const [customFasting, setCustomFasting] = useState(session?.custom_fasting_hours || 16);
   const [maxMeals, setMaxMeals] = useState(session?.max_meals || 3);
-  const [windowStartEdit, setWindowStartEdit] = useState(session?.eating_window_start || session?.eating_window_start_time || "12:00");
+  const [windowStartEdit, setWindowStartEdit] = useState(session?.eating_window_start || "12:00");
   const [showSettings, setShowSettings] = useState(false);
 
   const preset = FASTING_PRESETS[selectedPreset];
@@ -61,9 +61,16 @@ export default function Fuel() {
     const [eh, em] = windowEnd.split(":").map(Number);
     startMin = sh * 60 + sm;
     endMin = eh * 60 + em;
-    isBeforeWindow = nowMinutes < startMin;
-    isEatingWindow = nowMinutes >= startMin && nowMinutes < endMin;
-    isAfterWindow = nowMinutes >= endMin;
+    if (endMin > startMin) {
+      isBeforeWindow = nowMinutes < startMin;
+      isEatingWindow = nowMinutes >= startMin && nowMinutes < endMin;
+      isAfterWindow = nowMinutes >= endMin;
+    } else {
+      // Window crosses midnight (e.g. 20:00 — 04:00)
+      isEatingWindow = nowMinutes >= startMin || nowMinutes < endMin;
+      isBeforeWindow = !isEatingWindow && nowMinutes < startMin;
+      isAfterWindow = !isEatingWindow && nowMinutes >= endMin;
+    }
   }
 
   const updateSession = useMutation({
@@ -75,6 +82,10 @@ export default function Fuel() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["daySession"] });
+    },
+    onError: (error) => {
+      console.error("Fuel update failed:", error);
+      toast.error("Failed to save. Please try again.");
     },
   });
 
@@ -187,7 +198,13 @@ export default function Fuel() {
                       {isBeforeWindow
                         ? `Window opens at ${windowStart} · in ${fmtRemaining(startMin - nowMinutes)}`
                         : isEatingWindow
-                          ? `${windowStart} — ${windowEnd} · ${fmtRemaining(endMin - nowMinutes)} left`
+                          ? `${windowStart} — ${windowEnd} · ${fmtRemaining(
+                              endMin > startMin
+                                ? endMin - nowMinutes
+                                : nowMinutes >= startMin
+                                  ? 1440 - nowMinutes + endMin
+                                  : endMin - nowMinutes
+                            )} left`
                           : `Window closed · ${windowStart} — ${windowEnd}`
                       }
                     </p>
