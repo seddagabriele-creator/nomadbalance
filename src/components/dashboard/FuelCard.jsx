@@ -10,7 +10,7 @@ function getSmartFuelStatus(session) {
 
   if (!session.eating_window_start || !session.eating_window_end) {
     const preset = session.fasting_preset || "16/8";
-    return { label: "Fasting", detail: "Tap Fuel to start eating", icon: "droplets", extra: `${preset} protocol` };
+    return { label: "Fasting", detail: "Window not set", icon: "droplets", extra: `${preset} protocol` };
   }
 
   const now = new Date();

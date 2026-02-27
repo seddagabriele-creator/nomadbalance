@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock, RotateCcw } from "lucide-react";
 import { analyzeBreakFeasibility, calculateSessionConflict } from "../../utils/breakFeasibility";
-import { FASTING_PRESETS, getEatingHours } from "../../constants";
+import { FASTING_PRESETS, getEatingHours, calculateEatingWindowEnd } from "../../constants";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -49,7 +49,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   // When resuming, pre-fill from existing session
   const resumeDefaults = resumeSession ? {
     fasting_preset: resumeSession.fasting_preset || "16/8",
-    eating_window_start: null,
+    eating_window_start_time: resumeSession.eating_window_start_time || resumeSession.eating_window_start || "12:00",
     custom_fasting_hours: resumeSession.custom_fasting_hours || null,
     max_meals: resumeSession.max_meals || 3,
     focus_work_minutes: resumeSession.focus_work_minutes || 45,
@@ -77,7 +77,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   );
   const [data, setData] = useState({
     fasting_preset: defaults?.fasting_preset || "16/8",
-    eating_window_start: null,
+    eating_window_start_time: defaults?.eating_window_start_time || "12:00",
     custom_fasting_hours: defaults?.custom_fasting_hours || null,
     max_meals: defaults?.max_meals || 3,
     focus_work_minutes: defaults?.focus_work_minutes || 45,
@@ -458,7 +458,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
 
                 return (
                 <motion.div key="fuel" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-5">
-                  <p className="text-white/50 text-sm">Choose your fasting plan. The eating window starts when you log your first meal.</p>
+                  <p className="text-white/50 text-sm">Set your fasting plan and when your eating window opens.</p>
 
                   {/* Preset selector */}
                   <div className="space-y-2">
@@ -523,13 +523,24 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     </p>
                   </div>
 
+                  {/* Window start time */}
+                  <div className="space-y-1">
+                    <Label className="text-white/60 text-xs">Window opens at</Label>
+                    <Input
+                      type="time"
+                      value={data.eating_window_start_time}
+                      onChange={(e) => setData({ ...data, eating_window_start_time: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white h-10 w-32"
+                    />
+                  </div>
+
                   {/* Summary */}
                   <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
                     <p className="text-emerald-300 text-sm font-medium">
                       {24 - eatingHours}h fasting / {eatingHours}h eating
                     </p>
                     <p className="text-emerald-300/60 text-xs mt-0.5">
-                      {data.max_meals} meals · window starts when you eat
+                      {data.eating_window_start_time} — {calculateEatingWindowEnd(data.eating_window_start_time, eatingHours)} · {data.max_meals} meals
                     </p>
                   </div>
 
