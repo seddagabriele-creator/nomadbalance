@@ -339,8 +339,6 @@ export default function Dashboard() {
         ...wizardData,
         eating_window_start: null,
         eating_window_end: null,
-        meal_plan: [],
-        snacks_allowed: 0,
         meals_logged: [],
         body_breaks_target: breaksCount,
         date: today,
@@ -802,8 +800,6 @@ export default function Dashboard() {
                 if (!session.eating_window_start) {
                   updateData.eating_window_start = null;
                   updateData.eating_window_end = null;
-                  updateData.meal_plan = [];
-                  updateData.snacks_allowed = 0;
                 }
                 await daySessionService.update(session.id, {
                   ...updateData,

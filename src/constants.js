@@ -58,38 +58,6 @@ export function calculateEatingWindowEnd(startTime, eatingHours) {
   return `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
 }
 
-// Calculate smart meal plan based on work schedule and eating window
-export function calculateMealPlan({ morningEnd, afternoonEnd, windowStart, windowEnd, maxMeals }) {
-  const toMin = (t) => {
-    const [h, m] = (t || "12:00").split(":").map(Number);
-    return h * 60 + m;
-  };
-  const toTime = (m) =>
-    `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-
-  const winStart = toMin(windowStart);
-  const winEnd = toMin(windowEnd);
-  const lunchMin = toMin(morningEnd);
-  const dinnerMin = toMin(afternoonEnd);
-
-  const mainMeals = [];
-
-  // Lunch: at morning work end (lunch break), clamped to eating window
-  const lunchTime = Math.max(lunchMin, winStart);
-  if (lunchTime < winEnd - 30) {
-    mainMeals.push({ type: "lunch", label: "Lunch break", time: toTime(lunchTime), minutes: lunchTime });
-  }
-
-  // Dinner: at afternoon work end, must fit in eating window with 30min margin
-  const dinnerTime = Math.min(dinnerMin, winEnd - 30);
-  if (dinnerTime > (mainMeals[0]?.minutes || winStart) + 60 && dinnerTime >= winStart) {
-    mainMeals.push({ type: "dinner", label: "After work", time: toTime(dinnerTime), minutes: dinnerTime });
-  }
-
-  const snacksAllowed = Math.max(0, (maxMeals || 3) - mainMeals.length);
-
-  return { mainMeals, snacksAllowed };
-}
 
 // Exercise muscle group labels
 export const GROUP_LABELS = {

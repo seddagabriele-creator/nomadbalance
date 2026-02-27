@@ -23,13 +23,9 @@ function getSmartFuelStatus(session) {
   const startMin = toMin(session.eating_window_start);
   const endMin = toMin(session.eating_window_end);
 
-  const mealPlan = session.meal_plan || [];
   const mealsLogged = session.meals_logged || [];
-  const snacksAllowed = session.snacks_allowed || 0;
-
-  const snacksLogged = mealsLogged.filter((m) => m.type === "snack").length;
-  const snacksLeft = Math.max(0, snacksAllowed - snacksLogged);
-  const loggedMainTypes = mealsLogged.filter((m) => m.type !== "snack").map((m) => m.type);
+  const mealsTarget = session.max_meals || 3;
+  const mealsLeft = Math.max(0, mealsTarget - mealsLogged.length);
 
   const fmtRemaining = (mins) => {
     const h = Math.floor(mins / 60);
@@ -39,33 +35,21 @@ function getSmartFuelStatus(session) {
 
   if (nowMinutes < startMin) {
     const remaining = startMin - nowMinutes;
-    const firstMeal = mealPlan[0];
     return {
       icon: "droplets",
       label: "Fasting",
       detail: `Window opens in ${fmtRemaining(remaining)}`,
-      extra: firstMeal ? `First: ${firstMeal.label}` : null,
+      extra: `${mealsTarget} meals planned`,
     };
   } else if (nowMinutes < endMin) {
-    const nextMeal = mealPlan.find((m) => !loggedMainTypes.includes(m.type));
-
-    if (nextMeal) {
-      const diff = nextMeal.minutes - nowMinutes;
-      if (diff > 5) {
-        return {
-          icon: "utensils",
-          label: nextMeal.label,
-          detail: `in ${fmtRemaining(diff)}`,
-          extra: snacksLeft > 0 ? `+ ${snacksLeft} snack${snacksLeft > 1 ? "s" : ""} today` : null,
-        };
-      } else {
-        return {
-          icon: "utensils",
-          label: nextMeal.label,
-          detail: "time to eat!",
-          extra: snacksLeft > 0 ? `+ ${snacksLeft} snack${snacksLeft > 1 ? "s" : ""} today` : null,
-        };
-      }
+    if (mealsLeft > 0) {
+      const windowRemaining = endMin - nowMinutes;
+      return {
+        icon: "utensils",
+        label: `${mealsLogged.length}/${mealsTarget} meals`,
+        detail: `${fmtRemaining(windowRemaining)} left`,
+        extra: `${mealsLeft} meal${mealsLeft > 1 ? "s" : ""} to go`,
+      };
     }
 
     const windowRemaining = endMin - nowMinutes;
@@ -73,14 +57,14 @@ function getSmartFuelStatus(session) {
       icon: "check",
       label: "All meals done",
       detail: `Window: ${fmtRemaining(windowRemaining)} left`,
-      extra: snacksLeft > 0 ? `${snacksLeft} snack${snacksLeft > 1 ? "s" : ""} available` : null,
+      extra: null,
     };
   } else {
     return {
       icon: "droplets",
       label: "Fasting",
-      detail: `Tomorrow at ${session.eating_window_start}`,
-      extra: null,
+      detail: `Window closed`,
+      extra: `${mealsLogged.length}/${mealsTarget} meals today`,
     };
   }
 }
