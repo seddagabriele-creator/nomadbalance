@@ -537,14 +537,19 @@ export default function Settings() {
               </div>
               <Button
                 variant="ghost"
-                onClick={() => {
+                onClick={async () => {
                   localStorage.removeItem("nomadbalance_onboarding_completed");
-                  // Also clear backend flag
+                  sessionStorage.setItem("nomadbalance_replay_onboarding", "true");
+                  // Clear backend flag and wait for it before redirecting
                   if (userSettings.id) {
-                    userSettingsService.save(
-                      { ...userSettings, onboarding_completed: false },
-                      userSettings.id
-                    ).catch(() => {});
+                    try {
+                      await userSettingsService.save(
+                        { ...userSettings, onboarding_completed: false },
+                        userSettings.id
+                      );
+                    } catch (e) {
+                      // localStorage already cleared as fallback
+                    }
                   }
                   window.location.href = createPageUrl("Dashboard");
                 }}
