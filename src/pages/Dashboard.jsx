@@ -66,6 +66,11 @@ export default function Dashboard() {
 
   // Sync onboarding state from backend: if backend says completed, dismiss onboarding and sync localStorage
   useEffect(() => {
+    // Skip if user just requested a replay from Settings — stale cache might still say completed
+    if (sessionStorage.getItem("nomadbalance_replay_onboarding")) {
+      sessionStorage.removeItem("nomadbalance_replay_onboarding");
+      return;
+    }
     if (userSettings.onboarding_completed && showOnboarding) {
       localStorage.setItem("nomadbalance_onboarding_completed", "true");
       setShowOnboarding(false);
@@ -443,7 +448,7 @@ export default function Dashboard() {
       if (!session.meeting_mode) {
         setShowMeetingDialog(true);
       } else {
-        resumeTimer();
+        // Don't auto-resume timer — let the user start it when ready
         updateSession.mutate({ meeting_mode: false });
       }
     }

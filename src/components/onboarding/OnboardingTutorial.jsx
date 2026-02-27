@@ -11,7 +11,7 @@ const STEPS = [
     icon: Compass,
     color: "violet",
     title: "Welcome to NomadBalance",
-    body: "Your daily companion for a better workday. Whether you're at a coffee shop in Bali, a coworking space in Lisbon, or your home office — this app is designed to help you stay focused, build healthy habits, and actually take care of yourself while getting things done.",
+    body: "Your daily companion for a better workday. Whether you're in the office, working from home, at a coworking space, or a coffee shop halfway across the world — this app helps you stay focused, build healthy habits, and actually take care of yourself while getting things done.",
     hint: null,
   },
   {
@@ -60,7 +60,7 @@ const STEPS = [
     icon: Rocket,
     color: "rose",
     title: "You're All Set",
-    body: "That's it. NomadBalance works best when you let it guide your day — start in the morning, follow the rhythm, and let the small habits compound. Your future self will be grateful.",
+    body: "That's it. NomadBalance works best when you let it guide your day — start in the morning, follow the rhythm, and let the small habits add up. Your future self will thank you.",
     hint: null,
   },
 ];
