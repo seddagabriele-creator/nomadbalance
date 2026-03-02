@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Play, Pencil } from "lucide-react";
+import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Play, Pencil, Coffee } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
@@ -22,6 +22,7 @@ import MeetingModeDialog from "../components/MeetingModeDialog";
 import UseDefaultsDialog from "../components/wizard/UseDefaultsDialog";
 import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
 import BreakNotification from "../components/body/BreakNotification";
+import DeskStatusToggle from "../components/dashboard/DeskStatusToggle";
 import { useTimer } from "../components/lib/TimerContext";
 
 import { Button } from "@/components/ui/button";
@@ -125,9 +126,11 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [session]);
 
-  // Check for due body breaks every minute
+  // Check for due body breaks every minute (paused when away from desk)
   useEffect(() => {
     if (!session || session.status !== "active" || session.meeting_mode) return;
+    // Pause break checks when user is away from desk
+    if (session.desk_status === "away") return;
     // Respect notifications_enabled setting
     if (userSettings.notifications_enabled === false) return;
 
@@ -360,6 +363,9 @@ export default function Dashboard() {
         body_break_schedule: schedule,
         selected_exercise_groups: selectedGroups,
         exercises_done_today: [],
+        desk_status: "at_desk",
+        away_since: null,
+        away_log: [],
       });
 
       for (const task of tasks) {
@@ -476,15 +482,62 @@ export default function Dashboard() {
     }
   };
 
+  const handleToggleDeskStatus = () => {
+    if (!session) return;
+
+    if (session.desk_status !== "away") {
+      // Going AWAY: save timestamp, pause timer
+      pauseTimer();
+      updateSession.mutate({
+        desk_status: "away",
+        away_since: new Date().toISOString(),
+      });
+      toast("You're away. Breaks paused.", { icon: "\u2615" });
+    } else {
+      // Coming BACK: shift remaining break times forward by away duration
+      const awaySince = session.away_since ? new Date(session.away_since) : new Date();
+      const awayMinutes = Math.round((Date.now() - awaySince.getTime()) / 60000);
+
+      // Shift all uncompleted breaks forward by the time spent away
+      const updatedSchedule = (session.body_break_schedule || []).map((b) => {
+        if (b.completed) return b;
+        const originalMinutes = toMinutes(b.time);
+        const shiftedMinutes = originalMinutes + awayMinutes;
+        const clampedMinutes = Math.min(shiftedMinutes, 23 * 60 + 59); // cap at 23:59
+        const newTime = `${String(Math.floor(clampedMinutes / 60)).padStart(2, "0")}:${String(clampedMinutes % 60).padStart(2, "0")}`;
+        return { ...b, time: newTime };
+      });
+
+      // Log this away period
+      const awayLog = session.away_log || [];
+      awayLog.push({
+        start: session.away_since,
+        end: new Date().toISOString(),
+        duration_minutes: awayMinutes,
+      });
+
+      updateSession.mutate({
+        desk_status: "at_desk",
+        away_since: null,
+        away_log: awayLog,
+        body_break_schedule: updatedSchedule,
+      });
+      toast.success(`Welcome back! Breaks shifted by ${awayMinutes} min.`);
+    }
+  };
+
   const handleResetDay = () => {
     if (session && window.confirm("Do you really want to reset the day?")) {
-      updateSession.mutate({ 
+      updateSession.mutate({
         status: "standby",
         body_breaks_done: 0,
         focus_sessions_completed: 0,
         meeting_mode: false,
         body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false })),
         exercises_done_today: [],
+        desk_status: "at_desk",
+        away_since: null,
+        away_log: [],
       });
     }
   };
@@ -526,6 +579,12 @@ export default function Dashboard() {
               </h1>
             </div>
             <div className="flex items-center gap-2">
+              {isActive && session?.desk_status === "away" && (
+                <div className="flex items-center gap-1.5 bg-sky-500/20 border border-sky-500/30 rounded-full px-3 py-1">
+                  <Coffee className="w-3 h-3 text-sky-400" />
+                  <span className="text-sky-300 text-xs font-medium">Away</span>
+                </div>
+              )}
               {isActive && session?.meeting_mode && (
                 <div className="flex items-center gap-1.5 bg-amber-500/20 border border-amber-500/30 rounded-full px-3 py-1">
                   <Users className="w-3 h-3 text-amber-400" />
@@ -561,10 +620,21 @@ export default function Dashboard() {
 
           {isActive && (
             <div className="flex items-center gap-2 mt-3">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-emerald-400/70 text-xs font-medium">
-                Day active since {session.started_at}
-              </span>
+              {session.desk_status === "away" ? (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                  <span className="text-sky-400/70 text-xs font-medium">
+                    Away from desk
+                  </span>
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-400/70 text-xs font-medium">
+                    Day active since {session.started_at}
+                  </span>
+                </>
+              )}
             </div>
           )}
           {isCompleted && (
@@ -653,32 +723,37 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            <div className="mt-3 flex gap-3">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-3 flex gap-3"
+            >
+              <DeskStatusToggle
+                isAway={session.desk_status === "away"}
+                awaySince={session.away_since}
+                onToggle={handleToggleDeskStatus}
+              />
               <motion.button
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={toggleMeetingMode}
-                className={`flex-1 h-12 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
+                className={`h-12 px-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
                   session.meeting_mode
                     ? "bg-amber-500/20 border border-amber-500/30 text-amber-300"
                     : "bg-white/10 border border-white/10 text-white/70 hover:bg-white/15"
                 }`}
               >
                 <Users className="w-4 h-4" />
-                {session.meeting_mode ? "IN MEETING" : "MEETING"}
+                {session.meeting_mode ? "MTG" : "MTG"}
               </motion.button>
               <motion.button
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={handleEndDay}
-                className="h-12 px-5 rounded-2xl bg-white/10 border border-white/10 text-white/50 hover:text-white hover:bg-white/15 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                className="h-12 px-4 rounded-2xl bg-white/10 border border-white/10 text-white/50 hover:text-white hover:bg-white/15 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
               >
                 <Moon className="w-4 h-4" />
                 End
               </motion.button>
-            </div>
+            </motion.div>
           </>
         )}
 
