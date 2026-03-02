@@ -363,6 +363,9 @@ export default function Dashboard() {
         body_break_schedule: schedule,
         selected_exercise_groups: selectedGroups,
         exercises_done_today: [],
+        desk_status: "at_desk",
+        away_since: null,
+        away_log: [],
       });
 
       for (const task of tasks) {
