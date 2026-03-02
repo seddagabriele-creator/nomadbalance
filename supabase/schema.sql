@@ -45,6 +45,9 @@ CREATE TABLE day_sessions (
   max_meals INT DEFAULT 3,
   work_start_today TEXT,
   work_end_today TEXT,
+  desk_status TEXT DEFAULT 'at_desk',
+  away_since TIMESTAMPTZ,
+  away_log JSONB DEFAULT '[]',
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
