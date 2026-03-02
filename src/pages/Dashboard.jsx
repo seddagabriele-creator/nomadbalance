@@ -363,9 +363,6 @@ export default function Dashboard() {
         body_break_schedule: schedule,
         selected_exercise_groups: selectedGroups,
         exercises_done_today: [],
-        desk_status: "at_desk",
-        away_since: null,
-        away_log: [],
       });
 
       for (const task of tasks) {
@@ -485,6 +482,12 @@ export default function Dashboard() {
   const handleToggleDeskStatus = () => {
     if (!session) return;
 
+    // Skip if desk tracking columns don't exist yet
+    if (!("desk_status" in session)) {
+      toast.error("Desk tracking not available. Please add desk_status, away_since, away_log columns to day_sessions.");
+      return;
+    }
+
     if (session.desk_status !== "away") {
       // Going AWAY: save timestamp, pause timer
       pauseTimer();
@@ -528,17 +531,21 @@ export default function Dashboard() {
 
   const handleResetDay = () => {
     if (session && window.confirm("Do you really want to reset the day?")) {
-      updateSession.mutate({
+      const resetData = {
         status: "standby",
         body_breaks_done: 0,
         focus_sessions_completed: 0,
         meeting_mode: false,
         body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false })),
         exercises_done_today: [],
-        desk_status: "at_desk",
-        away_since: null,
-        away_log: [],
-      });
+      };
+      // Only include desk tracking fields if the session already has them (columns exist)
+      if ("desk_status" in session) {
+        resetData.desk_status = "at_desk";
+        resetData.away_since = null;
+        resetData.away_log = [];
+      }
+      updateSession.mutate(resetData);
     }
   };
 
