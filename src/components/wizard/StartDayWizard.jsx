@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock, RotateCcw } from "lucide-react";
+import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock, RotateCcw, X } from "lucide-react";
 import { analyzeBreakFeasibility, calculateSessionConflict } from "../../utils/breakFeasibility";
 import { getLocalDateString } from "../../utils";
 import { FASTING_PRESETS, getEatingHours, calculateEatingWindowEnd } from "../../constants";
@@ -378,12 +378,18 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
               <div className={`w-10 h-10 rounded-xl ${STEP_COLOR_MAP[currentStep.color].bg} flex items-center justify-center`}>
                 <currentStep.icon className={`w-5 h-5 ${STEP_COLOR_MAP[currentStep.color].text}`} />
               </div>
-              <div>
+              <div className="flex-1">
                 {!useDefaults && <p className="text-white/40 text-xs uppercase tracking-widest">Step {step + 1}/4</p>}
                 <h2 className="text-white font-bold text-lg">
                   {useDefaults ? (step === 3 ? "Body Pledge" : "Today's Tasks") : currentStep.label}
                 </h2>
               </div>
+              <button
+                onClick={onCancel}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
