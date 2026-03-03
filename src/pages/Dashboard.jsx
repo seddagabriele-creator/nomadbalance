@@ -1014,6 +1014,7 @@ export default function Dashboard() {
             userSettings={userSettings}
             useDefaults={useDefaults}
             resumeSession={resumeWithWizard ? session : null}
+            currentSessionId={session?.id}
           />
         )}
       </AnimatePresence>
