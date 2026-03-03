@@ -482,9 +482,21 @@ export default function Dashboard() {
   const handleToggleDeskStatus = () => {
     if (!session) return;
 
-    // Skip if desk tracking columns don't exist yet
-    if (!("desk_status" in session)) {
-      toast.error("Desk tracking not available. Please add desk_status, away_since, away_log columns to day_sessions.");
+    // Auto-initialize desk tracking columns if missing
+    if (!("desk_status" in session) || session.desk_status == null) {
+      updateSession.mutate({
+        desk_status: "away",
+        away_since: new Date().toISOString(),
+        away_log: [],
+      }, {
+        onSuccess: () => {
+          pauseTimer();
+          toast("You're away. Breaks paused.", { icon: "\u2615" });
+        },
+        onError: () => {
+          toast.error("Desk tracking not available. Run the migration: supabase/migrations/001_add_desk_tracking.sql");
+        },
+      });
       return;
     }
 
