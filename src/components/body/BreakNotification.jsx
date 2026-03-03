@@ -35,6 +35,13 @@ export default function BreakNotification({
     }, ONE_SECOND_MS);
   };
 
+  const handleSwapDuringExercise = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setElapsed(0);
+    setPhase("alert");
+    onSwap?.();
+  };
+
   const handleDone = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     onComplete?.();
@@ -244,7 +251,7 @@ export default function BreakNotification({
                 </div>
               )}
 
-              {/* Done button */}
+              {/* Done + Swap */}
               <Button
                 onClick={handleDone}
                 className="w-full h-12 rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 font-semibold text-base"
@@ -252,6 +259,17 @@ export default function BreakNotification({
                 <CheckCircle className="w-5 h-5 mr-2" />
                 Done
               </Button>
+
+              {onSwap && (
+                <Button
+                  variant="ghost"
+                  onClick={handleSwapDuringExercise}
+                  className="w-full h-10 rounded-xl text-white/40 hover:text-white hover:bg-white/10 text-sm"
+                >
+                  <RefreshCw className="w-4 h-4 mr-1.5" />
+                  Try another exercise
+                </Button>
+              )}
             </div>
           </motion.div>
         )}
