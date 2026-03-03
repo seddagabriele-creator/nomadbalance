@@ -52,6 +52,9 @@ export default function Dashboard() {
   });
   const [activeBreakNotification, setActiveBreakNotification] = useState(null);
   const breakCheckRef = React.useRef(null);
+  // Local fallback for desk tracking when DB columns are missing
+  const [localDeskStatus, setLocalDeskStatus] = useState("at_desk");
+  const [localAwaySince, setLocalAwaySince] = useState(null);
 
   const queryClient = useQueryClient();
   const today = getLocalDateString();
@@ -94,6 +97,10 @@ export default function Dashboard() {
   });
 
   const session = sessions[0] || null;
+  const hasDeskColumns = session && "desk_status" in session;
+  const deskStatus = hasDeskColumns ? session.desk_status : localDeskStatus;
+  const awaySince = hasDeskColumns ? session.away_since : localAwaySince;
+  const isAway = deskStatus === "away";
 
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", session?.id],
@@ -130,7 +137,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!session || session.status !== "active" || session.meeting_mode) return;
     // Pause break checks when user is away from desk
-    if (session.desk_status === "away") return;
+    if (isAway) return;
     // Respect notifications_enabled setting
     if (userSettings.notifications_enabled === false) return;
 
@@ -482,36 +489,24 @@ export default function Dashboard() {
   const handleToggleDeskStatus = () => {
     if (!session) return;
 
-    // Auto-initialize desk tracking columns if missing
-    if (!("desk_status" in session) || session.desk_status == null) {
-      updateSession.mutate({
-        desk_status: "away",
-        away_since: new Date().toISOString(),
-        away_log: [],
-      }, {
-        onSuccess: () => {
-          pauseTimer();
-          toast("You're away. Breaks paused.", { icon: "\u2615" });
-        },
-        onError: () => {
-          toast.error("Desk tracking not available. Run the migration: supabase/migrations/001_add_desk_tracking.sql");
-        },
-      });
-      return;
-    }
-
-    if (session.desk_status !== "away") {
+    if (!isAway) {
       // Going AWAY: save timestamp, pause timer
       pauseTimer();
-      updateSession.mutate({
-        desk_status: "away",
-        away_since: new Date().toISOString(),
-      });
+      const now = new Date().toISOString();
+      if (hasDeskColumns) {
+        updateSession.mutate({
+          desk_status: "away",
+          away_since: now,
+        });
+      } else {
+        setLocalDeskStatus("away");
+        setLocalAwaySince(now);
+      }
       toast("You're away. Breaks paused.", { icon: "\u2615" });
     } else {
       // Coming BACK: shift remaining break times forward by away duration
-      const awaySince = session.away_since ? new Date(session.away_since) : new Date();
-      const awayMinutes = Math.round((Date.now() - awaySince.getTime()) / 60000);
+      const awayStart = awaySince ? new Date(awaySince) : new Date();
+      const awayMinutes = Math.round((Date.now() - awayStart.getTime()) / 60000);
 
       // Shift all uncompleted breaks forward by the time spent away
       const updatedSchedule = (session.body_break_schedule || []).map((b) => {
@@ -523,20 +518,24 @@ export default function Dashboard() {
         return { ...b, time: newTime };
       });
 
-      // Log this away period
-      const awayLog = session.away_log || [];
-      awayLog.push({
-        start: session.away_since,
-        end: new Date().toISOString(),
-        duration_minutes: awayMinutes,
-      });
-
-      updateSession.mutate({
-        desk_status: "at_desk",
-        away_since: null,
-        away_log: awayLog,
-        body_break_schedule: updatedSchedule,
-      });
+      if (hasDeskColumns) {
+        const awayLog = session.away_log || [];
+        awayLog.push({
+          start: awaySince,
+          end: new Date().toISOString(),
+          duration_minutes: awayMinutes,
+        });
+        updateSession.mutate({
+          desk_status: "at_desk",
+          away_since: null,
+          away_log: awayLog,
+          body_break_schedule: updatedSchedule,
+        });
+      } else {
+        setLocalDeskStatus("at_desk");
+        setLocalAwaySince(null);
+        updateSession.mutate({ body_break_schedule: updatedSchedule });
+      }
       toast.success(`Welcome back! Breaks shifted by ${awayMinutes} min.`);
     }
   };
@@ -598,7 +597,7 @@ export default function Dashboard() {
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              {isActive && session?.desk_status === "away" && (
+              {isActive && isAway && (
                 <div className="flex items-center gap-1.5 bg-sky-500/20 border border-sky-500/30 rounded-full px-3 py-1">
                   <Coffee className="w-3 h-3 text-sky-400" />
                   <span className="text-sky-300 text-xs font-medium">Away</span>
@@ -639,7 +638,7 @@ export default function Dashboard() {
 
           {isActive && (
             <div className="flex items-center gap-2 mt-3">
-              {session.desk_status === "away" ? (
+              {isAway ? (
                 <>
                   <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
                   <span className="text-sky-400/70 text-xs font-medium">
@@ -748,8 +747,8 @@ export default function Dashboard() {
               className="mt-3 flex gap-3"
             >
               <DeskStatusToggle
-                isAway={session.desk_status === "away"}
-                awaySince={session.away_since}
+                isAway={isAway}
+                awaySince={awaySince}
                 onToggle={handleToggleDeskStatus}
               />
               <motion.button
