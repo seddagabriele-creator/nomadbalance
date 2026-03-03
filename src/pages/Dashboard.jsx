@@ -52,6 +52,7 @@ export default function Dashboard() {
   });
   const [activeBreakNotification, setActiveBreakNotification] = useState(null);
   const breakCheckRef = React.useRef(null);
+  const breakActionInProgress = React.useRef(false);
   // Local fallback for desk tracking when DB columns are missing
   const [localDeskStatus, setLocalDeskStatus] = useState("at_desk");
   const [localAwaySince, setLocalAwaySince] = useState(null);
@@ -142,7 +143,7 @@ export default function Dashboard() {
     if (userSettings.notifications_enabled === false) return;
 
     const checkBreaks = () => {
-      if (activeBreakNotification) return; // already showing one
+      if (activeBreakNotification || breakActionInProgress.current) return; // already showing or completing one
 
       // Respect notification time window
       const now = new Date();
@@ -189,6 +190,7 @@ export default function Dashboard() {
 
   const handleBreakSnooze = (minutes) => {
     if (!session || !activeBreakNotification) return;
+    breakActionInProgress.current = true;
     const now = new Date();
     const snoozedMinutes = now.getHours() * 60 + now.getMinutes() + minutes;
     const newTime = `${String(Math.floor(snoozedMinutes / 60) % 24).padStart(2, "0")}:${String(snoozedMinutes % 60).padStart(2, "0")}`;
@@ -202,11 +204,13 @@ export default function Dashboard() {
     );
     updateSession.mutate({ body_break_schedule: updatedSchedule });
     setActiveBreakNotification(null);
+    setTimeout(() => { breakActionInProgress.current = false; }, 500);
     toast("Break snoozed " + minutes + " min", { icon: "⏰" });
   };
 
   const handleBreakSkip = () => {
     if (!session || !activeBreakNotification) return;
+    breakActionInProgress.current = true;
     const updatedSchedule = (session.body_break_schedule || []).map((b) =>
       b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
         ? { ...b, completed: true }
@@ -217,10 +221,12 @@ export default function Dashboard() {
     );
     updateSession.mutate({ body_break_schedule: updatedSchedule });
     setActiveBreakNotification(null);
+    setTimeout(() => { breakActionInProgress.current = false; }, 500);
   };
 
   const handleBreakComplete = () => {
     if (!session || !activeBreakNotification) return;
+    breakActionInProgress.current = true;
     const updatedSchedule = (session.body_break_schedule || []).map((b) =>
       b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
         ? { ...b, completed: true }
@@ -241,6 +247,7 @@ export default function Dashboard() {
       exercises_done_today: exercisesDoneToday,
     });
     setActiveBreakNotification(null);
+    setTimeout(() => { breakActionInProgress.current = false; }, 500);
     toast.success("Break completed!");
   };
 
