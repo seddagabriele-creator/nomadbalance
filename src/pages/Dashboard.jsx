@@ -430,18 +430,22 @@ export default function Dashboard() {
         });
       }
 
-      // Only replace tasks if the wizard provided new ones
+      // Append new tasks from wizard to existing ones (never delete old tasks)
       if (tasks.length > 0) {
-        if (session) {
-          await taskService.deleteBySession(newSession.id);
-        }
+        const existingTasks = session ? await taskService.getBySession(newSession.id) : [];
+        const existingTitles = new Set(existingTasks.map(t => t.title));
+        const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
+        let orderOffset = 0;
         for (const task of tasks) {
-          await taskService.create({
-            session_id: newSession.id,
-            title: task.title,
-            order: task.order,
-            completed: false,
-          });
+          if (!existingTitles.has(task.title)) {
+            orderOffset++;
+            await taskService.create({
+              session_id: newSession.id,
+              title: task.title,
+              order: maxOrder + orderOffset,
+              completed: false,
+            });
+          }
         }
       }
 
@@ -977,16 +981,22 @@ export default function Dashboard() {
                   started_at: new Date().toTimeString().slice(0, 5),
                   selected_exercise_groups: selectedGroups,
                 });
-                // Update tasks if the wizard provided any
+                // Append new tasks from wizard (never delete existing ones)
                 if (wizardTasks.length > 0) {
-                  await taskService.deleteBySession(session.id);
+                  const existingTasks = await taskService.getBySession(session.id);
+                  const existingTitles = new Set(existingTasks.map(t => t.title));
+                  const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
+                  let orderOffset = 0;
                   for (const task of wizardTasks) {
-                    await taskService.create({
-                      session_id: session.id,
-                      title: task.title,
-                      order: task.order,
-                      completed: false,
-                    });
+                    if (!existingTitles.has(task.title)) {
+                      orderOffset++;
+                      await taskService.create({
+                        session_id: session.id,
+                        title: task.title,
+                        order: maxOrder + orderOffset,
+                        completed: false,
+                      });
+                    }
                   }
                 }
                 queryClient.invalidateQueries({ queryKey: ["daySession"] });
