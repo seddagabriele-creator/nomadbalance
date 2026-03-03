@@ -104,6 +104,10 @@ class AudioManager {
       this.audioContext.resume();
     }
 
+    // Fade in: start silent, ramp to target volume over 1.5s
+    this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+    this.gainNode.gain.linearRampToValueAtTime(0.7, this.audioContext.currentTime + 1.5);
+
     this.source = this.audioContext.createBufferSource();
     this.source.buffer = this.audioBuffer;
     this.source.loop = true;
@@ -115,9 +119,17 @@ class AudioManager {
   pause() {
     if (this.source && this.isPlaying) {
       try {
-        this.source.stop();
+        // Fade out over 0.5s before stopping
+        const now = this.audioContext.currentTime;
+        this.gainNode.gain.cancelScheduledValues(now);
+        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+        this.gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+        const src = this.source;
+        setTimeout(() => {
+          try { src.stop(); } catch { /* already stopped */ }
+        }, 550);
       } catch {
-        // Source may have already been stopped
+        try { this.source.stop(); } catch { /* already stopped */ }
       }
       this.source = null;
       this.isPlaying = false;

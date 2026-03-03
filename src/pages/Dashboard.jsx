@@ -197,6 +197,9 @@ export default function Dashboard() {
         ? { ...b, time: newTime }
         : b
     );
+    queryClient.setQueryData(["daySession", today], (old) =>
+      (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
+    );
     updateSession.mutate({ body_break_schedule: updatedSchedule });
     setActiveBreakNotification(null);
     toast("Break snoozed " + minutes + " min", { icon: "⏰" });
@@ -208,6 +211,9 @@ export default function Dashboard() {
       b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
         ? { ...b, completed: true }
         : b
+    );
+    queryClient.setQueryData(["daySession", today], (old) =>
+      (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
     );
     updateSession.mutate({ body_break_schedule: updatedSchedule });
     setActiveBreakNotification(null);
@@ -221,6 +227,14 @@ export default function Dashboard() {
         : b
     );
     const exercisesDoneToday = [...(session.exercises_done_today || []), activeBreakNotification.exercise_id];
+    // Optimistically update cache so the break check doesn't re-trigger
+    queryClient.setQueryData(["daySession", today], (old) =>
+      (old || []).map((s) =>
+        s.id === session.id
+          ? { ...s, body_break_schedule: updatedSchedule, body_breaks_done: (s.body_breaks_done || 0) + 1, exercises_done_today: exercisesDoneToday }
+          : s
+      )
+    );
     updateSession.mutate({
       body_break_schedule: updatedSchedule,
       body_breaks_done: (session.body_breaks_done || 0) + 1,
@@ -228,6 +242,27 @@ export default function Dashboard() {
     });
     setActiveBreakNotification(null);
     toast.success("Break completed!");
+  };
+
+  const handleBreakSwap = () => {
+    if (!session || !activeBreakNotification) return;
+    // Pick a different exercise from a different muscle group
+    const currentGroup = exercises.find((e) => e.id === activeBreakNotification.exercise_id)?.group;
+    const otherExercises = exercises.filter((e) => e.group !== currentGroup);
+    const pool = otherExercises.length > 0 ? otherExercises : exercises.filter((e) => e.id !== activeBreakNotification.exercise_id);
+    if (pool.length === 0) return;
+    const newExercise = pool[Math.floor(Math.random() * pool.length)];
+    const updatedSchedule = (session.body_break_schedule || []).map((b) =>
+      b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
+        ? { ...b, exercise_id: newExercise.id, exercise_name: newExercise.name }
+        : b
+    );
+    const newBreak = { ...activeBreakNotification, exercise_id: newExercise.id, exercise_name: newExercise.name };
+    queryClient.setQueryData(["daySession", today], (old) =>
+      (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
+    );
+    updateSession.mutate({ body_break_schedule: updatedSchedule });
+    setActiveBreakNotification(newBreak);
   };
 
   const handleOnboardingComplete = () => {
@@ -268,7 +303,7 @@ export default function Dashboard() {
     },
   });
 
-  const handleStartDay = async (wizardData, tasks, selectedGroups) => {
+  const handleStartDay = async (wizardData, tasks, selectedGroups, mealsAlreadyHad = 0) => {
     try {
       // Get exercises done in the last 7 days
       const last7Days = allPreviousSessions.slice(0, 7);
@@ -358,6 +393,12 @@ export default function Dashboard() {
       // Strip client-only fields before sending to Supabase
       const { eating_window_start_time: _ewst, ...sessionData } = wizardData;
 
+      // Pre-populate meals_logged if user already had meals
+      const initialMeals = Array.from({ length: mealsAlreadyHad }, (_, i) => ({
+        logged_at: new Date().toISOString(),
+        index: i,
+      }));
+
       // Reuse existing session (e.g. after Reset Day) instead of creating a duplicate
       let newSession;
       if (session) {
@@ -365,7 +406,7 @@ export default function Dashboard() {
           ...sessionData,
           eating_window_start: windowStartTime,
           eating_window_end: windowEndTime,
-          meals_logged: [],
+          meals_logged: initialMeals,
           body_breaks_target: breaksCount,
           status: "active",
           started_at: new Date().toTimeString().slice(0, 5),
@@ -378,7 +419,7 @@ export default function Dashboard() {
           ...sessionData,
           eating_window_start: windowStartTime,
           eating_window_end: windowEndTime,
-          meals_logged: [],
+          meals_logged: initialMeals,
           body_breaks_target: breaksCount,
           date: today,
           status: "active",
@@ -984,6 +1025,7 @@ export default function Dashboard() {
             onSnooze={handleBreakSnooze}
             onSkip={handleBreakSkip}
             onComplete={handleBreakComplete}
+            onSwap={handleBreakSwap}
           />
         )}
       </AnimatePresence>
