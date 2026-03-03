@@ -430,17 +430,23 @@ export default function Dashboard() {
         });
       }
 
-      // Clean old tasks when reusing a session after reset
-      if (session) {
-        await taskService.deleteBySession(newSession.id);
-      }
-      for (const task of tasks) {
-        await taskService.create({
-          session_id: newSession.id,
-          title: task.title,
-          order: task.order,
-          completed: false,
-        });
+      // Append new tasks from wizard to existing ones (never delete old tasks)
+      if (tasks.length > 0) {
+        const existingTasks = session ? await taskService.getBySession(newSession.id) : [];
+        const existingTitles = new Set(existingTasks.map(t => t.title));
+        const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
+        let orderOffset = 0;
+        for (const task of tasks) {
+          if (!existingTitles.has(task.title)) {
+            orderOffset++;
+            await taskService.create({
+              session_id: newSession.id,
+              title: task.title,
+              order: maxOrder + orderOffset,
+              completed: false,
+            });
+          }
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["daySession"] });
@@ -960,7 +966,7 @@ export default function Dashboard() {
       <AnimatePresence>
         {showWizard && (
           <StartDayWizard
-            onComplete={resumeWithWizard ? async (wizardData, tasks, selectedGroups) => {
+            onComplete={resumeWithWizard ? async (wizardData, wizardTasks, selectedGroups) => {
               // When resuming with changes, update the existing session instead of creating a new one
               if (session) {
                 // Recalculate eating window from new settings
@@ -975,6 +981,24 @@ export default function Dashboard() {
                   started_at: new Date().toTimeString().slice(0, 5),
                   selected_exercise_groups: selectedGroups,
                 });
+                // Append new tasks from wizard (never delete existing ones)
+                if (wizardTasks.length > 0) {
+                  const existingTasks = await taskService.getBySession(session.id);
+                  const existingTitles = new Set(existingTasks.map(t => t.title));
+                  const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
+                  let orderOffset = 0;
+                  for (const task of wizardTasks) {
+                    if (!existingTitles.has(task.title)) {
+                      orderOffset++;
+                      await taskService.create({
+                        session_id: session.id,
+                        title: task.title,
+                        order: maxOrder + orderOffset,
+                        completed: false,
+                      });
+                    }
+                  }
+                }
                 queryClient.invalidateQueries({ queryKey: ["daySession"] });
                 queryClient.invalidateQueries({ queryKey: ["tasks"] });
               }
@@ -990,6 +1014,7 @@ export default function Dashboard() {
             userSettings={userSettings}
             useDefaults={useDefaults}
             resumeSession={resumeWithWizard ? session : null}
+            currentSessionId={session?.id}
           />
         )}
       </AnimatePresence>

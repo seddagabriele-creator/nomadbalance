@@ -41,7 +41,7 @@ const GROUP_LABELS = {
   "hips_legs": "Hips & Legs"
 };
 
-export default function StartDayWizard({ onComplete, onCancel, userSettings, useDefaults = false, resumeSession = null }) {
+export default function StartDayWizard({ onComplete, onCancel, userSettings, useDefaults = false, resumeSession = null, currentSessionId = null }) {
   const queryClient = useQueryClient();
 
   // Load daily defaults if using them
@@ -119,6 +119,21 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     queryFn: () => taskService.getUnassigned(),
   });
 
+  // Load tasks from current session (resume or same-day reopen)
+  const taskSessionId = resumeSession?.id || currentSessionId;
+  const { data: sessionTasks = [] } = useQuery({
+    queryKey: ["sessionTasks", taskSessionId],
+    queryFn: () => taskService.getBySession(taskSessionId),
+    enabled: !!taskSessionId,
+  });
+
+  // Pre-fill task list from session tasks
+  useEffect(() => {
+    if (sessionTasks.length > 0 && tasks.length === 0) {
+      setTasks(sessionTasks.map(t => ({ title: t.title, order: t.order })));
+    }
+  }, [sessionTasks]);
+
   const previousSession = previousSessions[0];
 
   useEffect(() => {
@@ -150,19 +165,12 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
       relax_sound: previousSession.relax_sound || "wind",
       body_breaks_target: previousSession.body_breaks_target || 6,
     };
-    
-    // Load previous tasks
-    const { data: prevTasks = [] } = await queryClient.fetchQuery({
-      queryKey: ["previousTasks", previousSession.id],
-      queryFn: () => taskService.getBySession(previousSession.id),
-    });
-    
-    const prevTasksList = prevTasks.map((t, i) => ({ title: t.title, order: i + 1 }));
-    
-    // Use previous exercise selection
+
+    // Use previous exercise selection (tasks are NOT carried over —
+    // uncompleted tasks from past days appear in Journal's "Previous Tasks" section)
     const selectedGroups = previousSession.selected_exercise_groups || null;
-    
-    await onComplete(prevData, prevTasksList, selectedGroups);
+
+    await onComplete(prevData, [], selectedGroups);
   };
 
   const loadExistingTasks = () => {
