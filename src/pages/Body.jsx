@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService, exerciseService } from "../api/services";
 import { GROUP_LABELS } from "../constants";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Activity, ChevronRight } from "lucide-react";
+import { ArrowLeft, Activity, ChevronRight, CheckCircle, Clock, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import ExerciseDetail from "../components/body/ExerciseDetail";
 
 // GROUP_LABELS imported from constants
@@ -22,6 +22,7 @@ const GROUP_OBJECTIVES = {
 export default function Body() {
   const [selectedExercise, setSelectedExercise] = useState(null);
   const today = getLocalDateString();
+  const queryClient = useQueryClient();
 
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises"],
@@ -34,8 +35,24 @@ export default function Body() {
   });
 
   const session = sessions[0] || null;
-  const nextBreak = session?.body_break_schedule?.find(b => !b.completed);
+  const schedule = session?.body_break_schedule || [];
+  const nextBreak = schedule.find(b => !b.completed);
   const nextExerciseId = nextBreak?.exercise_id;
+
+  const updateSession = useMutation({
+    mutationFn: (data) => daySessionService.update(session.id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
+  });
+
+  const handleSwapScheduled = (breakIndex, newExercise) => {
+    const updatedSchedule = schedule.map((b, i) =>
+      i === breakIndex ? { ...b, exercise_id: newExercise.id, exercise_name: newExercise.name } : b
+    );
+    queryClient.setQueryData(["daySession", today], (old) =>
+      (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
+    );
+    updateSession.mutate({ body_break_schedule: updatedSchedule });
+  };
 
   const groupedExercises = exercises.reduce((acc, exercise) => {
     if (!acc[exercise.group]) {
@@ -59,6 +76,62 @@ export default function Body() {
             <h1 className="text-2xl font-bold">Body Exercises</h1>
           </div>
         </div>
+
+        {/* Today's planned exercises */}
+        {session?.status === "active" && schedule.length > 0 && (
+          <div className="mb-8 space-y-3">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Clock className="w-5 h-5 text-orange-400" />
+              Today's Plan
+            </h2>
+            <div className="space-y-2">
+              {schedule.map((b, idx) => {
+                const ex = exercises.find((e) => e.id === b.exercise_id);
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      b.completed
+                        ? "bg-emerald-500/10 border-emerald-500/20"
+                        : b === nextBreak
+                          ? "bg-orange-500/15 border-orange-500/30"
+                          : "bg-white/5 border-white/10"
+                    }`}
+                  >
+                    <span className="text-xs font-mono text-white/40 w-12 shrink-0">{b.time}</span>
+                    {b.completed ? (
+                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                    ) : (
+                      <Activity className="w-4 h-4 text-orange-400 shrink-0" />
+                    )}
+                    <button
+                      onClick={() => ex && setSelectedExercise(ex)}
+                      className="flex-1 text-left text-sm text-white/80 hover:text-white truncate"
+                    >
+                      {ex?.name || b.exercise_name}
+                    </button>
+                    {!b.completed && (
+                      <button
+                        onClick={() => {
+                          const currentGroup = ex?.group;
+                          const otherExercises = exercises.filter((e) => e.group !== currentGroup);
+                          const pool = otherExercises.length > 0 ? otherExercises : exercises.filter((e) => e.id !== b.exercise_id);
+                          if (pool.length === 0) return;
+                          const newEx = pool[Math.floor(Math.random() * pool.length)];
+                          handleSwapScheduled(idx, newEx);
+                        }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-orange-400 hover:bg-white/10 transition-colors shrink-0"
+                        title="Swap exercise"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-8">
           {Object.entries(groupedExercises).map(([groupKey, groupExercises]) => (

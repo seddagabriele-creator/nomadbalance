@@ -89,6 +89,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     work_start_today: defaults?.work_start_today || userSettings?.morning_work_start || "10:00",
     work_end_today: defaults?.work_end_today || userSettings?.afternoon_work_end || "19:00",
   });
+  const [mealsAlreadyHad, setMealsAlreadyHad] = useState(0);
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [needsWorkHours, setNeedsWorkHours] = useState(!userSettings?.morning_work_start);
   const [conflictResolution, setConflictResolution] = useState(null);
@@ -180,15 +181,15 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
         if (exerciseSelection === "manual") {
           setStep(3);
         } else {
-          await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
+          await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups, mealsAlreadyHad);
         }
       } else if (step === 3) {
-        await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
+        await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups, mealsAlreadyHad);
       }
     } else if (step < 3) {
       setStep(step + 1);
     } else {
-      await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups);
+      await onComplete(data, tasks, exerciseSelection === "auto" ? null : selectedGroups, mealsAlreadyHad);
     }
   };
 
@@ -541,6 +542,28 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     />
                   </div>
 
+                  {/* Already had meals? */}
+                  {!useDefaults && (
+                    <div className="space-y-1">
+                      <Label className="text-white/60 text-xs">Already had a meal today?</Label>
+                      <div className="flex gap-1.5">
+                        {[0, 1, 2].map(n => (
+                          <button
+                            key={n}
+                            onClick={() => setMealsAlreadyHad(n)}
+                            className={`flex-1 py-2 rounded-lg border text-xs font-bold transition-all ${
+                              mealsAlreadyHad === n
+                                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                                : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                            }`}
+                          >
+                            {n === 0 ? "No" : n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Summary */}
                   <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
                     <p className="text-emerald-300 text-sm font-medium">
@@ -548,6 +571,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     </p>
                     <p className="text-emerald-300/60 text-xs mt-0.5">
                       {data.eating_window_start_time} — {calculateEatingWindowEnd(data.eating_window_start_time, eatingHours)} · {data.max_meals} meals
+                      {mealsAlreadyHad > 0 && ` · ${mealsAlreadyHad} already had`}
                     </p>
                   </div>
 

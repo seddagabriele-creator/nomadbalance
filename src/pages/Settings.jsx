@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ import { DEFAULT_WORK_HOURS, FASTING_PRESETS, calculateEatingWindowEnd } from ".
 
 export default function Settings() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { defaults: dailyDefaults, setDefaults: saveDailyDefaults } = useDailyDefaults();
   const [localDefaults, setLocalDefaults] = useState(dailyDefaults);
 
@@ -59,6 +61,7 @@ export default function Settings() {
     saveMutation.mutate(formData);
     saveDailyDefaults(localDefaults);
     toast.success("Settings saved successfully");
+    navigate("/");
   };
 
   React.useEffect(() => {

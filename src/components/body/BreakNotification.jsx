@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Play, Clock, SkipForward, X, ChevronRight, AlertCircle, Info, CheckCircle } from "lucide-react";
+import { Activity, Play, Clock, SkipForward, X, ChevronRight, AlertCircle, Info, CheckCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ONE_SECOND_MS } from "../../constants";
 
@@ -13,6 +13,7 @@ export default function BreakNotification({
   onSnooze,
   onSkip,
   onComplete,
+  onSwap,
 }) {
   const [phase, setPhase] = useState("alert"); // "alert" | "exercise"
   const [showSnoozeOptions, setShowSnoozeOptions] = useState(false);
@@ -109,6 +110,17 @@ export default function BreakNotification({
                 <Play className="w-5 h-5 mr-2" />
                 Start Exercise
               </Button>
+
+              {onSwap && (
+                <Button
+                  variant="ghost"
+                  onClick={onSwap}
+                  className="w-full h-10 rounded-xl text-white/50 hover:text-white hover:bg-white/10 text-sm"
+                >
+                  <RefreshCw className="w-4 h-4 mr-1.5" />
+                  Try another exercise
+                </Button>
+              )}
 
               <div className="flex gap-2">
                 <div className="flex-1 relative">
