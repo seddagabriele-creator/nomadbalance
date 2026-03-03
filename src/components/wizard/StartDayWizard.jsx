@@ -119,6 +119,20 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     queryFn: () => taskService.getUnassigned(),
   });
 
+  // Load tasks from current session when resuming or using defaults
+  const { data: sessionTasks = [] } = useQuery({
+    queryKey: ["sessionTasks", resumeSession?.id],
+    queryFn: () => taskService.getBySession(resumeSession.id),
+    enabled: !!resumeSession?.id,
+  });
+
+  // Pre-fill task list from session tasks when resuming
+  useEffect(() => {
+    if (sessionTasks.length > 0 && tasks.length === 0) {
+      setTasks(sessionTasks.map(t => ({ title: t.title, order: t.order })));
+    }
+  }, [sessionTasks]);
+
   const previousSession = previousSessions[0];
 
   useEffect(() => {

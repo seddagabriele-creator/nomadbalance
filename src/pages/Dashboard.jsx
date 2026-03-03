@@ -430,17 +430,19 @@ export default function Dashboard() {
         });
       }
 
-      // Clean old tasks when reusing a session after reset
-      if (session) {
-        await taskService.deleteBySession(newSession.id);
-      }
-      for (const task of tasks) {
-        await taskService.create({
-          session_id: newSession.id,
-          title: task.title,
-          order: task.order,
-          completed: false,
-        });
+      // Only replace tasks if the wizard provided new ones
+      if (tasks.length > 0) {
+        if (session) {
+          await taskService.deleteBySession(newSession.id);
+        }
+        for (const task of tasks) {
+          await taskService.create({
+            session_id: newSession.id,
+            title: task.title,
+            order: task.order,
+            completed: false,
+          });
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["daySession"] });
@@ -960,7 +962,7 @@ export default function Dashboard() {
       <AnimatePresence>
         {showWizard && (
           <StartDayWizard
-            onComplete={resumeWithWizard ? async (wizardData, tasks, selectedGroups) => {
+            onComplete={resumeWithWizard ? async (wizardData, wizardTasks, selectedGroups) => {
               // When resuming with changes, update the existing session instead of creating a new one
               if (session) {
                 // Recalculate eating window from new settings
@@ -975,6 +977,18 @@ export default function Dashboard() {
                   started_at: new Date().toTimeString().slice(0, 5),
                   selected_exercise_groups: selectedGroups,
                 });
+                // Update tasks if the wizard provided any
+                if (wizardTasks.length > 0) {
+                  await taskService.deleteBySession(session.id);
+                  for (const task of wizardTasks) {
+                    await taskService.create({
+                      session_id: session.id,
+                      title: task.title,
+                      order: task.order,
+                      completed: false,
+                    });
+                  }
+                }
                 queryClient.invalidateQueries({ queryKey: ["daySession"] });
                 queryClient.invalidateQueries({ queryKey: ["tasks"] });
               }
