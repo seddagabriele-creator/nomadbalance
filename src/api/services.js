@@ -137,6 +137,13 @@ export const taskService = {
       await supabase.from("tasks").delete().eq("id", id)
     );
   },
+
+  deleteBySession: async (sessionId) => {
+    const userId = await getUserId();
+    return unwrap(
+      await supabase.from("tasks").delete().eq("user_id", userId).eq("session_id", sessionId)
+    );
+  },
 };
 
 // Exercise service

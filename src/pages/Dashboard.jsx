@@ -358,20 +358,41 @@ export default function Dashboard() {
       // Strip client-only fields before sending to Supabase
       const { eating_window_start_time: _ewst, ...sessionData } = wizardData;
 
-      const newSession = await daySessionService.create({
-        ...sessionData,
-        eating_window_start: windowStartTime,
-        eating_window_end: windowEndTime,
-        meals_logged: [],
-        body_breaks_target: breaksCount,
-        date: today,
-        status: "active",
-        started_at: new Date().toTimeString().slice(0, 5),
-        body_break_schedule: schedule,
-        selected_exercise_groups: selectedGroups,
-        exercises_done_today: [],
-      });
+      // Reuse existing session (e.g. after Reset Day) instead of creating a duplicate
+      let newSession;
+      if (session) {
+        newSession = await daySessionService.update(session.id, {
+          ...sessionData,
+          eating_window_start: windowStartTime,
+          eating_window_end: windowEndTime,
+          meals_logged: [],
+          body_breaks_target: breaksCount,
+          status: "active",
+          started_at: new Date().toTimeString().slice(0, 5),
+          body_break_schedule: schedule,
+          selected_exercise_groups: selectedGroups,
+          exercises_done_today: [],
+        });
+      } else {
+        newSession = await daySessionService.create({
+          ...sessionData,
+          eating_window_start: windowStartTime,
+          eating_window_end: windowEndTime,
+          meals_logged: [],
+          body_breaks_target: breaksCount,
+          date: today,
+          status: "active",
+          started_at: new Date().toTimeString().slice(0, 5),
+          body_break_schedule: schedule,
+          selected_exercise_groups: selectedGroups,
+          exercises_done_today: [],
+        });
+      }
 
+      // Clean old tasks when reusing a session after reset
+      if (session) {
+        await taskService.deleteBySession(newSession.id);
+      }
       for (const task of tasks) {
         await taskService.create({
           session_id: newSession.id,
