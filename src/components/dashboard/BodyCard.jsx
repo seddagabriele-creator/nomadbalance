@@ -2,7 +2,7 @@ import React from "react";
 import { Activity, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function BodyCard({ session }) {
+export default function BodyCard({ session, missedBreaks = 0 }) {
   const breaksDone = session?.body_breaks_done || 0;
   const breaksTarget = session?.body_breaks_target || 4;
   const schedule = session?.body_break_schedule || [];
@@ -10,6 +10,7 @@ export default function BodyCard({ session }) {
   const nextBreak = schedule.find(b => !b.completed && !b.skipped);
   const nextExercise = nextBreak?.exercise_name || "No exercise";
   const progressPercent = breaksTarget > 0 ? (breaksDone / breaksTarget) * 100 : 0;
+  const behindSchedule = missedBreaks > 0;
 
   return (
     <motion.div
@@ -26,6 +27,14 @@ export default function BodyCard({ session }) {
         <span className="text-xs font-semibold uppercase tracking-widest text-orange-400">Body</span>
       </div>
       <div className="flex-1 flex flex-col justify-center">
+        {behindSchedule && (
+          <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/25 w-fit">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-[10px] text-amber-300 font-medium">
+              {missedBreaks} missed
+            </span>
+          </div>
+        )}
         <p className="text-white/50 text-xs mb-1">Next break</p>
         <div className="flex items-center gap-2">
           <ChevronRight className="w-4 h-4 text-orange-400" />

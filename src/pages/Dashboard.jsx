@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
 import { useAuth } from "../lib/AuthContext";
 import { hasDailyDefaults, getDailyDefaults } from "../hooks/useDailyDefaults";
-import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, getEatingHours, calculateEatingWindowEnd } from "../constants";
+import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, DESK_RETURN_GRACE_MINUTES, getEatingHours, calculateEatingWindowEnd } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -58,6 +58,10 @@ export default function Dashboard() {
   // Local fallback for desk tracking when DB columns are missing
   const [localDeskStatus, setLocalDeskStatus] = useState("at_desk");
   const [localAwaySince, setLocalAwaySince] = useState(null);
+  // Grace period: track when user returned to desk to avoid immediate break triggers
+  const [returnedAtDesk, setReturnedAtDesk] = useState(null);
+  // Track missed breaks count during away period for catch-up logic
+  const [missedBreaksCount, setMissedBreaksCount] = useState(0);
 
   const queryClient = useQueryClient();
   const today = getLocalDateString();
@@ -220,6 +224,14 @@ export default function Dashboard() {
     const checkBreaks = () => {
       if (activeBreakNotification || breakActionInProgress.current) return; // already showing or completing one
 
+      // Grace period: don't trigger breaks for DESK_RETURN_GRACE_MINUTES after returning to desk
+      if (returnedAtDesk) {
+        const minutesSinceReturn = (Date.now() - returnedAtDesk) / 60000;
+        if (minutesSinceReturn < DESK_RETURN_GRACE_MINUTES) return;
+        // Grace period expired — clear it
+        setReturnedAtDesk(null);
+      }
+
       // Respect notification time window
       const now = new Date();
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -234,17 +246,23 @@ export default function Dashboard() {
       );
       // If multiple breaks are overdue (e.g. user was away), only show the most recent one
       // and auto-skip the older ones so they don't pile up
+      let skippedDuringAway = 0;
       if (dueBreaks.length > 1) {
         const sorted = [...dueBreaks].sort((a, b) => toMinutes(b.time) - toMinutes(a.time));
         const staleBreaks = sorted.slice(1); // all except the most recent
+        skippedDuringAway = staleBreaks.length;
         const updatedSchedule = schedule.map((b) => {
           const isStale = staleBreaks.some(sb => sb.time === b.time && sb.exercise_id === b.exercise_id);
-          return isStale ? { ...b, skipped: true } : b;
+          return isStale ? { ...b, skipped: true, skipped_reason: "away" } : b;
         });
         queryClient.setQueryData(["daySession", today], (old) =>
           (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
         );
         updateSession.mutate({ body_break_schedule: updatedSchedule });
+      }
+      // Track missed breaks for catch-up logic
+      if (skippedDuringAway > 0) {
+        setMissedBreaksCount(prev => prev + skippedDuringAway);
       }
       const dueBreak = dueBreaks.length > 0
         ? (dueBreaks.length > 1
@@ -267,7 +285,7 @@ export default function Dashboard() {
     checkBreaks(); // check immediately
     breakCheckRef.current = setInterval(checkBreaks, ONE_MINUTE_MS);
     return () => clearInterval(breakCheckRef.current);
-  }, [session, activeBreakNotification, userSettings, exercises]);
+  }, [session, activeBreakNotification, userSettings, exercises, returnedAtDesk]);
 
   const toMinutes = (t) => {
     const [h, m] = (t || "00:00").split(":").map(Number);
@@ -345,6 +363,40 @@ export default function Dashboard() {
     setActiveBreakNotification(null);
     setTimeout(() => { breakActionInProgress.current = false; }, 500);
     toast.success("Break completed!");
+  };
+
+  const handleCatchUpComplete = () => {
+    if (!session || !activeBreakNotification) return;
+    breakActionInProgress.current = true;
+    // Count as 2 completed breaks (catch-up for missed one)
+    const updatedSchedule = (session.body_break_schedule || []).map((b) =>
+      b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
+        ? { ...b, completed: true }
+        : b
+    );
+    const exercisesDoneToday = [
+      ...(session.exercises_done_today || []),
+      activeBreakNotification.exercise_id,
+      activeBreakNotification.exercise_id, // counted twice for catch-up
+    ];
+    const newBreaksDone = (session.body_breaks_done || 0) + 2;
+    queryClient.setQueryData(["daySession", today], (old) =>
+      (old || []).map((s) =>
+        s.id === session.id
+          ? { ...s, body_break_schedule: updatedSchedule, body_breaks_done: newBreaksDone, exercises_done_today: exercisesDoneToday }
+          : s
+      )
+    );
+    updateSession.mutate({
+      body_break_schedule: updatedSchedule,
+      body_breaks_done: newBreaksDone,
+      exercises_done_today: exercisesDoneToday,
+    });
+    // Clear missed breaks count since user caught up
+    setMissedBreaksCount(prev => Math.max(0, prev - 1));
+    setActiveBreakNotification(null);
+    setTimeout(() => { breakActionInProgress.current = false; }, 500);
+    toast.success("Catch-up complete! 2 exercises counted.");
   };
 
   const handleBreakSwap = () => {
@@ -700,15 +752,30 @@ export default function Dashboard() {
       const awayStart = awaySince ? new Date(awaySince) : new Date();
       const awayMinutes = Math.round((Date.now() - awayStart.getTime()) / 60000);
 
+      // Count how many breaks were missed during away (for catch-up tracking)
+      const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+      const schedule = session.body_break_schedule || [];
+      const missedDuringAway = schedule.filter(
+        (b) => !b.completed && !b.skipped && toMinutes(b.time) <= nowMin
+      ).length;
+      if (missedDuringAway > 0) {
+        setMissedBreaksCount(prev => prev + missedDuringAway);
+      }
+
       // Shift all uncompleted breaks forward by the time spent away
-      const updatedSchedule = (session.body_break_schedule || []).map((b) => {
-        if (b.completed) return b;
+      const updatedSchedule = schedule.map((b) => {
+        if (b.completed || b.skipped) return b;
         const originalMinutes = toMinutes(b.time);
+        // If break was already past due, don't shift it — it will be handled by break check
+        if (originalMinutes <= nowMin) return b;
         const shiftedMinutes = originalMinutes + awayMinutes;
         const clampedMinutes = Math.min(shiftedMinutes, 23 * 60 + 59); // cap at 23:59
         const newTime = `${String(Math.floor(clampedMinutes / 60)).padStart(2, "0")}:${String(clampedMinutes % 60).padStart(2, "0")}`;
         return { ...b, time: newTime };
       });
+
+      // Set grace period — breaks won't fire for DESK_RETURN_GRACE_MINUTES
+      setReturnedAtDesk(Date.now());
 
       if (hasDeskColumns) {
         const awayLog = session.away_log || [];
@@ -728,7 +795,7 @@ export default function Dashboard() {
         setLocalAwaySince(null);
         updateSession.mutate({ body_break_schedule: updatedSchedule });
       }
-      toast.success(`Welcome back! Breaks shifted by ${awayMinutes} min.`);
+      toast.success(`Welcome back! ${DESK_RETURN_GRACE_MINUTES} min grace period before next break.`);
     }
   };
 
@@ -885,7 +952,7 @@ export default function Dashboard() {
                 <FlowCard session={session} onSessionComplete={handleSessionComplete} />
               </Link>
               <Link to={createPageUrl("Body")} className="h-[170px]">
-                <BodyCard session={session} />
+                <BodyCard session={session} missedBreaks={missedBreaksCount} />
               </Link>
               <Link to={createPageUrl("Journal")} className="h-[170px]">
                 <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />
@@ -1175,6 +1242,10 @@ export default function Dashboard() {
             onSkip={handleBreakSkip}
             onComplete={handleBreakComplete}
             onSwap={handleBreakSwap}
+            missedBreaks={missedBreaksCount}
+            breaksTarget={session?.body_breaks_target || 6}
+            breaksDone={session?.body_breaks_done || 0}
+            onCatchUpComplete={handleCatchUpComplete}
           />
         )}
       </AnimatePresence>

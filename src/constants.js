@@ -6,6 +6,7 @@ export const ONE_SECOND_MS = 1000;
 // Break scheduling
 export const MIN_BREAK_SPACING_MINUTES = 20;
 export const ACTIVE_BREAK_DURATION_MINUTES = 5;
+export const DESK_RETURN_GRACE_MINUTES = 15;
 
 // Timer defaults
 export const DEFAULT_WORK_MINUTES = 45;

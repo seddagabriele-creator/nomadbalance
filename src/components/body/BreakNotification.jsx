@@ -14,11 +14,16 @@ export default function BreakNotification({
   onSkip,
   onComplete,
   onSwap,
+  missedBreaks = 0,
+  breaksTarget = 6,
+  breaksDone = 0,
+  onCatchUpComplete,
 }) {
   const [phase, setPhase] = useState("alert"); // "alert" | "exercise"
   const [showSnoozeOptions, setShowSnoozeOptions] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef(null);
+  const showCatchUp = missedBreaks > 0;
 
   useEffect(() => {
     return () => {
@@ -26,9 +31,12 @@ export default function BreakNotification({
     };
   }, []);
 
-  const handleStartExercise = () => {
+  const [isCatchUp, setIsCatchUp] = useState(false);
+
+  const handleStartExercise = (catchUp = false) => {
     setPhase("exercise");
     setElapsed(0);
+    setIsCatchUp(catchUp);
     onStart?.();
     intervalRef.current = setInterval(() => {
       setElapsed((prev) => prev + 1);
@@ -44,7 +52,11 @@ export default function BreakNotification({
 
   const handleDone = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    onComplete?.();
+    if (isCatchUp && onCatchUpComplete) {
+      onCatchUpComplete();
+    } else {
+      onComplete?.();
+    }
   };
 
   const formatTime = (seconds) => {
@@ -82,6 +94,14 @@ export default function BreakNotification({
               </motion.div>
               <h2 className="text-xl font-bold text-white mb-1">Time for a break!</h2>
               <p className="text-white/50 text-sm">Move your body, clear your mind</p>
+              {showCatchUp && (
+                <div className="mt-3 px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/25">
+                  <p className="text-amber-300 text-xs font-medium">
+                    You missed {missedBreaks} break{missedBreaks > 1 ? "s" : ""} earlier.
+                    Want to do 2 exercises now to stay on target for {breaksTarget}/day?
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Exercise preview */}
@@ -110,12 +130,21 @@ export default function BreakNotification({
 
             {/* Actions */}
             <div className="px-6 pb-6 space-y-2">
+              {showCatchUp && onCatchUpComplete && (
+                <Button
+                  onClick={() => handleStartExercise(true)}
+                  className="w-full h-12 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 font-semibold text-base mb-2"
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Catch Up (2 exercises)
+                </Button>
+              )}
               <Button
                 onClick={handleStartExercise}
-                className="w-full h-12 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 font-semibold text-base"
+                className={`w-full h-12 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 font-semibold text-base ${showCatchUp ? "opacity-70" : ""}`}
               >
                 <Play className="w-5 h-5 mr-2" />
-                Start Exercise
+                {showCatchUp ? "Just 1 exercise" : "Start Exercise"}
               </Button>
 
               {onSwap && (

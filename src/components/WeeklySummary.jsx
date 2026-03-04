@@ -8,7 +8,7 @@ export default function WeeklySummary({ sessions = [], onClose }) {
   // Aggregate weekly data
   const totalDays = sessions.length;
 
-  // Meals
+  // Meals — track days within budget vs days exceeded
   const totalMeals = sessions.reduce((sum, s) => {
     const meals = (s.meals_logged || []).filter(m => m.type !== "snack");
     return sum + meals.length;
@@ -18,7 +18,13 @@ export default function WeeklySummary({ sessions = [], onClose }) {
     return sum + snacks.length;
   }, 0);
   const totalPlannedMeals = sessions.reduce((sum, s) => sum + (s.max_meals || 3), 0);
-  const mealsOnTrack = totalPlannedMeals > 0 && totalMeals >= totalPlannedMeals * 0.8;
+  // Per-day analysis: green = logged <= planned (under or equal), red = logged > planned (exceeded)
+  const daysWithinMeals = sessions.filter(s => {
+    const logged = (s.meals_logged || []).filter(m => m.type !== "snack").length;
+    return logged <= (s.max_meals || 3);
+  }).length;
+  const daysExceededMeals = totalDays - daysWithinMeals;
+  const mealsOnTrack = daysExceededMeals === 0;
 
   // Focus
   const totalFocusSessions = sessions.reduce((sum, s) => sum + (s.focus_sessions_completed || 0), 0);
@@ -96,14 +102,20 @@ export default function WeeklySummary({ sessions = [], onClose }) {
         {/* Stats */}
         <div className="px-6 pb-4 space-y-3">
           {/* Meals */}
-          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
+          <div className={`${mealsOnTrack ? "bg-emerald-500/10 border-emerald-500/20" : "bg-amber-500/10 border-amber-500/20"} border rounded-2xl p-4`}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                <Utensils className="w-5 h-5 text-emerald-400" />
+              <div className={`w-10 h-10 rounded-xl ${mealsOnTrack ? "bg-emerald-500/20" : "bg-amber-500/20"} flex items-center justify-center`}>
+                <Utensils className={`w-5 h-5 ${mealsOnTrack ? "text-emerald-400" : "text-amber-400"}`} />
               </div>
               <div className="flex-1">
-                <p className="text-emerald-300 font-semibold text-sm">Meals</p>
+                <p className={`${mealsOnTrack ? "text-emerald-300" : "text-amber-300"} font-semibold text-sm`}>Meals</p>
                 <p className="text-white/50 text-xs">
+                  {daysWithinMeals} day{daysWithinMeals !== 1 ? "s" : ""} within plan
+                  {daysExceededMeals > 0 && (
+                    <span className="text-amber-400"> · {daysExceededMeals} day{daysExceededMeals !== 1 ? "s" : ""} exceeded</span>
+                  )}
+                </p>
+                <p className="text-white/30 text-[10px] mt-0.5">
                   {totalMeals} meals logged
                   {totalSnacks > 0 && ` + ${totalSnacks} snack${totalSnacks > 1 ? "s" : ""}`}
                 </p>
