@@ -6,7 +6,8 @@ export default function BodyCard({ session }) {
   const breaksDone = session?.body_breaks_done || 0;
   const breaksTarget = session?.body_breaks_target || 4;
   const schedule = session?.body_break_schedule || [];
-  const nextBreak = schedule.find(b => !b.completed);
+  const skippedCount = schedule.filter(b => b.skipped).length;
+  const nextBreak = schedule.find(b => !b.completed && !b.skipped);
   const nextExercise = nextBreak?.exercise_name || "No exercise";
   const progressPercent = breaksTarget > 0 ? (breaksDone / breaksTarget) * 100 : 0;
 
@@ -34,7 +35,10 @@ export default function BodyCard({ session }) {
       <div className="mt-4">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[10px] text-white/40 uppercase tracking-wider">Progress</span>
-          <span className="text-xs text-white/60 font-medium">{breaksDone}/{breaksTarget}</span>
+          <span className="text-xs text-white/60 font-medium">
+            {breaksDone}/{breaksTarget}
+            {skippedCount > 0 && <span className="text-white/30 ml-1">({skippedCount} skipped)</span>}
+          </span>
         </div>
         <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
           <motion.div

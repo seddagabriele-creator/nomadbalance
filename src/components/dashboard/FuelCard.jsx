@@ -24,8 +24,10 @@ function getSmartFuelStatus(session) {
   const endMin = toMin(session.eating_window_end);
 
   const mealsLogged = session.meals_logged || [];
+  const regularMeals = mealsLogged.filter(m => m.type !== "snack");
+  const snacksCount = mealsLogged.filter(m => m.type === "snack").length;
   const mealsTarget = session.max_meals || 3;
-  const mealsLeft = Math.max(0, mealsTarget - mealsLogged.length);
+  const mealsLeft = Math.max(0, mealsTarget - regularMeals.length);
 
   const fmtRemaining = (mins) => {
     const h = Math.floor(mins / 60);
@@ -55,26 +57,29 @@ function getSmartFuelStatus(session) {
       ? (nowMinutes >= startMin ? (1440 - nowMinutes + endMin) : (endMin - nowMinutes))
       : (endMin - nowMinutes);
     if (mealsLeft > 0) {
+      const snackExtra = snacksCount > 0 ? ` + ${snacksCount} snack${snacksCount > 1 ? "s" : ""}` : "";
       return {
         icon: "utensils",
-        label: `${mealsLogged.length}/${mealsTarget} meals`,
+        label: `${regularMeals.length}/${mealsTarget} meals`,
         detail: `${fmtRemaining(windowRemaining)} left`,
-        extra: `${mealsLeft} meal${mealsLeft > 1 ? "s" : ""} to go`,
+        extra: `${mealsLeft} meal${mealsLeft > 1 ? "s" : ""} to go${snackExtra}`,
       };
     }
 
+    const snackExtra = snacksCount > 0 ? ` + ${snacksCount} snack${snacksCount > 1 ? "s" : ""}` : "";
     return {
       icon: "check",
-      label: "All meals done",
+      label: `All meals done${snackExtra}`,
       detail: `Window: ${fmtRemaining(windowRemaining)} left`,
       extra: null,
     };
   } else {
+    const snackExtra = snacksCount > 0 ? ` + ${snacksCount} snack${snacksCount > 1 ? "s" : ""}` : "";
     return {
       icon: "droplets",
       label: "Fasting",
       detail: `Window closed`,
-      extra: `${mealsLogged.length}/${mealsTarget} meals today`,
+      extra: `${regularMeals.length}/${mealsTarget} meals today${snackExtra}`,
     };
   }
 }

@@ -8,7 +8,7 @@ import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
 import { useAuth } from "../lib/AuthContext";
-import { hasDailyDefaults } from "../hooks/useDailyDefaults";
+import { hasDailyDefaults, getDailyDefaults } from "../hooks/useDailyDefaults";
 import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, getEatingHours, calculateEatingWindowEnd } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
@@ -23,6 +23,7 @@ import UseDefaultsDialog from "../components/wizard/UseDefaultsDialog";
 import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
 import BreakNotification from "../components/body/BreakNotification";
 import DeskStatusToggle from "../components/dashboard/DeskStatusToggle";
+import WeeklySummary from "../components/WeeklySummary";
 import { useTimer } from "../components/lib/TimerContext";
 
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ export default function Dashboard() {
     return !localStorage.getItem("nomadbalance_onboarding_completed");
   });
   const [activeBreakNotification, setActiveBreakNotification] = useState(null);
+  const [showWeeklySummary, setShowWeeklySummary] = useState(false);
   const breakCheckRef = React.useRef(null);
   const breakActionInProgress = React.useRef(false);
   // Local fallback for desk tracking when DB columns are missing
@@ -124,6 +126,79 @@ export default function Dashboard() {
     queryFn: () => daySessionService.listRecent(),
   });
 
+  // Check if we should show weekly summary
+  useEffect(() => {
+    const dailyDefaults = getDailyDefaults();
+    const timings = dailyDefaults.weekly_summary_timing || ["monday_morning"];
+    if (timings.includes("never")) return;
+
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sunday, 1=Monday, 5=Friday
+    const lastShown = localStorage.getItem("nomadbalance_weekly_summary_shown");
+    const lastShownDate = lastShown ? new Date(parseInt(lastShown)) : null;
+    const alreadyShownToday = lastShownDate && lastShownDate.toDateString() === now.toDateString();
+
+    if (alreadyShownToday) return;
+
+    // Monday morning trigger
+    if (timings.includes("monday_morning") && dayOfWeek === 1 && !session) {
+      const lastWeekSessions = allPreviousSessions.filter(s => {
+        const sDate = new Date(s.date);
+        const daysDiff = (now.getTime() - sDate.getTime()) / (1000 * 60 * 60 * 24);
+        return daysDiff >= 1 && daysDiff <= 7;
+      });
+      if (lastWeekSessions.length > 0) {
+        setShowWeeklySummary(true);
+        localStorage.setItem("nomadbalance_weekly_summary_shown", Date.now().toString());
+      }
+    }
+  }, [allPreviousSessions, session]);
+
+  // Auto-away on tab close/hide: save timestamp when tab becomes hidden,
+  // auto-set "away" when user returns after being hidden for a while
+  useEffect(() => {
+    if (!session || session.status !== "active") return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is being hidden — save the timestamp
+        localStorage.setItem("nomadbalance_tab_hidden_at", Date.now().toString());
+      } else {
+        // Tab is back — check how long we were hidden
+        const hiddenAt = localStorage.getItem("nomadbalance_tab_hidden_at");
+        localStorage.removeItem("nomadbalance_tab_hidden_at");
+        if (!hiddenAt) return;
+
+        const hiddenMs = Date.now() - parseInt(hiddenAt);
+        const hiddenMinutes = Math.round(hiddenMs / 60000);
+
+        // If hidden for more than 2 minutes and was at desk, auto-away and back
+        if (hiddenMinutes >= 2 && !isAway) {
+          // Log the away period silently (don't shift breaks — just ignore past ones)
+          const awayStart = new Date(parseInt(hiddenAt)).toISOString();
+          const awayEnd = new Date().toISOString();
+          if (hasDeskColumns) {
+            const awayLog = [...(session.away_log || []), {
+              start: awayStart,
+              end: awayEnd,
+              duration_minutes: hiddenMinutes,
+              auto: true,
+            }];
+            updateSession.mutate({
+              desk_status: "at_desk",
+              away_since: null,
+              away_log: awayLog,
+            });
+          }
+          toast(`Welcome back! You were away for ${hiddenMinutes} min.`, { icon: "\u2615" });
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [session, isAway, hasDeskColumns]);
+
   // Show motivational quote every hour
   useEffect(() => {
     if (!session || session.status !== "active") return;
@@ -153,9 +228,29 @@ export default function Dashboard() {
       if (nowMinutes < startMinutes || nowMinutes > endMinutes) return;
 
       const schedule = session.body_break_schedule || [];
-      const dueBreak = schedule.find(
-        (b) => !b.completed && toMinutes(b.time) <= nowMinutes
+      // Find breaks that are due (past their scheduled time)
+      const dueBreaks = schedule.filter(
+        (b) => !b.completed && !b.skipped && toMinutes(b.time) <= nowMinutes
       );
+      // If multiple breaks are overdue (e.g. user was away), only show the most recent one
+      // and auto-skip the older ones so they don't pile up
+      if (dueBreaks.length > 1) {
+        const sorted = [...dueBreaks].sort((a, b) => toMinutes(b.time) - toMinutes(a.time));
+        const staleBreaks = sorted.slice(1); // all except the most recent
+        const updatedSchedule = schedule.map((b) => {
+          const isStale = staleBreaks.some(sb => sb.time === b.time && sb.exercise_id === b.exercise_id);
+          return isStale ? { ...b, skipped: true } : b;
+        });
+        queryClient.setQueryData(["daySession", today], (old) =>
+          (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
+        );
+        updateSession.mutate({ body_break_schedule: updatedSchedule });
+      }
+      const dueBreak = dueBreaks.length > 0
+        ? (dueBreaks.length > 1
+          ? [...dueBreaks].sort((a, b) => toMinutes(b.time) - toMinutes(a.time))[0]
+          : dueBreaks[0])
+        : null;
       if (dueBreak) {
         setActiveBreakNotification(dueBreak);
         // Send browser notification if tab is not visible
@@ -213,7 +308,7 @@ export default function Dashboard() {
     breakActionInProgress.current = true;
     const updatedSchedule = (session.body_break_schedule || []).map((b) =>
       b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
-        ? { ...b, completed: true }
+        ? { ...b, skipped: true }
         : b
     );
     queryClient.setQueryData(["daySession", today], (old) =>
@@ -222,6 +317,7 @@ export default function Dashboard() {
     updateSession.mutate({ body_break_schedule: updatedSchedule });
     setActiveBreakNotification(null);
     setTimeout(() => { breakActionInProgress.current = false; }, 500);
+    toast("Break skipped", { icon: "\u23ED\uFE0F" });
   };
 
   const handleBreakComplete = () => {
@@ -402,7 +498,8 @@ export default function Dashboard() {
 
       // Pre-populate meals_logged if user already had meals
       const initialMeals = Array.from({ length: mealsAlreadyHad }, (_, i) => ({
-        logged_at: new Date().toISOString(),
+        time: `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`,
+        type: "meal",
         index: i,
       }));
 
@@ -501,6 +598,24 @@ export default function Dashboard() {
     setShowBreathing(true);
   };
 
+  const maybeShowEndDaySummary = () => {
+    const dailyDefaults = getDailyDefaults();
+    const timings = dailyDefaults.weekly_summary_timing || ["monday_morning"];
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const isFriday = dayOfWeek === 5;
+
+    if ((timings.includes("every_end")) || (timings.includes("friday_end") && isFriday)) {
+      const lastShown = localStorage.getItem("nomadbalance_weekly_summary_shown");
+      const lastShownDate = lastShown ? new Date(parseInt(lastShown)) : null;
+      const alreadyShownToday = lastShownDate && lastShownDate.toDateString() === now.toDateString();
+      if (!alreadyShownToday) {
+        setShowWeeklySummary(true);
+        localStorage.setItem("nomadbalance_weekly_summary_shown", Date.now().toString());
+      }
+    }
+  };
+
   const handleDecompressionComplete = () => {
     setShowBreathing(false);
     if (session) {
@@ -508,6 +623,7 @@ export default function Dashboard() {
         updateSession.mutate({ meeting_mode: true });
       } else {
         updateSession.mutate({ status: "completed" });
+        maybeShowEndDaySummary();
       }
     }
   };
@@ -516,6 +632,7 @@ export default function Dashboard() {
     setShowBreathing(false);
     if (session) {
       updateSession.mutate({ status: "completed" });
+      maybeShowEndDaySummary();
     }
   };
 
@@ -622,7 +739,7 @@ export default function Dashboard() {
         body_breaks_done: 0,
         focus_sessions_completed: 0,
         meeting_mode: false,
-        body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false })),
+        body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false, skipped: false })),
         exercises_done_today: [],
       };
       // Only include desk tracking fields if the session already has them (columns exist)
@@ -1058,6 +1175,20 @@ export default function Dashboard() {
             onSkip={handleBreakSkip}
             onComplete={handleBreakComplete}
             onSwap={handleBreakSwap}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Weekly Summary */}
+      <AnimatePresence>
+        {showWeeklySummary && (
+          <WeeklySummary
+            sessions={allPreviousSessions.filter(s => {
+              const sDate = new Date(s.date);
+              const daysDiff = (Date.now() - sDate.getTime()) / (1000 * 60 * 60 * 24);
+              return daysDiff <= 7;
+            })}
+            onClose={() => setShowWeeklySummary(false)}
           />
         )}
       </AnimatePresence>

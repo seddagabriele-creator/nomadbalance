@@ -69,11 +69,21 @@ export const GROUP_LABELS = {
 };
 
 // Daily defaults initial values
+export const DEFAULT_SNACKS_ALLOWED = 2;
+
+export const WEEKLY_SUMMARY_OPTIONS = [
+  { value: "monday_morning", label: "Monday morning" },
+  { value: "friday_end", label: "Friday (End Day)" },
+  { value: "every_end", label: "Every End Day" },
+  { value: "never", label: "Never" },
+];
+
 export const INITIAL_DAILY_DEFAULTS = {
   fasting_preset: DEFAULT_FASTING_PRESET,
   eating_window_start_time: DEFAULT_EATING_WINDOW_START,
   custom_fasting_hours: null,
   max_meals: DEFAULT_MAX_MEALS,
+  snacks_allowed: DEFAULT_SNACKS_ALLOWED,
   focus_work_minutes: DEFAULT_WORK_MINUTES,
   focus_break_minutes: DEFAULT_BREAK_MINUTES,
   focus_sound: "wind",
@@ -81,4 +91,5 @@ export const INITIAL_DAILY_DEFAULTS = {
   body_breaks_target: DEFAULT_BODY_BREAKS_TARGET,
   exercise_selection: "auto",
   selected_groups: [],
+  weekly_summary_timing: ["monday_morning"],
 };

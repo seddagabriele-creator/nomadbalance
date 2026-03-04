@@ -6,14 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen, Bell, BellOff } from "lucide-react";
+import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen, Bell, BellOff, Cookie, BarChart3 } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
 import { userSettingsService } from "../api/services";
 import useDailyDefaults from "../hooks/useDailyDefaults";
-import { DEFAULT_WORK_HOURS, FASTING_PRESETS, calculateEatingWindowEnd } from "../constants";
+import { DEFAULT_WORK_HOURS, FASTING_PRESETS, calculateEatingWindowEnd, WEEKLY_SUMMARY_OPTIONS } from "../constants";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -368,10 +368,33 @@ export default function Settings() {
                   </div>
                 </div>
 
+                {/* Snacks allowed */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Cookie className="w-4 h-4 text-amber-400" />
+                    <Label className="text-white/60 text-xs">Snacks per day</Label>
+                  </div>
+                  <div className="flex gap-2">
+                    {[0, 1, 2, 3].map(n => (
+                      <button
+                        key={n}
+                        onClick={() => setLocalDefaults({ ...localDefaults, snacks_allowed: n })}
+                        className={`flex-1 py-2 rounded-lg border text-sm font-bold transition-all ${
+                          (localDefaults.snacks_allowed ?? 2) === n
+                            ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
+                            : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Meal breakdown info */}
                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
                   <p className="text-white/40 text-xs">
-                    {localDefaults.max_meals || 3} meals per day
+                    {localDefaults.max_meals || 3} meals + {localDefaults.snacks_allowed ?? 2} snacks per day
                   </p>
                 </div>
               </div>
@@ -536,6 +559,52 @@ export default function Settings() {
               </div>
             </div>
 
+          </section>
+
+          {/* Weekly Summary */}
+          <section className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6" aria-label="Weekly summary settings">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-violet-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Weekly Summary</h2>
+                <p className="text-xs text-white/50">When to show your weekly progress recap</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {WEEKLY_SUMMARY_OPTIONS.map(option => {
+                const timings = localDefaults.weekly_summary_timing || ["monday_morning"];
+                const isSelected = timings.includes(option.value);
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      let updated;
+                      if (option.value === "never") {
+                        updated = ["never"];
+                      } else {
+                        const withoutNever = timings.filter(t => t !== "never");
+                        updated = isSelected
+                          ? withoutNever.filter(t => t !== option.value)
+                          : [...withoutNever, option.value];
+                        if (updated.length === 0) updated = ["never"];
+                      }
+                      setLocalDefaults({ ...localDefaults, weekly_summary_timing: updated });
+                    }}
+                    className={`w-full p-3 rounded-xl border transition-all text-left ${
+                      isSelected
+                        ? "bg-violet-500/20 border-violet-500/50"
+                        : "bg-white/5 border-white/10 hover:bg-white/10"
+                    }`}
+                  >
+                    <p className={`text-sm font-medium ${isSelected ? "text-violet-300" : "text-white/60"}`}>
+                      {option.label}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
           </section>
 
           {/* Tutorial Replay */}

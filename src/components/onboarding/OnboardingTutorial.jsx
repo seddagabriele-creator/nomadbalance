@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass, Settings, Sun, Droplets, Headphones,
-  ClipboardList, Dumbbell, Rocket, ChevronRight, ChevronLeft,
+  ClipboardList, Dumbbell, Rocket, ChevronRight, ChevronLeft, Coffee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -55,6 +55,13 @@ const STEPS = [
     title: "Body — Move, Don't Rust",
     body: "Hours at a desk take a real toll. The app schedules short exercise breaks throughout your day — quick movements designed for desk workers that help your posture, relieve tension, and keep your body from filing a complaint. When it's time, you'll get a notification with exactly what to do.",
     hint: "Exercises auto-selected for variety across muscle groups",
+  },
+  {
+    icon: Coffee,
+    color: "cyan",
+    title: "At Desk — Smart Pauses",
+    body: "Use the 'At Desk' toggle on your dashboard to tell the app when you step away — for a coffee, a meeting, or just a walk. This pauses break reminders while you're gone, and the app picks up right where you left off when you return. It also auto-detects when you close the tab, so you won't come back to a pile of missed notifications.",
+    hint: "Toggle it from the dashboard — your breaks adapt to your real schedule",
   },
   {
     icon: Rocket,
