@@ -62,6 +62,7 @@ CREATE TABLE tasks (
   completed_at TIMESTAMPTZ,
   is_work_day_task BOOLEAN DEFAULT false,
   alarm_time TEXT,
+  notes TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService, taskService } from "../api/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock } from "lucide-react";
+import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock, ArrowRightCircle, MessageSquare, Save } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
@@ -25,6 +26,8 @@ export default function Journal() {
   const [alarmTime, setAlarmTime] = useState("");
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState(null);
+  const [editingNotes, setEditingNotes] = useState({});
+  const [showCarryoverConfirm, setShowCarryoverConfirm] = useState(null);
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
@@ -95,6 +98,37 @@ export default function Journal() {
       toast.success("All previous tasks completed");
     },
   });
+
+  const handleCarryoverTask = (task) => {
+    if (!session?.id) return;
+    const maxOrder = todayTasks.length > 0 ? Math.max(...todayTasks.map((t) => t.order)) : 0;
+    updateTask.mutate({
+      id: task.id,
+      data: {
+        session_id: session.id,
+        order: maxOrder + 1,
+        completed: false,
+        completed_at: null,
+      },
+    });
+    setShowCarryoverConfirm(null);
+    toast.success("Task moved to today");
+  };
+
+  const handleSaveNotes = (task) => {
+    const notes = editingNotes[task.id];
+    if (notes === undefined) return;
+    updateTask.mutate({
+      id: task.id,
+      data: { notes: notes || null },
+    });
+    setEditingNotes(prev => {
+      const next = { ...prev };
+      delete next[task.id];
+      return next;
+    });
+    toast.success("Notes saved");
+  };
 
   const handleAddTask = () => {
     if (!newTaskTitle.trim()) return;
@@ -287,63 +321,126 @@ export default function Journal() {
                                     {task.title}
                                   </span>
                                   {isExpanded && (
-                                    <div className="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-white/10">
-                                      {task.alarm_time && (
-                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs">
-                                          <Clock className="w-3 h-3" />
-                                          <span>{task.alarm_time}</span>
+                                    <div className="mt-1.5 pt-1.5 border-t border-white/10 space-y-2">
+                                      <div className="flex items-center gap-1">
+                                        {task.alarm_time && (
+                                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs">
+                                            <Clock className="w-3 h-3" />
+                                            <span>{task.alarm_time}</span>
+                                          </div>
+                                        )}
+                                        {task.notes && editingNotes[task.id] === undefined && (
+                                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-xs">
+                                            <MessageSquare className="w-3 h-3" />
+                                            <span>Notes</span>
+                                          </div>
+                                        )}
+                                        <div className="flex-1" />
+                                        <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
+                                          if (!open) { setEditingAlarm(null); setAlarmTime(""); }
+                                        }}>
+                                          <PopoverTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingAlarm(task.id);
+                                                setAlarmTime(task.alarm_time || "");
+                                              }}
+                                              className={`h-7 w-7 ${task.alarm_time ? 'text-cyan-400' : 'text-white/40'} hover:text-cyan-300 hover:bg-cyan-500/10`}
+                                            >
+                                              <Clock className="w-3.5 h-3.5" />
+                                            </Button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
+                                            <div className="space-y-2">
+                                              <Input
+                                                type="time"
+                                                value={alarmTime}
+                                                onChange={(e) => setAlarmTime(e.target.value)}
+                                                className="bg-white/5 border-white/10 text-white"
+                                              />
+                                              <div className="flex gap-2">
+                                                {task.alarm_time && (
+                                                  <Button size="sm" variant="ghost" onClick={() => handleRemoveAlarm(task)} className="flex-1 text-red-400 hover:text-red-300">Remove</Button>
+                                                )}
+                                                <Button size="sm" onClick={() => handleSetAlarm(task)} className="flex-1 bg-cyan-600 hover:bg-cyan-700">Set</Button>
+                                              </div>
+                                            </div>
+                                          </PopoverContent>
+                                        </Popover>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingNotes(prev => prev[task.id] !== undefined
+                                              ? (() => { const n = { ...prev }; delete n[task.id]; return n; })()
+                                              : { ...prev, [task.id]: task.notes || "" }
+                                            );
+                                          }}
+                                          className={`h-7 w-7 ${task.notes ? 'text-indigo-400' : 'text-white/40'} hover:text-indigo-300 hover:bg-indigo-500/10`}
+                                        >
+                                          <MessageSquare className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={(e) => { e.stopPropagation(); deleteTask.mutate(task.id); }}
+                                          className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </div>
+                                      {editingNotes[task.id] !== undefined && (
+                                        <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                                          <Textarea
+                                            value={editingNotes[task.id]}
+                                            onChange={(e) => setEditingNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                            placeholder="Add notes..."
+                                            rows={2}
+                                            className="bg-white/5 border-white/10 text-white text-xs resize-none min-h-[48px]"
+                                          />
+                                          <div className="flex justify-end gap-1.5">
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() => setEditingNotes(prev => { const n = { ...prev }; delete n[task.id]; return n; })}
+                                              className="h-6 px-2 text-xs text-white/40 hover:text-white"
+                                            >
+                                              Cancel
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              onClick={() => handleSaveNotes(task)}
+                                              className="h-6 px-2 text-xs bg-indigo-600 hover:bg-indigo-700"
+                                            >
+                                              <Save className="w-3 h-3 mr-1" />
+                                              Save
+                                            </Button>
+                                          </div>
                                         </div>
                                       )}
-                                      <div className="flex-1" />
-                                      <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
-                                        if (!open) { setEditingAlarm(null); setAlarmTime(""); }
-                                      }}>
-                                        <PopoverTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEditingAlarm(task.id);
-                                              setAlarmTime(task.alarm_time || "");
-                                            }}
-                                            className={`h-7 w-7 ${task.alarm_time ? 'text-cyan-400' : 'text-white/40'} hover:text-cyan-300 hover:bg-cyan-500/10`}
-                                          >
-                                            <Clock className="w-3.5 h-3.5" />
-                                          </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
-                                          <div className="space-y-2">
-                                            <Input
-                                              type="time"
-                                              value={alarmTime}
-                                              onChange={(e) => setAlarmTime(e.target.value)}
-                                              className="bg-white/5 border-white/10 text-white"
-                                            />
-                                            <div className="flex gap-2">
-                                              {task.alarm_time && (
-                                                <Button size="sm" variant="ghost" onClick={() => handleRemoveAlarm(task)} className="flex-1 text-red-400 hover:text-red-300">Remove</Button>
-                                              )}
-                                              <Button size="sm" onClick={() => handleSetAlarm(task)} className="flex-1 bg-cyan-600 hover:bg-cyan-700">Set</Button>
-                                            </div>
-                                          </div>
-                                        </PopoverContent>
-                                      </Popover>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={(e) => { e.stopPropagation(); deleteTask.mutate(task.id); }}
-                                        className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </Button>
+                                      {editingNotes[task.id] === undefined && task.notes && (
+                                        <p className="text-xs text-white/50 whitespace-pre-wrap pl-0.5">{task.notes}</p>
+                                      )}
                                     </div>
                                   )}
                                 </div>
-                                {!isExpanded && task.alarm_time && (
-                                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] shrink-0 mt-px">
-                                    <Clock className="w-2.5 h-2.5" />
-                                    <span>{task.alarm_time}</span>
+                                {!isExpanded && (task.alarm_time || task.notes) && (
+                                  <div className="flex items-center gap-1 shrink-0 mt-px">
+                                    {task.alarm_time && (
+                                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px]">
+                                        <Clock className="w-2.5 h-2.5" />
+                                        <span>{task.alarm_time}</span>
+                                      </div>
+                                    )}
+                                    {task.notes && (
+                                      <div className="flex items-center px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px]">
+                                        <MessageSquare className="w-2.5 h-2.5" />
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -409,64 +506,168 @@ export default function Journal() {
                                     {task.title}
                                   </span>
                                   {isExpanded && (
-                                    <div className="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-amber-500/20">
-                                      {task.alarm_time && (
-                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs">
-                                          <Clock className="w-3 h-3" />
-                                          <span>{task.alarm_time}</span>
-                                        </div>
-                                      )}
-                                      <div className="flex-1" />
-                                      <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
-                                        if (!open) { setEditingAlarm(null); setAlarmTime(""); }
-                                      }}>
-                                        <PopoverTrigger asChild>
+                                    <div className="mt-1.5 pt-1.5 border-t border-amber-500/20 space-y-2">
+                                      <div className="flex items-center gap-1">
+                                        {task.alarm_time && (
+                                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs">
+                                            <Clock className="w-3 h-3" />
+                                            <span>{task.alarm_time}</span>
+                                          </div>
+                                        )}
+                                        {task.notes && editingNotes[task.id] === undefined && (
+                                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-xs">
+                                            <MessageSquare className="w-3 h-3" />
+                                            <span>Notes</span>
+                                          </div>
+                                        )}
+                                        <div className="flex-1" />
+                                        {showCarryoverConfirm === task.id ? (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-[10px] text-amber-400/70">Move to today?</span>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={(e) => { e.stopPropagation(); setShowCarryoverConfirm(null); }}
+                                              className="h-6 px-1.5 text-[10px] text-white/40 hover:text-white"
+                                            >
+                                              No
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              onClick={(e) => { e.stopPropagation(); handleCarryoverTask(task); }}
+                                              className="h-6 px-1.5 text-[10px] bg-cyan-600 hover:bg-cyan-700"
+                                            >
+                                              Yes
+                                            </Button>
+                                          </div>
+                                        ) : (
                                           <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEditingAlarm(task.id);
-                                              setAlarmTime(task.alarm_time || "");
-                                            }}
-                                            className={`h-7 w-7 ${task.alarm_time ? 'text-amber-400' : 'text-white/40'} hover:text-amber-300 hover:bg-amber-500/10`}
+                                            onClick={(e) => { e.stopPropagation(); setShowCarryoverConfirm(task.id); }}
+                                            className="h-7 w-7 text-cyan-400/70 hover:text-cyan-300 hover:bg-cyan-500/10"
+                                            title="Move to today"
                                           >
-                                            <Clock className="w-3.5 h-3.5" />
+                                            <ArrowRightCircle className="w-3.5 h-3.5" />
                                           </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
-                                          <div className="space-y-2">
-                                            <Input
-                                              type="time"
-                                              value={alarmTime}
-                                              onChange={(e) => setAlarmTime(e.target.value)}
-                                              className="bg-white/5 border-white/10 text-white"
-                                            />
-                                            <div className="flex gap-2">
-                                              {task.alarm_time && (
-                                                <Button size="sm" variant="ghost" onClick={() => handleRemoveAlarm(task)} className="flex-1 text-red-400 hover:text-red-300">Remove</Button>
-                                              )}
-                                              <Button size="sm" onClick={() => handleSetAlarm(task)} className="flex-1 bg-amber-600 hover:bg-amber-700">Set</Button>
+                                        )}
+                                        <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
+                                          if (!open) { setEditingAlarm(null); setAlarmTime(""); }
+                                        }}>
+                                          <PopoverTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingAlarm(task.id);
+                                                setAlarmTime(task.alarm_time || "");
+                                              }}
+                                              className={`h-7 w-7 ${task.alarm_time ? 'text-amber-400' : 'text-white/40'} hover:text-amber-300 hover:bg-amber-500/10`}
+                                            >
+                                              <Clock className="w-3.5 h-3.5" />
+                                            </Button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
+                                            <div className="space-y-2">
+                                              <Input
+                                                type="time"
+                                                value={alarmTime}
+                                                onChange={(e) => setAlarmTime(e.target.value)}
+                                                className="bg-white/5 border-white/10 text-white"
+                                              />
+                                              <div className="flex gap-2">
+                                                {task.alarm_time && (
+                                                  <Button size="sm" variant="ghost" onClick={() => handleRemoveAlarm(task)} className="flex-1 text-red-400 hover:text-red-300">Remove</Button>
+                                                )}
+                                                <Button size="sm" onClick={() => handleSetAlarm(task)} className="flex-1 bg-amber-600 hover:bg-amber-700">Set</Button>
+                                              </div>
                                             </div>
+                                          </PopoverContent>
+                                        </Popover>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingNotes(prev => prev[task.id] !== undefined
+                                              ? (() => { const n = { ...prev }; delete n[task.id]; return n; })()
+                                              : { ...prev, [task.id]: task.notes || "" }
+                                            );
+                                          }}
+                                          className={`h-7 w-7 ${task.notes ? 'text-indigo-400' : 'text-white/40'} hover:text-indigo-300 hover:bg-indigo-500/10`}
+                                        >
+                                          <MessageSquare className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={(e) => { e.stopPropagation(); deleteTask.mutate(task.id); }}
+                                          className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </div>
+                                      {editingNotes[task.id] !== undefined && (
+                                        <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                                          <Textarea
+                                            value={editingNotes[task.id]}
+                                            onChange={(e) => setEditingNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                            placeholder="Add notes..."
+                                            rows={2}
+                                            className="bg-white/5 border-amber-500/20 text-white text-xs resize-none min-h-[48px]"
+                                          />
+                                          <div className="flex justify-end gap-1.5">
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() => setEditingNotes(prev => { const n = { ...prev }; delete n[task.id]; return n; })}
+                                              className="h-6 px-2 text-xs text-white/40 hover:text-white"
+                                            >
+                                              Cancel
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              onClick={() => handleSaveNotes(task)}
+                                              className="h-6 px-2 text-xs bg-indigo-600 hover:bg-indigo-700"
+                                            >
+                                              <Save className="w-3 h-3 mr-1" />
+                                              Save
+                                            </Button>
                                           </div>
-                                        </PopoverContent>
-                                      </Popover>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={(e) => { e.stopPropagation(); deleteTask.mutate(task.id); }}
-                                        className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </Button>
+                                        </div>
+                                      )}
+                                      {editingNotes[task.id] === undefined && task.notes && (
+                                        <p className="text-xs text-white/50 whitespace-pre-wrap pl-0.5">{task.notes}</p>
+                                      )}
                                     </div>
                                   )}
                                 </div>
-                                {!isExpanded && task.alarm_time && (
-                                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] shrink-0 mt-px">
-                                    <Clock className="w-2.5 h-2.5" />
-                                    <span>{task.alarm_time}</span>
+                                {!isExpanded && (task.alarm_time || task.notes) && (
+                                  <div className="flex items-center gap-1 shrink-0 mt-px">
+                                    {task.alarm_time && (
+                                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px]">
+                                        <Clock className="w-2.5 h-2.5" />
+                                        <span>{task.alarm_time}</span>
+                                      </div>
+                                    )}
+                                    {task.notes && (
+                                      <div className="flex items-center px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px]">
+                                        <MessageSquare className="w-2.5 h-2.5" />
+                                      </div>
+                                    )}
                                   </div>
+                                )}
+                                {!isExpanded && !task.alarm_time && !task.notes && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => { e.stopPropagation(); setShowCarryoverConfirm(task.id); setExpandedTaskId(task.id); }}
+                                    className="h-6 w-6 text-cyan-400/50 hover:text-cyan-300 hover:bg-cyan-500/10 shrink-0 mt-px"
+                                    title="Move to today"
+                                  >
+                                    <ArrowRightCircle className="w-3 h-3" />
+                                  </Button>
                                 )}
                               </div>
                             );
