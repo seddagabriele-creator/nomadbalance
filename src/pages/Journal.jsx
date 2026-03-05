@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService, taskService } from "../api/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock, ArrowRightCircle, MessageSquare, Save } from "lucide-react";
+import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock, ArrowUp, ArrowDown, MessageSquare, Save, CheckSquare, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
@@ -28,6 +28,7 @@ export default function Journal() {
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [editingNotes, setEditingNotes] = useState({});
   const [selectedPrevTasks, setSelectedPrevTasks] = useState(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
@@ -187,42 +188,101 @@ export default function Journal() {
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
-    if (result.source.index === result.destination.index) return;
 
-    const listId = result.source.droppableId;
-    const tasksList = listId === "today" ? sortedTodayTasks : sortedPreviousTasks;
+    const { source, destination } = result;
+    const sameList = source.droppableId === destination.droppableId;
 
-    const reordered = Array.from(tasksList);
-    const [moved] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, moved);
+    if (sameList && source.index === destination.index) return;
 
-    // Build order map for optimistic update
-    const orderMap = new Map();
-    reordered.forEach((task, index) => {
-      orderMap.set(task.id, index + 1);
-    });
+    const sourceList = source.droppableId === "today" ? sortedTodayTasks : sortedPreviousTasks;
+    const destList = destination.droppableId === "today" ? sortedTodayTasks : sortedPreviousTasks;
 
-    // Optimistic update — instantly reflect new order in UI
-    queryClient.setQueryData(["allTasks", session?.id], (old) => {
-      if (!old) return old;
-      return old.map(task => {
-        const newOrder = orderMap.get(task.id);
-        return newOrder !== undefined ? { ...task, order: newOrder } : task;
-      });
-    });
+    if (sameList) {
+      // Reorder within same list
+      const reordered = Array.from(sourceList);
+      const [moved] = reordered.splice(source.index, 1);
+      reordered.splice(destination.index, 0, moved);
 
-    // Persist to backend (bypass mutation to avoid per-item invalidation)
-    const updates = reordered
-      .filter((task, index) => task.order !== index + 1)
-      .map((task, index) => {
-        const newOrder = orderMap.get(task.id);
-        return taskService.update(task.id, { order: newOrder });
+      const orderMap = new Map();
+      reordered.forEach((task, index) => { orderMap.set(task.id, index + 1); });
+
+      queryClient.setQueryData(["allTasks", session?.id], (old) => {
+        if (!old) return old;
+        return old.map(task => {
+          const newOrder = orderMap.get(task.id);
+          return newOrder !== undefined ? { ...task, order: newOrder } : task;
+        });
       });
 
-    try {
-      await Promise.all(updates);
-    } finally {
-      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+      const updates = reordered
+        .filter((task) => task.order !== orderMap.get(task.id))
+        .map((task) => taskService.update(task.id, { order: orderMap.get(task.id) }));
+
+      try { await Promise.all(updates); }
+      finally { queryClient.invalidateQueries({ queryKey: ["allTasks"] }); }
+    } else {
+      // Cross-list move
+      const movedTask = sourceList[source.index];
+      const newSourceList = Array.from(sourceList);
+      newSourceList.splice(source.index, 1);
+      const newDestList = Array.from(destList);
+      newDestList.splice(destination.index, 0, movedTask);
+
+      // Determine the new session_id for the moved task
+      const movingToToday = destination.droppableId === "today";
+      const newSessionId = movingToToday ? session?.id : movedTask._original_session_id || null;
+
+      // Build order maps
+      const orderMap = new Map();
+      newSourceList.forEach((task, i) => { orderMap.set(task.id, i + 1); });
+      newDestList.forEach((task, i) => { orderMap.set(task.id, i + 1); });
+
+      // Optimistic update
+      queryClient.setQueryData(["allTasks", session?.id], (old) => {
+        if (!old) return old;
+        return old.map(task => {
+          if (task.id === movedTask.id) {
+            return { ...task, session_id: movingToToday ? session?.id : task._original_session_id || task.session_id, order: orderMap.get(task.id) ?? task.order };
+          }
+          const newOrder = orderMap.get(task.id);
+          return newOrder !== undefined ? { ...task, order: newOrder } : task;
+        });
+      });
+
+      // Persist — move task + reorder both lists
+      const updates = [];
+      if (movingToToday) {
+        updates.push(taskService.update(movedTask.id, {
+          session_id: session?.id,
+          order: orderMap.get(movedTask.id),
+          completed: false,
+          completed_at: null,
+        }));
+      } else {
+        // Moving from today back to previous — restore original session
+        // We need the task's original session. Since previous tasks are from other sessions,
+        // we can't easily know which one. For simplicity, just reorder within today.
+        // Actually cross-list today→previous doesn't make sense logically, so we skip.
+        return;
+      }
+
+      // Reorder remaining source list
+      newSourceList.forEach((task) => {
+        if (task.order !== orderMap.get(task.id)) {
+          updates.push(taskService.update(task.id, { order: orderMap.get(task.id) }));
+        }
+      });
+      // Reorder dest list (excluding the moved task already handled)
+      newDestList.forEach((task) => {
+        if (task.id !== movedTask.id && task.order !== orderMap.get(task.id)) {
+          updates.push(taskService.update(task.id, { order: orderMap.get(task.id) }));
+        }
+      });
+
+      try { await Promise.all(updates); }
+      finally { queryClient.invalidateQueries({ queryKey: ["allTasks"] }); }
+
+      toast.success("Task moved to today");
     }
   };
 
@@ -286,13 +346,30 @@ export default function Journal() {
             </div>
           </div>
 
-          {sortedTodayTasks.length > 0 && (
+          <DragDropContext onDragEnd={handleDragEnd}>
+          {(sortedTodayTasks.length > 0 || sortedPreviousTasks.length > 0) && (
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
               <h2 className="text-lg font-semibold mb-3">Today's Tasks</h2>
-              <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="today">
-                  {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef} className="flex flex-col gap-1.5">
+                  {(provided, dropSnapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`flex flex-col gap-1.5 min-h-[40px] rounded-xl transition-all ${
+                        dropSnapshot.isDraggingOver
+                          ? "bg-cyan-500/10 ring-2 ring-cyan-500/30"
+                          : ""
+                      }`}
+                    >
+                      {sortedTodayTasks.length === 0 && (
+                        <div className={`flex items-center justify-center py-3 rounded-xl border-2 border-dashed transition-colors ${
+                          dropSnapshot.isDraggingOver ? "border-cyan-500/40 text-cyan-400" : "border-white/10 text-white/30"
+                        }`}>
+                          <span className="text-xs">
+                            {dropSnapshot.isDraggingOver ? "Drop here to add to today" : "Drag tasks here or add one above"}
+                          </span>
+                        </div>
+                      )}
                       {sortedTodayTasks.map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
                           {(provided, snapshot) => {
@@ -467,7 +544,6 @@ export default function Journal() {
                     </div>
                   )}
                 </Droppable>
-              </DragDropContext>
             </div>
           )}
 
@@ -476,31 +552,69 @@ export default function Journal() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-amber-400">Previous Tasks</h2>
                 <div className="flex items-center gap-1.5">
-                  {selectedPrevTasks.size > 0 && (
-                    <Button
-                      onClick={() => {
-                        const tasksToMove = sortedPreviousTasks.filter(t => selectedPrevTasks.has(t.id));
-                        moveTasksToToday.mutate(tasksToMove);
-                      }}
-                      size="sm"
-                      className="h-7 px-2.5 text-xs bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400"
-                    >
-                      <ArrowRightCircle className="w-3 h-3 mr-1" />
-                      Move {selectedPrevTasks.size} to today
-                    </Button>
+                  {selectionMode ? (
+                    <>
+                      {selectedPrevTasks.size > 0 && (
+                        <Button
+                          onClick={() => {
+                            const tasksToMove = sortedPreviousTasks.filter(t => selectedPrevTasks.has(t.id));
+                            moveTasksToToday.mutate(tasksToMove);
+                            setSelectionMode(false);
+                          }}
+                          size="sm"
+                          className="h-7 px-2.5 text-xs bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400"
+                        >
+                          <ArrowUp className="w-3 h-3 mr-1" />
+                          Move {selectedPrevTasks.size} to today
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => {
+                          if (selectedPrevTasks.size === sortedPreviousTasks.length) {
+                            setSelectedPrevTasks(new Set());
+                          } else {
+                            setSelectedPrevTasks(new Set(sortedPreviousTasks.map(t => t.id)));
+                          }
+                        }}
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs text-amber-400 hover:text-amber-300"
+                      >
+                        {selectedPrevTasks.size === sortedPreviousTasks.length ? "Deselect all" : "Select all"}
+                      </Button>
+                      <Button
+                        onClick={() => { setSelectionMode(false); setSelectedPrevTasks(new Set()); }}
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-white/40 hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={() => setSelectionMode(true)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs text-white/50 hover:text-white hover:bg-white/10"
+                        title="Select tasks"
+                      >
+                        <CheckSquare className="w-3 h-3 mr-1" />
+                        Select
+                      </Button>
+                      <Button
+                        onClick={() => moveTasksToToday.mutate(sortedPreviousTasks)}
+                        size="sm"
+                        className="h-7 px-2.5 text-xs bg-gradient-to-r from-cyan-600/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-400"
+                      >
+                        <ArrowUp className="w-3 h-3 mr-1" />
+                        Move all to today
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    onClick={() => moveTasksToToday.mutate(sortedPreviousTasks)}
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2.5 text-xs text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
-                  >
-                    <ArrowRightCircle className="w-3 h-3 mr-1" />
-                    Move all
-                  </Button>
                 </div>
               </div>
-              <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="previous">
                   {(provided) => (
                     <div {...provided.droppableProps} ref={provided.innerRef} className="flex flex-col gap-1.5">
@@ -512,25 +626,31 @@ export default function Journal() {
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className={`flex items-start gap-1.5 px-2 py-1.5 rounded-xl border transition-colors ${
+                                className={`group flex items-start gap-1.5 px-2 py-1.5 rounded-xl border transition-all ${
                                   snapshot.isDragging
-                                    ? "bg-slate-900 border-amber-500/50 shadow-lg shadow-amber-500/10"
-                                    : "bg-amber-500/5 border-amber-500/20"
+                                    ? "bg-slate-900 border-cyan-500/50 shadow-xl shadow-cyan-500/20 scale-[1.02]"
+                                    : selectedPrevTasks.has(task.id)
+                                    ? "bg-cyan-500/10 border-cyan-500/30"
+                                    : "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/40"
                                 }`}
                               >
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleToggleSelectPrev(task.id); }}
-                                  className={`shrink-0 mt-0.5 w-4 h-4 rounded border transition-colors ${
-                                    selectedPrevTasks.has(task.id)
-                                      ? "bg-cyan-500 border-cyan-500"
-                                      : "border-amber-500/40 hover:border-amber-400"
-                                  }`}
-                                >
-                                  {selectedPrevTasks.has(task.id) && (
-                                    <CheckCircle2 className="w-4 h-4 text-white" />
-                                  )}
-                                </button>
-                                <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0 pt-0.5">
+                                {selectionMode && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleToggleSelectPrev(task.id); }}
+                                    className={`shrink-0 mt-0.5 w-4 h-4 rounded border-2 transition-all flex items-center justify-center ${
+                                      selectedPrevTasks.has(task.id)
+                                        ? "bg-cyan-500 border-cyan-500 scale-110"
+                                        : "border-white/30 hover:border-cyan-400"
+                                    }`}
+                                  >
+                                    {selectedPrevTasks.has(task.id) && (
+                                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                )}
+                                <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0 pt-0.5 cursor-grab active:cursor-grabbing">
                                   <GripVertical className="w-3.5 h-3.5" />
                                 </div>
                                 <div className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold shrink-0 mt-px">
@@ -548,7 +668,13 @@ export default function Journal() {
                                 </button>
                                 <div
                                   className="flex-1 min-w-0 cursor-pointer"
-                                  onClick={() => setExpandedTaskId(prev => prev === task.id ? null : task.id)}
+                                  onClick={() => {
+                                    if (selectionMode) {
+                                      handleToggleSelectPrev(task.id);
+                                    } else {
+                                      setExpandedTaskId(prev => prev === task.id ? null : task.id);
+                                    }
+                                  }}
                                 >
                                   <span
                                     className={`text-sm leading-5 ${
@@ -557,7 +683,7 @@ export default function Journal() {
                                   >
                                     {task.title}
                                   </span>
-                                  {isExpanded && (
+                                  {isExpanded && !selectionMode && (
                                     <div className="mt-1.5 pt-1.5 border-t border-amber-500/20 space-y-2">
                                       <div className="flex items-center gap-1">
                                         {task.alarm_time && (
@@ -577,10 +703,10 @@ export default function Journal() {
                                           variant="ghost"
                                           size="sm"
                                           onClick={(e) => { e.stopPropagation(); moveTasksToToday.mutate([task]); }}
-                                          className="h-6 px-2 text-[10px] text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                                          className="h-6 px-2 text-[10px] text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 gap-1"
                                         >
-                                          <ArrowRightCircle className="w-3 h-3 mr-1" />
-                                          Today
+                                          <ArrowUp className="w-3 h-3" />
+                                          Move to today
                                         </Button>
                                         <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
                                           if (!open) { setEditingAlarm(null); setAlarmTime(""); }
@@ -674,7 +800,19 @@ export default function Journal() {
                                     </div>
                                   )}
                                 </div>
-                                {!isExpanded && (task.alarm_time || task.notes) && (
+                                {!selectionMode && !isExpanded && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); moveTasksToToday.mutate([task]); }}
+                                    className="relative shrink-0 mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center text-cyan-400/60 hover:text-cyan-300 hover:bg-cyan-500/15 transition-all group/btn"
+                                    title="Move to today"
+                                  >
+                                    <ArrowUp className="w-3.5 h-3.5" />
+                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-slate-800 text-[10px] text-cyan-300 whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none border border-cyan-500/20 shadow-lg">
+                                      Move to today
+                                    </span>
+                                  </button>
+                                )}
+                                {!selectionMode && !isExpanded && (task.alarm_time || task.notes) && (
                                   <div className="flex items-center gap-1 shrink-0 mt-px">
                                     {task.alarm_time && (
                                       <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px]">
@@ -699,9 +837,9 @@ export default function Journal() {
                     </div>
                   )}
                 </Droppable>
-              </DragDropContext>
             </div>
           )}
+          </DragDropContext>
 
           {sortedTodayTasks.length === 0 && sortedPreviousTasks.length === 0 && (
             <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-white/10 rounded-2xl p-8 text-center">
