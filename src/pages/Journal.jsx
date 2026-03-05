@@ -27,7 +27,7 @@ export default function Journal() {
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [editingNotes, setEditingNotes] = useState({});
-  const [showCarryoverConfirm, setShowCarryoverConfirm] = useState(null);
+  const [selectedPrevTasks, setSelectedPrevTasks] = useState(new Set());
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
@@ -99,20 +99,34 @@ export default function Journal() {
     },
   });
 
-  const handleCarryoverTask = (task) => {
-    if (!session?.id) return;
-    const maxOrder = todayTasks.length > 0 ? Math.max(...todayTasks.map((t) => t.order)) : 0;
-    updateTask.mutate({
-      id: task.id,
-      data: {
-        session_id: session.id,
-        order: maxOrder + 1,
-        completed: false,
-        completed_at: null,
-      },
+  const moveTasksToToday = useMutation({
+    mutationFn: async (tasks) => {
+      if (!session?.id) return;
+      let maxOrder = todayTasks.length > 0 ? Math.max(...todayTasks.map((t) => t.order)) : 0;
+      const promises = tasks.map((task, i) =>
+        taskService.update(task.id, {
+          session_id: session.id,
+          order: maxOrder + 1 + i,
+          completed: false,
+          completed_at: null,
+        })
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: (_, tasks) => {
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+      setSelectedPrevTasks(new Set());
+      toast.success(tasks.length === 1 ? "Task moved to today" : `${tasks.length} tasks moved to today`);
+    },
+  });
+
+  const handleToggleSelectPrev = (taskId) => {
+    setSelectedPrevTasks(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
     });
-    setShowCarryoverConfirm(null);
-    toast.success("Task moved to today");
   };
 
   const handleSaveNotes = (task) => {
@@ -459,7 +473,33 @@ export default function Journal() {
 
           {sortedPreviousTasks.length > 0 && (
             <div className="bg-amber-500/5 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-4">
-              <h2 className="text-lg font-semibold mb-3 text-amber-400">Previous Tasks</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-amber-400">Previous Tasks</h2>
+                <div className="flex items-center gap-1.5">
+                  {selectedPrevTasks.size > 0 && (
+                    <Button
+                      onClick={() => {
+                        const tasksToMove = sortedPreviousTasks.filter(t => selectedPrevTasks.has(t.id));
+                        moveTasksToToday.mutate(tasksToMove);
+                      }}
+                      size="sm"
+                      className="h-7 px-2.5 text-xs bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400"
+                    >
+                      <ArrowRightCircle className="w-3 h-3 mr-1" />
+                      Move {selectedPrevTasks.size} to today
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => moveTasksToToday.mutate(sortedPreviousTasks)}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2.5 text-xs text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                  >
+                    <ArrowRightCircle className="w-3 h-3 mr-1" />
+                    Move all
+                  </Button>
+                </div>
+              </div>
               <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="previous">
                   {(provided) => (
@@ -478,6 +518,18 @@ export default function Journal() {
                                     : "bg-amber-500/5 border-amber-500/20"
                                 }`}
                               >
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleToggleSelectPrev(task.id); }}
+                                  className={`shrink-0 mt-0.5 w-4 h-4 rounded border transition-colors ${
+                                    selectedPrevTasks.has(task.id)
+                                      ? "bg-cyan-500 border-cyan-500"
+                                      : "border-amber-500/40 hover:border-amber-400"
+                                  }`}
+                                >
+                                  {selectedPrevTasks.has(task.id) && (
+                                    <CheckCircle2 className="w-4 h-4 text-white" />
+                                  )}
+                                </button>
                                 <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0 pt-0.5">
                                   <GripVertical className="w-3.5 h-3.5" />
                                 </div>
@@ -521,36 +573,15 @@ export default function Journal() {
                                           </div>
                                         )}
                                         <div className="flex-1" />
-                                        {showCarryoverConfirm === task.id ? (
-                                          <div className="flex items-center gap-1">
-                                            <span className="text-[10px] text-amber-400/70">Move to today?</span>
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              onClick={(e) => { e.stopPropagation(); setShowCarryoverConfirm(null); }}
-                                              className="h-6 px-1.5 text-[10px] text-white/40 hover:text-white"
-                                            >
-                                              No
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              onClick={(e) => { e.stopPropagation(); handleCarryoverTask(task); }}
-                                              className="h-6 px-1.5 text-[10px] bg-cyan-600 hover:bg-cyan-700"
-                                            >
-                                              Yes
-                                            </Button>
-                                          </div>
-                                        ) : (
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={(e) => { e.stopPropagation(); setShowCarryoverConfirm(task.id); }}
-                                            className="h-7 w-7 text-cyan-400/70 hover:text-cyan-300 hover:bg-cyan-500/10"
-                                            title="Move to today"
-                                          >
-                                            <ArrowRightCircle className="w-3.5 h-3.5" />
-                                          </Button>
-                                        )}
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={(e) => { e.stopPropagation(); moveTasksToToday.mutate([task]); }}
+                                          className="h-6 px-2 text-[10px] text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                                        >
+                                          <ArrowRightCircle className="w-3 h-3 mr-1" />
+                                          Today
+                                        </Button>
                                         <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
                                           if (!open) { setEditingAlarm(null); setAlarmTime(""); }
                                         }}>
@@ -657,17 +688,6 @@ export default function Journal() {
                                       </div>
                                     )}
                                   </div>
-                                )}
-                                {!isExpanded && !task.alarm_time && !task.notes && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => { e.stopPropagation(); setShowCarryoverConfirm(task.id); setExpandedTaskId(task.id); }}
-                                    className="h-6 w-6 text-cyan-400/50 hover:text-cyan-300 hover:bg-cyan-500/10 shrink-0 mt-px"
-                                    title="Move to today"
-                                  >
-                                    <ArrowRightCircle className="w-3 h-3" />
-                                  </Button>
                                 )}
                               </div>
                             );
