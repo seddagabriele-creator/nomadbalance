@@ -5,10 +5,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarDays, CheckCircle2, Circle, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, CheckCircle2, Circle, Search, X, ChevronLeft, ChevronRight, ArrowRightCircle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { getLocalDateString } from "../../utils";
 
 export default function TaskHistoryCalendar() {
   const queryClient = useQueryClient();
@@ -119,6 +120,25 @@ export default function TaskHistoryCalendar() {
       },
     });
     toast.success(task.completed ? "Task reopened" : "Task completed!");
+  };
+
+  const today = getLocalDateString();
+
+  // Find today's active session if any
+  const todaySession = sessions.find(s => s.date === today);
+  const hasActiveSession = todaySession?.status === "active";
+
+  const handleCarryoverToToday = (task) => {
+    updateTask.mutate({
+      id: task.id,
+      data: {
+        // If there's an active work day, assign to that session; otherwise unassign
+        session_id: hasActiveSession ? todaySession.id : null,
+        completed: false,
+        completed_at: null,
+      },
+    });
+    toast.success("Task moved to today");
   };
 
   // Search results
@@ -369,12 +389,24 @@ export default function TaskHistoryCalendar() {
                         }
                       </span>
                     </div>
-                    <div className={`px-2 py-1 rounded-md text-xs font-semibold ${
-                      task.completed
-                        ? "bg-green-500/20 text-green-400"
-                        : "bg-red-500/20 text-red-400"
-                    }`}>
-                      #{index + 1}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {!task.completed && selectedDateStr !== today && (
+                        <button
+                          onClick={() => handleCarryoverToToday(task)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
+                          title="Move to today"
+                        >
+                          <ArrowRightCircle className="w-3.5 h-3.5" />
+                          <span>Today</span>
+                        </button>
+                      )}
+                      <div className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                        task.completed
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-red-500/20 text-red-400"
+                      }`}>
+                        #{index + 1}
+                      </div>
                     </div>
                   </div>
                 ))}
