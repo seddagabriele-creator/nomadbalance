@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService, exerciseService } from "../api/services";
 import { GROUP_LABELS } from "../constants";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Activity, ChevronRight, CheckCircle, Clock, RefreshCw, SkipForward, Search, X } from "lucide-react";
+import { ArrowLeft, Activity, ChevronRight, CheckCircle, Clock, RefreshCw, XCircle, Circle, Search, X, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -52,6 +52,26 @@ export default function Body() {
       (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
     );
     updateSession.mutate({ body_break_schedule: updatedSchedule });
+  };
+
+  const handleRecoverSkipped = (breakIndex) => {
+    const b = schedule[breakIndex];
+    const updatedSchedule = schedule.map((item, i) =>
+      i === breakIndex ? { ...item, completed: true, skipped: false } : item
+    );
+    const exercisesDoneToday = [...(session.exercises_done_today || []), b.exercise_id];
+    queryClient.setQueryData(["daySession", today], (old) =>
+      (old || []).map((s) =>
+        s.id === session.id
+          ? { ...s, body_break_schedule: updatedSchedule, body_breaks_done: (s.body_breaks_done || 0) + 1, exercises_done_today: exercisesDoneToday }
+          : s
+      )
+    );
+    updateSession.mutate({
+      body_break_schedule: updatedSchedule,
+      body_breaks_done: (session.body_breaks_done || 0) + 1,
+      exercises_done_today: exercisesDoneToday,
+    });
   };
 
   const [pickerForIndex, setPickerForIndex] = useState(null);
@@ -109,7 +129,7 @@ export default function Body() {
                     key={idx}
                     className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                       b.completed && b.skipped
-                        ? "bg-white/5 border-white/10 opacity-50"
+                        ? "bg-red-500/8 border-red-500/20"
                         : b.completed
                           ? "bg-emerald-500/10 border-emerald-500/20"
                           : b === nextBreak
@@ -117,20 +137,34 @@ export default function Body() {
                             : "bg-white/5 border-white/10"
                     }`}
                   >
-                    <span className="text-xs font-mono text-white/40 w-12 shrink-0">{b.time}</span>
+                    <span className={`text-xs font-mono w-12 shrink-0 ${b.completed && b.skipped ? "text-red-400/40" : "text-white/40"}`}>{b.time}</span>
                     {b.completed && b.skipped ? (
-                      <SkipForward className="w-4 h-4 text-white/30 shrink-0" />
+                      <XCircle className="w-4 h-4 text-red-400 shrink-0" />
                     ) : b.completed ? (
                       <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                     ) : (
-                      <Activity className="w-4 h-4 text-orange-400 shrink-0" />
+                      <Circle className="w-4 h-4 text-white/25 shrink-0" strokeDasharray="3 3" />
                     )}
                     <button
                       onClick={() => ex && setSelectedExercise(ex)}
-                      className="flex-1 text-left text-sm text-white/80 hover:text-white truncate"
+                      className={`flex-1 text-left text-sm truncate ${
+                        b.completed && b.skipped
+                          ? "text-red-300/50 line-through decoration-red-400/30 hover:text-red-300/70"
+                          : "text-white/80 hover:text-white"
+                      }`}
                     >
                       {ex?.name || b.exercise_name}
                     </button>
+                    {b.completed && b.skipped && (
+                      <button
+                        onClick={() => handleRecoverSkipped(idx)}
+                        className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 hover:text-red-200 transition-colors text-xs font-medium"
+                        title="Do this exercise now"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Do now
+                      </button>
+                    )}
                     {!b.completed && (
                       <div className="relative flex items-center gap-1 shrink-0">
                         <button
