@@ -550,8 +550,8 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                     />
                   </div>
 
-                  {/* Already had meals? */}
-                  {!useDefaults && (
+                  {/* Already had meals? Show if time is past eating window start or always in manual mode */}
+                  {(!useDefaults || (new Date().getHours() * 60 + new Date().getMinutes()) >= (() => { const [h, m] = (data.eating_window_start_time || "12:00").split(":").map(Number); return h * 60 + m; })()) && (
                     <div className="space-y-1">
                       <Label className="text-white/60 text-xs">Already had a meal today?</Label>
                       <div className="flex gap-1.5">

@@ -29,6 +29,7 @@ export default function Journal() {
   const [editingNotes, setEditingNotes] = useState({});
   const [selectedPrevTasks, setSelectedPrevTasks] = useState(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
+  const [showPreviousTasks, setShowPreviousTasks] = useState(false);
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
@@ -547,10 +548,35 @@ export default function Journal() {
             </div>
           )}
 
-          {sortedPreviousTasks.length > 0 && (
+          {sortedPreviousTasks.length > 0 && !showPreviousTasks && (
+            <button
+              onClick={() => setShowPreviousTasks(true)}
+              className="w-full bg-amber-500/5 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-4 text-left hover:bg-amber-500/10 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  </div>
+                  <span className="text-sm font-medium text-amber-400">
+                    {sortedPreviousTasks.length} unclosed task{sortedPreviousTasks.length > 1 ? "s" : ""} from previous days
+                  </span>
+                </div>
+                <Eye className="w-4 h-4 text-amber-400/60" />
+              </div>
+            </button>
+          )}
+
+          {sortedPreviousTasks.length > 0 && showPreviousTasks && (
             <div className="bg-amber-500/5 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-amber-400">Previous Tasks</h2>
+                <button
+                  onClick={() => setShowPreviousTasks(false)}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  <h2 className="text-lg font-semibold text-amber-400">Previous Tasks</h2>
+                  <EyeOff className="w-4 h-4 text-amber-400/40" />
+                </button>
                 <div className="flex items-center gap-1.5">
                   {selectionMode ? (
                     <>

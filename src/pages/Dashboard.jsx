@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Play, Pencil, Coffee } from "lucide-react";
+import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Play, Pencil, Coffee, Activity, BarChart3 } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
@@ -51,8 +51,10 @@ export default function Dashboard() {
     return !localStorage.getItem("nomadbalance_onboarding_completed");
   });
   const [activeBreakNotification, setActiveBreakNotification] = useState(null);
+  const [overdueBreaks, setOverdueBreaks] = useState(null); // batch overdue breaks dialog
   const breakCheckRef = React.useRef(null);
   const breakActionInProgress = React.useRef(false);
+  const deskReturnedAt = React.useRef(null);
   // Local fallback for desk tracking when DB columns are missing
   const [localDeskStatus, setLocalDeskStatus] = useState("at_desk");
   const [localAwaySince, setLocalAwaySince] = useState(null);
@@ -152,17 +154,29 @@ export default function Dashboard() {
       const endMinutes = toMinutes(userSettings.notification_end_time || DEFAULT_WORK_HOURS.afternoon_end);
       if (nowMinutes < startMinutes || nowMinutes > endMinutes) return;
 
+      // Grace period: don't interrupt right after returning to desk
+      if (deskReturnedAt.current) {
+        const msSinceReturn = Date.now() - deskReturnedAt.current;
+        const graceMinutes = 10; // Let user settle in for 10 minutes
+        if (msSinceReturn < graceMinutes * 60 * 1000) return;
+        deskReturnedAt.current = null; // Grace period over
+      }
+
       const schedule = session.body_break_schedule || [];
-      const dueBreak = schedule.find(
+      const overdueBreaks = schedule.filter(
         (b) => !b.completed && toMinutes(b.time) <= nowMinutes
       );
-      if (dueBreak) {
-        setActiveBreakNotification(dueBreak);
+
+      if (overdueBreaks.length > 1) {
+        // Multiple overdue: show batch dialog instead of one-by-one
+        setOverdueBreaks(overdueBreaks);
+      } else if (overdueBreaks.length === 1) {
+        setActiveBreakNotification(overdueBreaks[0]);
         // Send browser notification if tab is not visible
         if (document.hidden && Notification.permission === "granted") {
-          const exercise = exercises.find((e) => e.id === dueBreak.exercise_id);
+          const exercise = exercises.find((e) => e.id === overdueBreaks[0].exercise_id);
           new Notification("Time for a break!", {
-            body: exercise?.name || dueBreak.exercise_name || "Move your body, clear your mind",
+            body: exercise?.name || overdueBreaks[0].exercise_name || "Move your body, clear your mind",
             icon: "/favicon.ico",
             tag: "nomadbalance-break",
           });
@@ -204,7 +218,7 @@ export default function Dashboard() {
     );
     updateSession.mutate({ body_break_schedule: updatedSchedule });
     setActiveBreakNotification(null);
-    setTimeout(() => { breakActionInProgress.current = false; }, 500);
+    setTimeout(() => { breakActionInProgress.current = false; }, 2000);
     toast("Break snoozed " + minutes + " min", { icon: "⏰" });
   };
 
@@ -213,7 +227,7 @@ export default function Dashboard() {
     breakActionInProgress.current = true;
     const updatedSchedule = (session.body_break_schedule || []).map((b) =>
       b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
-        ? { ...b, completed: true }
+        ? { ...b, completed: true, skipped: true }
         : b
     );
     queryClient.setQueryData(["daySession", today], (old) =>
@@ -221,7 +235,8 @@ export default function Dashboard() {
     );
     updateSession.mutate({ body_break_schedule: updatedSchedule });
     setActiveBreakNotification(null);
-    setTimeout(() => { breakActionInProgress.current = false; }, 500);
+    setTimeout(() => { breakActionInProgress.current = false; }, 2000);
+    toast("Break skipped", { icon: "⏭️" });
   };
 
   const handleBreakComplete = () => {
@@ -247,7 +262,7 @@ export default function Dashboard() {
       exercises_done_today: exercisesDoneToday,
     });
     setActiveBreakNotification(null);
-    setTimeout(() => { breakActionInProgress.current = false; }, 500);
+    setTimeout(() => { breakActionInProgress.current = false; }, 2000);
     toast.success("Break completed!");
   };
 
@@ -439,12 +454,26 @@ export default function Dashboard() {
 
       // Append new tasks from wizard to existing ones (never delete old tasks)
       if (tasks.length > 0) {
+        // Check tasks already in today's session
         const existingTasks = session ? await taskService.getBySession(newSession.id) : [];
         const existingTitles = new Set(existingTasks.map(t => t.title));
+        // Also check ALL uncompleted tasks to avoid duplicates across sessions
+        const allTasks = await taskService.listAll("-order");
         const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
         let orderOffset = 0;
         for (const task of tasks) {
-          if (!existingTitles.has(task.title)) {
+          if (existingTitles.has(task.title)) continue;
+          // If an uncompleted task with same title exists in another session, move it to today
+          const duplicateFromPrev = allTasks.find(
+            t => t.title === task.title && !t.completed && t.session_id && t.session_id !== newSession.id
+          );
+          if (duplicateFromPrev) {
+            orderOffset++;
+            await taskService.update(duplicateFromPrev.id, {
+              session_id: newSession.id,
+              order: maxOrder + orderOffset,
+            });
+          } else {
             orderOffset++;
             await taskService.create({
               session_id: newSession.id,
@@ -458,6 +487,7 @@ export default function Dashboard() {
 
       queryClient.invalidateQueries({ queryKey: ["daySession"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
       setShowWizard(false);
       setShowFirstQuote(false);
     } catch (error) {
@@ -611,9 +641,35 @@ export default function Dashboard() {
         setLocalAwaySince(null);
         updateSession.mutate({ body_break_schedule: updatedSchedule });
       }
+      deskReturnedAt.current = Date.now(); // Start grace period
       toast.success(`Welcome back! Breaks shifted by ${awayMinutes} min.`);
     }
   };
+
+  // Auto "Not at Desk" when browser tab is hidden/closed
+  useEffect(() => {
+    if (!session || session.status !== "active") return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && !isAway && session?.id) {
+        // Tab hidden: mark as away
+        pauseTimer();
+        const now = new Date().toISOString();
+        if (hasDeskColumns) {
+          daySessionService.update(session.id, {
+            desk_status: "away",
+            away_since: now,
+          }).then(() => queryClient.invalidateQueries({ queryKey: ["daySession"] }));
+        } else {
+          setLocalDeskStatus("away");
+          setLocalAwaySince(now);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [session, isAway, hasDeskColumns]);
 
   const handleResetDay = () => {
     if (session && window.confirm("Do you really want to reset the day?")) {
@@ -622,7 +678,7 @@ export default function Dashboard() {
         body_breaks_done: 0,
         focus_sessions_completed: 0,
         meeting_mode: false,
-        body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false })),
+        body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false, skipped: false })),
         exercises_done_today: [],
       };
       // Only include desk tracking fields if the session already has them (columns exist)
@@ -691,6 +747,12 @@ export default function Dashboard() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-slate-900 border-white/10">
+                  <Link to={createPageUrl("Reports")}>
+                    <DropdownMenuItem className="text-white hover:bg-white/10 cursor-pointer">
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Reports
+                    </DropdownMenuItem>
+                  </Link>
                   <Link to={createPageUrl("Settings")}>
                     <DropdownMenuItem className="text-white hover:bg-white/10 cursor-pointer">
                       <SettingsIcon className="w-4 h-4 mr-2" />
@@ -992,10 +1054,21 @@ export default function Dashboard() {
                 if (wizardTasks.length > 0) {
                   const existingTasks = await taskService.getBySession(session.id);
                   const existingTitles = new Set(existingTasks.map(t => t.title));
+                  const allTasks = await taskService.listAll("-order");
                   const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
                   let orderOffset = 0;
                   for (const task of wizardTasks) {
-                    if (!existingTitles.has(task.title)) {
+                    if (existingTitles.has(task.title)) continue;
+                    const duplicateFromPrev = allTasks.find(
+                      t => t.title === task.title && !t.completed && t.session_id && t.session_id !== session.id
+                    );
+                    if (duplicateFromPrev) {
+                      orderOffset++;
+                      await taskService.update(duplicateFromPrev.id, {
+                        session_id: session.id,
+                        order: maxOrder + orderOffset,
+                      });
+                    } else {
                       orderOffset++;
                       await taskService.create({
                         session_id: session.id,
@@ -1008,6 +1081,7 @@ export default function Dashboard() {
                 }
                 queryClient.invalidateQueries({ queryKey: ["daySession"] });
                 queryClient.invalidateQueries({ queryKey: ["tasks"] });
+                queryClient.invalidateQueries({ queryKey: ["allTasks"] });
               }
               setShowWizard(false);
               setResumeWithWizard(false);
@@ -1044,6 +1118,77 @@ export default function Dashboard() {
             onConfirm={handleMeetingConfirm}
             onCancel={() => setShowMeetingDialog(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Overdue Breaks Batch Dialog */}
+      <AnimatePresence>
+        {overdueBreaks && overdueBreaks.length > 1 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-sm bg-gradient-to-br from-slate-900/98 to-orange-950/30 backdrop-blur-xl rounded-3xl border border-orange-500/30 p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center"
+                >
+                  <Activity className="w-6 h-6 text-orange-400" />
+                </motion.div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">You're a bit behind</h2>
+                  <p className="text-white/50 text-sm">{overdueBreaks.length} breaks overdue</p>
+                </div>
+              </div>
+              <p className="text-white/60 text-sm mb-6">
+                Want to do a double session now, or shift the remaining breaks forward?
+              </p>
+              <div className="space-y-2">
+                <Button
+                  onClick={() => {
+                    // Double session: show the first overdue break, skip the rest
+                    setActiveBreakNotification(overdueBreaks[0]);
+                    setOverdueBreaks(null);
+                  }}
+                  className="w-full h-12 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 font-semibold"
+                >
+                  Do a session now
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    // Shift: skip all overdue and redistribute remaining
+                    const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+                    const updatedSchedule = (session.body_break_schedule || []).map((b) => {
+                      if (b.completed) return b;
+                      if (toMinutes(b.time) <= nowMins) {
+                        return { ...b, completed: true, skipped: true };
+                      }
+                      return b;
+                    });
+                    queryClient.setQueryData(["daySession", today], (old) =>
+                      (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
+                    );
+                    updateSession.mutate({ body_break_schedule: updatedSchedule });
+                    setOverdueBreaks(null);
+                    toast("Overdue breaks skipped, continuing with remaining schedule", { icon: "⏭️" });
+                  }}
+                  className="w-full h-10 rounded-xl text-white/50 hover:text-white hover:bg-white/10 text-sm"
+                >
+                  Skip overdue & shift forward
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 

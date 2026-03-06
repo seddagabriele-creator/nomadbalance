@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService, exerciseService } from "../api/services";
 import { GROUP_LABELS } from "../constants";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Activity, ChevronRight, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { ArrowLeft, Activity, ChevronRight, CheckCircle, Clock, RefreshCw, SkipForward, Search, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -54,6 +54,23 @@ export default function Body() {
     updateSession.mutate({ body_break_schedule: updatedSchedule });
   };
 
+  const [pickerForIndex, setPickerForIndex] = useState(null);
+  const [pickerSearch, setPickerSearch] = useState("");
+  const pickerRef = useRef(null);
+
+  // Close picker on outside click
+  useEffect(() => {
+    if (pickerForIndex === null) return;
+    const handleClick = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+        setPickerForIndex(null);
+        setPickerSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [pickerForIndex]);
+
   const groupedExercises = exercises.reduce((acc, exercise) => {
     if (!acc[exercise.group]) {
       acc[exercise.group] = [];
@@ -91,15 +108,19 @@ export default function Body() {
                   <div
                     key={idx}
                     className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                      b.completed
-                        ? "bg-emerald-500/10 border-emerald-500/20"
-                        : b === nextBreak
-                          ? "bg-orange-500/15 border-orange-500/30"
-                          : "bg-white/5 border-white/10"
+                      b.completed && b.skipped
+                        ? "bg-white/5 border-white/10 opacity-50"
+                        : b.completed
+                          ? "bg-emerald-500/10 border-emerald-500/20"
+                          : b === nextBreak
+                            ? "bg-orange-500/15 border-orange-500/30"
+                            : "bg-white/5 border-white/10"
                     }`}
                   >
                     <span className="text-xs font-mono text-white/40 w-12 shrink-0">{b.time}</span>
-                    {b.completed ? (
+                    {b.completed && b.skipped ? (
+                      <SkipForward className="w-4 h-4 text-white/30 shrink-0" />
+                    ) : b.completed ? (
                       <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                     ) : (
                       <Activity className="w-4 h-4 text-orange-400 shrink-0" />
@@ -111,20 +132,89 @@ export default function Body() {
                       {ex?.name || b.exercise_name}
                     </button>
                     {!b.completed && (
-                      <button
-                        onClick={() => {
-                          const currentGroup = ex?.group;
-                          const otherExercises = exercises.filter((e) => e.group !== currentGroup);
-                          const pool = otherExercises.length > 0 ? otherExercises : exercises.filter((e) => e.id !== b.exercise_id);
-                          if (pool.length === 0) return;
-                          const newEx = pool[Math.floor(Math.random() * pool.length)];
-                          handleSwapScheduled(idx, newEx);
-                        }}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-orange-400 hover:bg-white/10 transition-colors shrink-0"
-                        title="Swap exercise"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="relative flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => {
+                            const currentGroup = ex?.group;
+                            const otherExercises = exercises.filter((e) => e.group !== currentGroup);
+                            const pool = otherExercises.length > 0 ? otherExercises : exercises.filter((e) => e.id !== b.exercise_id);
+                            if (pool.length === 0) return;
+                            const newEx = pool[Math.floor(Math.random() * pool.length)];
+                            handleSwapScheduled(idx, newEx);
+                          }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-orange-400 hover:bg-white/10 transition-colors"
+                          title="Random swap"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => { setPickerForIndex(pickerForIndex === idx ? null : idx); setPickerSearch(""); }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-orange-400 hover:bg-white/10 transition-colors"
+                          title="Choose exercise"
+                        >
+                          <Search className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Exercise picker popover */}
+                        <AnimatePresence>
+                          {pickerForIndex === idx && (
+                            <motion.div
+                              ref={pickerRef}
+                              initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute right-0 top-full mt-2 w-72 max-h-80 bg-slate-900 border border-white/15 rounded-xl shadow-2xl z-50 overflow-hidden"
+                            >
+                              <div className="sticky top-0 bg-slate-900 border-b border-white/10 p-2 flex items-center gap-2">
+                                <Search className="w-3.5 h-3.5 text-white/30 shrink-0" />
+                                <input
+                                  type="text"
+                                  placeholder="Search exercises..."
+                                  value={pickerSearch}
+                                  onChange={(e) => setPickerSearch(e.target.value)}
+                                  autoFocus
+                                  className="flex-1 bg-transparent text-sm text-white placeholder-white/30 outline-none"
+                                />
+                                <button onClick={() => { setPickerForIndex(null); setPickerSearch(""); }} className="text-white/30 hover:text-white/60">
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <div className="overflow-y-auto max-h-64 p-1">
+                                {Object.entries(
+                                  exercises
+                                    .filter((e) => e.id !== b.exercise_id)
+                                    .filter((e) => !pickerSearch || e.name.toLowerCase().includes(pickerSearch.toLowerCase()) || (GROUP_LABELS[e.group] || "").toLowerCase().includes(pickerSearch.toLowerCase()))
+                                    .reduce((acc, e) => { (acc[e.group] = acc[e.group] || []).push(e); return acc; }, {})
+                                ).map(([group, exs]) => (
+                                  <div key={group}>
+                                    <p className="text-[10px] uppercase tracking-wider text-orange-400/60 font-semibold px-2 pt-2 pb-1">{GROUP_LABELS[group]}</p>
+                                    {exs.map((pickEx) => (
+                                      <button
+                                        key={pickEx.id}
+                                        onClick={() => {
+                                          handleSwapScheduled(idx, pickEx);
+                                          setPickerForIndex(null);
+                                          setPickerSearch("");
+                                        }}
+                                        className="w-full text-left px-3 py-2 rounded-lg text-sm text-white/70 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-2"
+                                      >
+                                        {pickEx.image_url && (
+                                          <img src={pickEx.image_url} alt="" className="w-8 h-8 rounded-md object-cover shrink-0 border border-white/10" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="truncate">{pickEx.name}</p>
+                                          <p className="text-[10px] text-white/30 truncate">{pickEx.dosage}</p>
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     )}
                   </div>
                 );

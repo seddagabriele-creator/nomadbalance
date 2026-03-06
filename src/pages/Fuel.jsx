@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Droplets, Utensils, Check, X, Settings2, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Droplets, Utensils, Check, X, Settings2, ChevronDown, ChevronUp, Plus, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
@@ -33,6 +33,8 @@ export default function Fuel() {
   const [maxMeals, setMaxMeals] = useState(session?.max_meals || 3);
   const [windowStartEdit, setWindowStartEdit] = useState(session?.eating_window_start || "12:00");
   const [showSettings, setShowSettings] = useState(false);
+  const [editingMealTime, setEditingMealTime] = useState(null);
+  const [editMealTimeValue, setEditMealTimeValue] = useState("");
 
   const preset = FASTING_PRESETS[selectedPreset];
   const eatingHours = preset?.eating !== null ? preset.eating : 24 - customFasting;
@@ -97,9 +99,23 @@ export default function Fuel() {
     toast.success(`Meal logged at ${timeStr}`);
   };
 
+  const handleLogSnack = () => {
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const updated = [...mealsLogged, { time: timeStr, is_snack: true }];
+    updateSession.mutate({ meals_logged: updated });
+    toast.success(`Snack logged at ${timeStr}`);
+  };
+
   const handleRemoveMeal = (index) => {
     const updated = mealsLogged.filter((_, i) => i !== index);
     updateSession.mutate({ meals_logged: updated });
+  };
+
+  const handleEditMealTime = (index) => {
+    const updated = mealsLogged.map((m, i) => i === index ? { ...m, time: editMealTimeValue } : m);
+    updateSession.mutate({ meals_logged: updated });
+    setEditingMealTime(null);
+    toast.success(`Meal time updated to ${editMealTimeValue}`);
   };
 
   const handleSaveSettings = () => {
@@ -232,19 +248,42 @@ export default function Fuel() {
                     {mealsLogged.map((meal, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20"
+                        className={`flex items-center justify-between p-3 rounded-xl ${
+                          meal.is_snack
+                            ? "bg-amber-500/10 border border-amber-500/20"
+                            : "bg-emerald-500/10 border border-emerald-500/20"
+                        }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-emerald-400" />
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            meal.is_snack ? "bg-amber-500/20" : "bg-emerald-500/20"
+                          }`}>
+                            <Check className={`w-4 h-4 ${meal.is_snack ? "text-amber-400" : "text-emerald-400"}`} />
                           </div>
                           <div>
-                            <p className="text-emerald-300 text-sm font-medium">
-                              Meal {i + 1}
+                            <p className={`text-sm font-medium ${meal.is_snack ? "text-amber-300" : "text-emerald-300"}`}>
+                              {meal.is_snack ? "Snack" : `Meal ${i + 1 - mealsLogged.slice(0, i).filter(m => m.is_snack).length}`}
                             </p>
-                            <p className="text-white/40 text-xs">
-                              {meal.time}
-                            </p>
+                            {editingMealTime === i ? (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <input
+                                  type="time"
+                                  value={editMealTimeValue}
+                                  onChange={(e) => setEditMealTimeValue(e.target.value)}
+                                  className="bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-white text-xs w-24"
+                                />
+                                <button onClick={() => handleEditMealTime(i)} className="text-emerald-400 hover:text-emerald-300 text-xs font-medium">Save</button>
+                                <button onClick={() => setEditingMealTime(null)} className="text-white/30 hover:text-white/50 text-xs">Cancel</button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => { setEditingMealTime(i); setEditMealTimeValue(meal.time || ""); }}
+                                className="text-white/40 text-xs hover:text-white/60 flex items-center gap-1"
+                              >
+                                <Clock className="w-2.5 h-2.5" />
+                                {meal.time}
+                              </button>
+                            )}
                           </div>
                         </div>
                         <button
@@ -280,11 +319,24 @@ export default function Fuel() {
                   </div>
                 )}
 
-                {/* All meals done */}
+                {/* All meals done + snack option */}
                 {mealsLeft === 0 && (
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                    <Check className="w-5 h-5 text-emerald-400" />
-                    <p className="text-emerald-300 text-sm font-medium">All meals done</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <Check className="w-5 h-5 text-emerald-400" />
+                      <p className="text-emerald-300 text-sm font-medium">All meals done</p>
+                    </div>
+                    {isEatingWindow && (
+                      <Button
+                        onClick={handleLogSnack}
+                        variant="ghost"
+                        disabled={updateSession.isPending}
+                        className="w-full h-10 rounded-xl text-amber-400/70 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20 text-sm"
+                      >
+                        <Plus className="w-4 h-4 mr-1.5" />
+                        Log a snack
+                      </Button>
+                    )}
                   </div>
                 )}
 
