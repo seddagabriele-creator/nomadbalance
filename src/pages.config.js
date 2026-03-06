@@ -52,6 +52,7 @@ import Dashboard from './pages/Dashboard';
 import Flow from './pages/Flow';
 import Fuel from './pages/Fuel';
 import Journal from './pages/Journal';
+import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
@@ -62,6 +63,7 @@ export const PAGES = {
     "Flow": Flow,
     "Fuel": Fuel,
     "Journal": Journal,
+    "Reports": Reports,
     "Settings": Settings,
 }
 

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass, Settings, Sun, Droplets, Headphones,
-  ClipboardList, Dumbbell, Rocket, ChevronRight, ChevronLeft,
+  ClipboardList, Dumbbell, Rocket, ChevronRight, ChevronLeft, Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -55,6 +55,13 @@ const STEPS = [
     title: "Body — Move, Don't Rust",
     body: "Hours at a desk take a real toll. The app schedules short exercise breaks throughout your day — quick movements designed for desk workers that help your posture, relieve tension, and keep your body from filing a complaint. When it's time, you'll get a notification with exactly what to do.",
     hint: "Exercises auto-selected for variety across muscle groups",
+  },
+  {
+    icon: Monitor,
+    color: "sky",
+    title: "At Desk — Smart Tracking",
+    body: "Use the 'At Desk' toggle on the dashboard to let the app know when you're actually working. When you step away, toggle it off — break notifications pause, timers hold, and everything shifts to match your real schedule. This way, the app only counts real desk time and sends breaks when they make sense.",
+    hint: "Dashboard > At Desk toggle (auto-activates when tab is hidden)",
   },
   {
     icon: Rocket,
