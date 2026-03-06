@@ -888,26 +888,38 @@ export default function Dashboard() {
                 awaySince={awaySince}
                 onToggle={handleToggleDeskStatus}
               />
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={toggleMeetingMode}
-                className={`h-12 px-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
-                  session.meeting_mode
-                    ? "bg-amber-500/20 border border-amber-500/30 text-amber-300"
-                    : "bg-white/10 border border-white/10 text-white/70 hover:bg-white/15"
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                {session.meeting_mode ? "MTG" : "MTG"}
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={handleEndDay}
-                className="h-12 px-4 rounded-2xl bg-white/10 border border-white/10 text-white/50 hover:text-white hover:bg-white/15 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
-              >
-                <Moon className="w-4 h-4" />
-                End
-              </motion.button>
+              <div className="relative group/mtg">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={toggleMeetingMode}
+                  className={`h-12 px-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
+                    session.meeting_mode
+                      ? "bg-amber-500/20 border border-amber-500/30 text-amber-300"
+                      : "bg-white/10 border border-white/10 text-white/70 hover:bg-white/15"
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  {session.meeting_mode ? "MTG" : "MTG"}
+                </motion.button>
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded-xl bg-gray-900/95 border border-white/10 px-3 py-2 text-xs text-white/80 text-center opacity-0 group-hover/mtg:opacity-100 transition-opacity duration-200 backdrop-blur-sm z-50">
+                  {session.meeting_mode
+                    ? "Tap to exit meeting mode — notifications will resume"
+                    : "Meeting mode — all notifications and reminders are paused"}
+                </div>
+              </div>
+              <div className="relative group/end">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleEndDay}
+                  className="h-12 px-4 rounded-2xl bg-white/10 border border-white/10 text-white/50 hover:text-white hover:bg-white/15 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                >
+                  <Moon className="w-4 h-4" />
+                  End
+                </motion.button>
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded-xl bg-gray-900/95 border border-white/10 px-3 py-2 text-xs text-white/80 text-center opacity-0 group-hover/end:opacity-100 transition-opacity duration-200 backdrop-blur-sm z-50">
+                  End your workday — starts a decompression breathing session
+                </div>
+              </div>
             </motion.div>
           </>
         )}
