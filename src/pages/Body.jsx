@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService, exerciseService } from "../api/services";
 import { GROUP_LABELS } from "../constants";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Activity, ChevronRight, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { ArrowLeft, Activity, ChevronRight, CheckCircle, Clock, RefreshCw, SkipForward } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -91,15 +91,19 @@ export default function Body() {
                   <div
                     key={idx}
                     className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                      b.completed
-                        ? "bg-emerald-500/10 border-emerald-500/20"
-                        : b === nextBreak
-                          ? "bg-orange-500/15 border-orange-500/30"
-                          : "bg-white/5 border-white/10"
+                      b.completed && b.skipped
+                        ? "bg-white/5 border-white/10 opacity-50"
+                        : b.completed
+                          ? "bg-emerald-500/10 border-emerald-500/20"
+                          : b === nextBreak
+                            ? "bg-orange-500/15 border-orange-500/30"
+                            : "bg-white/5 border-white/10"
                     }`}
                   >
                     <span className="text-xs font-mono text-white/40 w-12 shrink-0">{b.time}</span>
-                    {b.completed ? (
+                    {b.completed && b.skipped ? (
+                      <SkipForward className="w-4 h-4 text-white/30 shrink-0" />
+                    ) : b.completed ? (
                       <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                     ) : (
                       <Activity className="w-4 h-4 text-orange-400 shrink-0" />

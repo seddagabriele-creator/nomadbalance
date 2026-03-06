@@ -213,7 +213,7 @@ export default function Dashboard() {
     breakActionInProgress.current = true;
     const updatedSchedule = (session.body_break_schedule || []).map((b) =>
       b.time === activeBreakNotification.time && b.exercise_id === activeBreakNotification.exercise_id
-        ? { ...b, completed: true }
+        ? { ...b, completed: true, skipped: true }
         : b
     );
     queryClient.setQueryData(["daySession", today], (old) =>
@@ -222,6 +222,7 @@ export default function Dashboard() {
     updateSession.mutate({ body_break_schedule: updatedSchedule });
     setActiveBreakNotification(null);
     setTimeout(() => { breakActionInProgress.current = false; }, 500);
+    toast("Break skipped", { icon: "⏭️" });
   };
 
   const handleBreakComplete = () => {
@@ -439,12 +440,26 @@ export default function Dashboard() {
 
       // Append new tasks from wizard to existing ones (never delete old tasks)
       if (tasks.length > 0) {
+        // Check tasks already in today's session
         const existingTasks = session ? await taskService.getBySession(newSession.id) : [];
         const existingTitles = new Set(existingTasks.map(t => t.title));
+        // Also check ALL uncompleted tasks to avoid duplicates across sessions
+        const allTasks = await taskService.listAll("-order");
         const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
         let orderOffset = 0;
         for (const task of tasks) {
-          if (!existingTitles.has(task.title)) {
+          if (existingTitles.has(task.title)) continue;
+          // If an uncompleted task with same title exists in another session, move it to today
+          const duplicateFromPrev = allTasks.find(
+            t => t.title === task.title && !t.completed && t.session_id && t.session_id !== newSession.id
+          );
+          if (duplicateFromPrev) {
+            orderOffset++;
+            await taskService.update(duplicateFromPrev.id, {
+              session_id: newSession.id,
+              order: maxOrder + orderOffset,
+            });
+          } else {
             orderOffset++;
             await taskService.create({
               session_id: newSession.id,
@@ -458,6 +473,7 @@ export default function Dashboard() {
 
       queryClient.invalidateQueries({ queryKey: ["daySession"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
       setShowWizard(false);
       setShowFirstQuote(false);
     } catch (error) {
@@ -622,7 +638,7 @@ export default function Dashboard() {
         body_breaks_done: 0,
         focus_sessions_completed: 0,
         meeting_mode: false,
-        body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false })),
+        body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false, skipped: false })),
         exercises_done_today: [],
       };
       // Only include desk tracking fields if the session already has them (columns exist)
@@ -992,10 +1008,21 @@ export default function Dashboard() {
                 if (wizardTasks.length > 0) {
                   const existingTasks = await taskService.getBySession(session.id);
                   const existingTitles = new Set(existingTasks.map(t => t.title));
+                  const allTasks = await taskService.listAll("-order");
                   const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
                   let orderOffset = 0;
                   for (const task of wizardTasks) {
-                    if (!existingTitles.has(task.title)) {
+                    if (existingTitles.has(task.title)) continue;
+                    const duplicateFromPrev = allTasks.find(
+                      t => t.title === task.title && !t.completed && t.session_id && t.session_id !== session.id
+                    );
+                    if (duplicateFromPrev) {
+                      orderOffset++;
+                      await taskService.update(duplicateFromPrev.id, {
+                        session_id: session.id,
+                        order: maxOrder + orderOffset,
+                      });
+                    } else {
                       orderOffset++;
                       await taskService.create({
                         session_id: session.id,
@@ -1008,6 +1035,7 @@ export default function Dashboard() {
                 }
                 queryClient.invalidateQueries({ queryKey: ["daySession"] });
                 queryClient.invalidateQueries({ queryKey: ["tasks"] });
+                queryClient.invalidateQueries({ queryKey: ["allTasks"] });
               }
               setShowWizard(false);
               setResumeWithWizard(false);
