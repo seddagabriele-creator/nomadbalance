@@ -114,7 +114,7 @@ export default function Dashboard() {
     enabled: !!session?.id,
   });
 
-  const topTask = tasks.sort((a, b) => a.order - b.order).find((t) => !t.completed) || null;
+  const topTask = [...tasks].sort((a, b) => a.order - b.order).find((t) => !t.completed) || null;
 
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises"],

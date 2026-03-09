@@ -127,6 +127,19 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     enabled: !!taskSessionId,
   });
 
+  // Fetch all tasks to find previous uncompleted ones
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ["allTasksWizard"],
+    queryFn: () => taskService.listAll("-order"),
+  });
+
+  const previousUncompletedTasks = allTasks.filter(
+    (t) => t.session_id && t.session_id !== taskSessionId && !t.completed
+  );
+
+  const [showOldTasks, setShowOldTasks] = useState(false);
+  const [selectedOldTasks, setSelectedOldTasks] = useState(new Set());
+
   // Pre-fill task list from session tasks
   useEffect(() => {
     if (sessionTasks.length > 0 && tasks.length === 0) {
@@ -463,6 +476,71 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                   {tasks.length === 0 && (
                     <div className="text-center py-6">
                       <p className="text-white/40 text-sm italic">No specific tasks, I'll follow the flow ✨</p>
+                    </div>
+                  )}
+
+                  {/* Old tasks section */}
+                  {previousUncompletedTasks.length > 0 && (
+                    <div className="pt-2">
+                      <button
+                        onClick={() => { setShowOldTasks(!showOldTasks); setSelectedOldTasks(new Set()); }}
+                        className="flex items-center gap-2 text-white/40 hover:text-white/70 text-xs transition-colors"
+                      >
+                        <History className="w-3.5 h-3.5" />
+                        {showOldTasks ? "Hide" : "View"} old tasks ({previousUncompletedTasks.length})
+                      </button>
+
+                      <AnimatePresence>
+                        {showOldTasks && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto">
+                              {previousUncompletedTasks.map((task) => (
+                                <button
+                                  key={task.id}
+                                  onClick={() => {
+                                    const next = new Set(selectedOldTasks);
+                                    next.has(task.id) ? next.delete(task.id) : next.add(task.id);
+                                    setSelectedOldTasks(next);
+                                  }}
+                                  className={`w-full flex items-center gap-2 p-2 rounded-lg text-left text-sm transition-all ${
+                                    selectedOldTasks.has(task.id)
+                                      ? "bg-cyan-500/15 border border-cyan-500/40 text-white"
+                                      : "bg-white/5 border border-white/10 text-white/50 hover:bg-white/10"
+                                  }`}
+                                >
+                                  <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                                    selectedOldTasks.has(task.id) ? "bg-cyan-500 border-cyan-500" : "border-white/30"
+                                  }`}>
+                                    {selectedOldTasks.has(task.id) && <CheckCircle className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <span className="flex-1 truncate">{task.title}</span>
+                                </button>
+                              ))}
+                            </div>
+                            {selectedOldTasks.size > 0 && (
+                              <Button
+                                onClick={() => {
+                                  const selected = previousUncompletedTasks.filter((t) => selectedOldTasks.has(t.id));
+                                  const newTasks = selected
+                                    .filter((t) => !tasks.some((existing) => existing.title === t.title))
+                                    .map((t, i) => ({ title: t.title, order: tasks.length + i + 1 }));
+                                  setTasks([...tasks, ...newTasks]);
+                                  setSelectedOldTasks(new Set());
+                                  setShowOldTasks(false);
+                                }}
+                                className="w-full mt-3 h-10 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-sm font-semibold"
+                              >
+                                Add {selectedOldTasks.size} to today
+                              </Button>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )}
                 </motion.div>
