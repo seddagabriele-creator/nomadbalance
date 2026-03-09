@@ -33,6 +33,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const toMinutes = (t) => {
+  const [h, m] = (t || "00:00").split(":").map(Number);
+  return h * 60 + m;
+};
+
 export default function Dashboard() {
   const [showWizard, setShowWizard] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
@@ -188,10 +193,6 @@ export default function Dashboard() {
     return () => clearInterval(breakCheckRef.current);
   }, [session, activeBreakNotification, overdueBreaks, userSettings, exercises]);
 
-  const toMinutes = (t) => {
-    const [h, m] = (t || "00:00").split(":").map(Number);
-    return h * 60 + m;
-  };
 
   const activeExercise = React.useMemo(() => {
     if (!activeBreakNotification) return null;
