@@ -168,20 +168,20 @@ export default function Dashboard() {
       }
 
       const schedule = session.body_break_schedule || [];
-      const overdueBreaks = schedule.filter(
+      const dueBreaks = schedule.filter(
         (b) => !b.completed && toMinutes(b.time) <= nowMinutes
       );
 
-      if (overdueBreaks.length > 1) {
+      if (dueBreaks.length > 1) {
         // Multiple overdue: show batch dialog instead of one-by-one
-        setOverdueBreaks(overdueBreaks);
-      } else if (overdueBreaks.length === 1) {
-        setActiveBreakNotification(overdueBreaks[0]);
+        setOverdueBreaks(dueBreaks);
+      } else if (dueBreaks.length === 1) {
+        setActiveBreakNotification(dueBreaks[0]);
         // Send browser notification if tab is not visible
         if (document.hidden && Notification.permission === "granted") {
-          const exercise = exercises.find((e) => e.id === overdueBreaks[0].exercise_id);
+          const exercise = exercises.find((e) => e.id === dueBreaks[0].exercise_id);
           new Notification("Time for a break!", {
-            body: exercise?.name || overdueBreaks[0].exercise_name || "Move your body, clear your mind",
+            body: exercise?.name || dueBreaks[0].exercise_name || "Move your body, clear your mind",
             icon: "/favicon.ico",
             tag: "nomadbalance-break",
           });
