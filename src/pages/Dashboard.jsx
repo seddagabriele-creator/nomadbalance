@@ -145,7 +145,7 @@ export default function Dashboard() {
     if (userSettings.notifications_enabled === false) return;
 
     const checkBreaks = () => {
-      if (activeBreakNotification || breakActionInProgress.current) return; // already showing or completing one
+      if (activeBreakNotification || overdueBreaks || breakActionInProgress.current) return; // already showing or completing one
 
       // Respect notification time window
       const now = new Date();
@@ -186,7 +186,7 @@ export default function Dashboard() {
     checkBreaks(); // check immediately
     breakCheckRef.current = setInterval(checkBreaks, ONE_MINUTE_MS);
     return () => clearInterval(breakCheckRef.current);
-  }, [session, activeBreakNotification, userSettings, exercises]);
+  }, [session, activeBreakNotification, overdueBreaks, userSettings, exercises]);
 
   const toMinutes = (t) => {
     const [h, m] = (t || "00:00").split(":").map(Number);
@@ -262,7 +262,19 @@ export default function Dashboard() {
       exercises_done_today: exercisesDoneToday,
     });
     setActiveBreakNotification(null);
-    setTimeout(() => { breakActionInProgress.current = false; }, 2000);
+    // Check if there are still more overdue breaks after this one
+    const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+    const stillOverdue = updatedSchedule.filter(
+      (b) => !b.completed && !b.skipped && toMinutes(b.time) <= nowMins
+    );
+    if (stillOverdue.length > 0) {
+      // Show batch dialog instead of auto-triggering the next exercise
+      setOverdueBreaks(stillOverdue);
+      // Keep breakActionInProgress true to prevent checkBreaks from racing
+      setTimeout(() => { breakActionInProgress.current = false; }, 2000);
+    } else {
+      setTimeout(() => { breakActionInProgress.current = false; }, 2000);
+    }
     toast.success("Break completed!");
   };
 
@@ -1135,7 +1147,7 @@ export default function Dashboard() {
 
       {/* Overdue Breaks Batch Dialog */}
       <AnimatePresence>
-        {overdueBreaks && overdueBreaks.length > 1 && (
+        {overdueBreaks && overdueBreaks.length >= 1 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1157,28 +1169,55 @@ export default function Dashboard() {
                   <Activity className="w-6 h-6 text-orange-400" />
                 </motion.div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">You're a bit behind</h2>
-                  <p className="text-white/50 text-sm">{overdueBreaks.length} breaks overdue</p>
+                  <h2 className="text-lg font-bold text-white">
+                    {overdueBreaks.length === 1 ? "1 break to catch up" : `${overdueBreaks.length} breaks to catch up`}
+                  </h2>
                 </div>
               </div>
-              <p className="text-white/60 text-sm mb-6">
-                Want to do a double session now, or shift the remaining breaks forward?
-              </p>
               <div className="space-y-2">
+                {overdueBreaks.length > 1 && (
+                  <Button
+                    onClick={() => {
+                      // Do all: start with first, the rest will be prompted one by one via batch dialog
+                      setActiveBreakNotification(overdueBreaks[0]);
+                      setOverdueBreaks(null);
+                    }}
+                    className="w-full h-12 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 font-semibold"
+                  >
+                    Catch up ({overdueBreaks.length} sessions)
+                  </Button>
+                )}
                 <Button
                   onClick={() => {
-                    // Double session: show the first overdue break, skip the rest
-                    setActiveBreakNotification(overdueBreaks[0]);
+                    // Do just one, skip the rest
+                    const firstBreak = overdueBreaks[0];
+                    if (overdueBreaks.length > 1) {
+                      // Skip all overdue except the first
+                      const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+                      const updatedSchedule = (session.body_break_schedule || []).map((b) => {
+                        if (b.completed) return b;
+                        // Skip overdue ones that are not the first
+                        if (b.time !== firstBreak.time && b.exercise_id !== firstBreak.exercise_id && toMinutes(b.time) <= nowMins) {
+                          return { ...b, completed: true, skipped: true };
+                        }
+                        return b;
+                      });
+                      queryClient.setQueryData(["daySession", today], (old) =>
+                        (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
+                      );
+                      updateSession.mutate({ body_break_schedule: updatedSchedule });
+                    }
+                    setActiveBreakNotification(firstBreak);
                     setOverdueBreaks(null);
                   }}
-                  className="w-full h-12 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 font-semibold"
+                  className={`w-full h-12 rounded-2xl font-semibold ${overdueBreaks.length === 1 ? "bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400" : "bg-white/10 hover:bg-white/20 text-white"}`}
                 >
-                  Do a session now
+                  {overdueBreaks.length === 1 ? "Let's go" : "Just 1, skip the rest"}
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    // Shift: skip all overdue and redistribute remaining
+                    // Skip all overdue
                     const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
                     const updatedSchedule = (session.body_break_schedule || []).map((b) => {
                       if (b.completed) return b;
@@ -1192,11 +1231,11 @@ export default function Dashboard() {
                     );
                     updateSession.mutate({ body_break_schedule: updatedSchedule });
                     setOverdueBreaks(null);
-                    toast("Overdue breaks skipped, continuing with remaining schedule", { icon: "⏭️" });
+                    toast("Skipped, continuing with remaining schedule", { icon: "⏭️" });
                   }}
                   className="w-full h-10 rounded-xl text-white/50 hover:text-white hover:bg-white/10 text-sm"
                 >
-                  Skip overdue & shift forward
+                  Skip {overdueBreaks.length === 1 ? "" : "all "}& continue
                 </Button>
               </div>
             </motion.div>
