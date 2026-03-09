@@ -33,6 +33,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const toMinutes = (t) => {
+  const [h, m] = (t || "00:00").split(":").map(Number);
+  return h * 60 + m;
+};
+
 export default function Dashboard() {
   const [showWizard, setShowWizard] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
@@ -94,7 +99,7 @@ export default function Dashboard() {
     setUserName(userSettings.display_name || fallbackName);
   }, [userSettings]);
 
-  const { data: sessions = [], isLoading } = useQuery({
+  const { data: sessions = [], isLoading, isError: sessionError } = useQuery({
     queryKey: ["daySession", today],
     queryFn: () => daySessionService.getByDate(today),
   });
@@ -183,15 +188,11 @@ export default function Dashboard() {
         }
       }
     };
-    checkBreaks(); // check immediately
-    breakCheckRef.current = setInterval(checkBreaks, ONE_MINUTE_MS);
+    try { checkBreaks(); } catch (e) { console.error("Break check error:", e); }
+    breakCheckRef.current = setInterval(() => { try { checkBreaks(); } catch (e) { console.error("Break check error:", e); } }, ONE_MINUTE_MS);
     return () => clearInterval(breakCheckRef.current);
   }, [session, activeBreakNotification, overdueBreaks, userSettings, exercises]);
 
-  const toMinutes = (t) => {
-    const [h, m] = (t || "00:00").split(":").map(Number);
-    return h * 60 + m;
-  };
 
   const activeExercise = React.useMemo(() => {
     if (!activeBreakNotification) return null;
@@ -722,6 +723,20 @@ export default function Dashboard() {
 
   const isActive = session?.status === "active";
   const isCompleted = session?.status === "completed";
+
+  // Show error state if session query fails
+  if (sessionError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-white/50 mb-4">Failed to load session data.</p>
+          <button onClick={() => queryClient.invalidateQueries({ queryKey: ["daySession"] })} className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-semibold">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white relative overflow-hidden">
