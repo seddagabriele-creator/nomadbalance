@@ -64,7 +64,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
 
   const defaults = resumeDefaults || loadedDefaults;
 
-  const [step, setStep] = useState(useDefaults ? 0 : resumeSession ? 0 : -1);
+  const [step, setStep] = useState(resumeSession ? 0 : -1);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [tasks, setTasks] = useState([]);
   const [showPreviousSettings, setShowPreviousSettings] = useState(false);
@@ -150,15 +150,16 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   const previousSession = previousSessions[0];
 
   useEffect(() => {
-    // Skip dialogs if using defaults or resuming
-    if (useDefaults || resumeSession) {
+    // Skip all dialogs if resuming
+    if (resumeSession) {
       return;
     }
 
-    // Check for existing pre-day tasks
+    // Always show existing tasks dialog, even when using defaults
     if (existingTasks.length > 0 && step === -1) {
       setShowTasksDialog(true);
-    } else if (previousSession && step === -1) {
+    } else if (!useDefaults && previousSession && step === -1) {
+      // Only show previous settings if NOT using defaults
       setShowPreviousSettings(true);
     } else if (step === -1) {
       setStep(0);
