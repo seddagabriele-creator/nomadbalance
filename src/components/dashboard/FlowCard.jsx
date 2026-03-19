@@ -6,7 +6,7 @@ import { getDailyDefaults } from "../../hooks/useDailyDefaults";
 import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES } from "../../constants";
 
 export default function FlowCard({ session, onSessionComplete }) {
-  const { timeLeft, isRunning, isBreak, workMinutes, breakMinutes, toggleTimer, resetTimer, initializeTimer } = useTimer();
+  const { timeLeft, isRunning, isBreak, workMinutes, breakMinutes, toggleTimer, resetTimer, initializeTimer, setFocusSoundId } = useTimer();
 
   const userDuration = (() => {
     const defaults = getDailyDefaults();
@@ -23,6 +23,11 @@ export default function FlowCard({ session, onSessionComplete }) {
   useEffect(() => {
     initializeTimer(sessionWorkMinutes, sessionBreakMinutes, onSessionComplete);
   }, [sessionWorkMinutes, sessionBreakMinutes, onSessionComplete, initializeTimer]);
+
+  // Sync selected focus sound from session to timer context
+  useEffect(() => {
+    if (session?.focus_sound) setFocusSoundId(session.focus_sound);
+  }, [session?.focus_sound, setFocusSoundId]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
