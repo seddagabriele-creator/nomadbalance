@@ -8,7 +8,7 @@ import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
 import { useAuth } from "../lib/AuthContext";
-import { hasDailyDefaults } from "../hooks/useDailyDefaults";
+import { hasDailyDefaults, getDailyDefaults } from "../hooks/useDailyDefaults";
 import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, getEatingHours, calculateEatingWindowEnd } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
@@ -496,6 +496,26 @@ export default function Dashboard() {
             });
           }
         }
+      }
+
+      // Auto-save daily defaults so next time user gets "Use defaults?" prompt
+      if (!hasDailyDefaults()) {
+        const defaultsToSave = {
+          fasting_preset: wizardData.fasting_preset,
+          eating_window_start_time: wizardData.eating_window_start_time,
+          custom_fasting_hours: wizardData.custom_fasting_hours,
+          max_meals: wizardData.max_meals,
+          focus_work_minutes: wizardData.focus_work_minutes,
+          focus_break_minutes: wizardData.focus_break_minutes,
+          focus_sound: wizardData.focus_sound,
+          relax_sound: wizardData.relax_sound,
+          body_breaks_target: wizardData.body_breaks_target,
+          work_start_today: wizardData.work_start_today,
+          work_end_today: wizardData.work_end_today,
+          exercise_selection: selectedGroups ? "manual" : "auto",
+          selected_groups: selectedGroups || [],
+        };
+        localStorage.setItem("dailyDefaults", JSON.stringify(defaultsToSave));
       }
 
       queryClient.invalidateQueries({ queryKey: ["daySession"] });
