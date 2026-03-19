@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock, RotateCcw, X } from "lucide-react";
+import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock, RotateCcw, X, Pencil, Check } from "lucide-react";
 import { analyzeBreakFeasibility, calculateSessionConflict } from "../../utils/breakFeasibility";
 import { getLocalDateString } from "../../utils";
 import { FASTING_PRESETS, getEatingHours, calculateEatingWindowEnd } from "../../constants";
@@ -139,6 +139,9 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
 
   const [showOldTasks, setShowOldTasks] = useState(false);
   const [selectedOldTasks, setSelectedOldTasks] = useState(new Set());
+  const [editingTaskIndex, setEditingTaskIndex] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [showAlarmIndex, setShowAlarmIndex] = useState(null);
 
   // Pre-fill task list from session tasks
   useEffect(() => {
@@ -238,7 +241,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
 
   const addTask = () => {
     if (!newTaskTitle.trim()) return;
-    setTasks([...tasks, { title: newTaskTitle, order: tasks.length + 1 }]);
+    setTasks([...tasks, { title: newTaskTitle, order: tasks.length + 1, alarm_time: null }]);
     setNewTaskTitle("");
   };
 
@@ -446,23 +449,104 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                                   <div
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
-                                    className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/10"
+                                    className="flex flex-col gap-1 p-2 rounded-lg bg-white/5 border border-white/10"
                                   >
-                                    <div {...provided.dragHandleProps}>
-                                      <GripVertical className="w-4 h-4 text-white/40" />
+                                    <div className="flex items-center gap-2">
+                                      <div {...provided.dragHandleProps}>
+                                        <GripVertical className="w-4 h-4 text-white/40" />
+                                      </div>
+                                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold shrink-0">
+                                        {index + 1}
+                                      </div>
+                                      {editingTaskIndex === index ? (
+                                        <div className="flex-1 flex items-center gap-1">
+                                          <Input
+                                            value={editingTitle}
+                                            onChange={(e) => setEditingTitle(e.target.value)}
+                                            onKeyPress={(e) => {
+                                              if (e.key === "Enter" && editingTitle.trim()) {
+                                                setTasks(tasks.map((t, i) => i === index ? { ...t, title: editingTitle.trim() } : t));
+                                                setEditingTaskIndex(null);
+                                              }
+                                            }}
+                                            className="bg-white/5 border-white/10 text-white h-7 text-sm flex-1"
+                                            autoFocus
+                                          />
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => {
+                                              if (editingTitle.trim()) {
+                                                setTasks(tasks.map((t, i) => i === index ? { ...t, title: editingTitle.trim() } : t));
+                                              }
+                                              setEditingTaskIndex(null);
+                                            }}
+                                            className="text-emerald-400 hover:text-emerald-300 h-7 w-7"
+                                          >
+                                            <Check className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <span
+                                          className="flex-1 text-white text-sm cursor-pointer hover:text-white/80"
+                                          onClick={() => { setEditingTaskIndex(index); setEditingTitle(task.title); }}
+                                        >
+                                          {task.title}
+                                        </span>
+                                      )}
+                                      {task.alarm_time && editingTaskIndex !== index && (
+                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] shrink-0">
+                                          <Clock className="w-2.5 h-2.5" />
+                                          <span>{task.alarm_time}</span>
+                                        </div>
+                                      )}
+                                      {editingTaskIndex !== index && (
+                                        <>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => { setEditingTaskIndex(index); setEditingTitle(task.title); }}
+                                            className="text-white/30 hover:text-white/60 h-7 w-7"
+                                          >
+                                            <Pencil className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setShowAlarmIndex(showAlarmIndex === index ? null : index)}
+                                            className={`h-7 w-7 ${task.alarm_time ? 'text-cyan-400' : 'text-white/30 hover:text-white/60'}`}
+                                          >
+                                            <Clock className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => { removeTask(index); if (showAlarmIndex === index) setShowAlarmIndex(null); }}
+                                            className="text-red-400 hover:text-red-300 h-7 w-7"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </>
+                                      )}
                                     </div>
-                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold">
-                                      {index + 1}
-                                    </div>
-                                    <span className="flex-1 text-white text-sm">{task.title}</span>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => removeTask(index)}
-                                      className="text-red-400 hover:text-red-300 h-8 w-8"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
+                                    {showAlarmIndex === index && (
+                                      <div className="flex items-center gap-2 pl-12">
+                                        <Input
+                                          type="time"
+                                          value={task.alarm_time || ""}
+                                          onChange={(e) => setTasks(tasks.map((t, i) => i === index ? { ...t, alarm_time: e.target.value || null } : t))}
+                                          className="bg-white/5 border-white/10 text-white h-7 text-xs w-28"
+                                        />
+                                        {task.alarm_time && (
+                                          <button
+                                            onClick={() => setTasks(tasks.map((t, i) => i === index ? { ...t, alarm_time: null } : t))}
+                                            className="text-red-400/60 hover:text-red-400 text-xs"
+                                          >
+                                            Remove
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </Draggable>

@@ -17,8 +17,35 @@ export default function BreakNotification({
 }) {
   const [phase, setPhase] = useState("alert"); // "alert" | "exercise"
   const [showSnoozeOptions, setShowSnoozeOptions] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef(null);
+
+  // Play notification chime on mount
+  useEffect(() => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.frequency.setValueAtTime(587.33, ctx.currentTime);
+      gain1.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.3);
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.15);
+      gain2.gain.setValueAtTime(0, ctx.currentTime);
+      gain2.gain.setValueAtTime(0.25, ctx.currentTime + 0.15);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+      osc2.start(ctx.currentTime + 0.15);
+      osc2.stop(ctx.currentTime + 0.6);
+    } catch (e) {}
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -84,9 +111,12 @@ export default function BreakNotification({
               <p className="text-white/50 text-sm">Move your body, clear your mind</p>
             </div>
 
-            {/* Exercise preview */}
+            {/* Exercise preview — tap to see details */}
             <div className="px-6 pb-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-left transition-colors hover:bg-white/8"
+              >
                 <div className="flex items-center gap-3">
                   {exercise?.image_url && (
                     <div className="w-14 h-14 rounded-xl overflow-hidden border border-white/10 shrink-0">
@@ -103,9 +133,49 @@ export default function BreakNotification({
                     </p>
                     <p className="text-white/40 text-xs mt-0.5">{exercise?.dosage || "Quick exercise"}</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-orange-400/50" />
+                  <motion.div animate={{ rotate: showDetails ? 90 : 0 }}>
+                    <ChevronRight className="w-4 h-4 text-orange-400/50" />
+                  </motion.div>
                 </div>
-              </div>
+              </button>
+
+              {/* Expandable exercise details */}
+              <AnimatePresence>
+                {showDetails && exercise && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-2 space-y-3 bg-white/5 border border-white/10 rounded-2xl p-4 max-h-52 overflow-y-auto">
+                      {exercise.image_url && (
+                        <div className="rounded-xl overflow-hidden border border-white/10">
+                          <img src={exercise.image_url} alt={exercise.name} className="w-full h-auto" />
+                        </div>
+                      )}
+                      {exercise.execution && (
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Info className="w-3 h-3 text-orange-400" />
+                            <p className="text-[10px] font-semibold text-orange-400 uppercase tracking-wider">How to do it</p>
+                          </div>
+                          <p className="text-white/60 text-xs leading-relaxed">{exercise.execution}</p>
+                        </div>
+                      )}
+                      {exercise.anti_cheating && (
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <AlertCircle className="w-3 h-3 text-red-400" />
+                            <p className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">Watch out</p>
+                          </div>
+                          <p className="text-white/60 text-xs leading-relaxed">{exercise.anti_cheating}</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Actions */}

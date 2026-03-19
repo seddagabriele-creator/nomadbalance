@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass, Settings, Sun, Droplets, Headphones,
@@ -93,6 +93,9 @@ export default function OnboardingTutorial({ onComplete }) {
   const isLast = step === STEPS.length - 1;
   const isFirst = step === 0;
 
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
   const goNext = () => {
     if (isLast) {
       onComplete();
@@ -108,12 +111,29 @@ export default function OnboardingTutorial({ onComplete }) {
     setStep((s) => s - 1);
   };
 
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e) => {
+    const dx = touchStartX.current - e.changedTouches[0].clientX;
+    const dy = Math.abs(touchStartY.current - e.changedTouches[0].clientY);
+    // Only trigger swipe if horizontal movement > 50px and greater than vertical
+    if (Math.abs(dx) > 50 && Math.abs(dx) > dy) {
+      if (dx > 0) goNext();  // swipe left → next
+      else goPrev();          // swipe right → prev
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex items-center justify-center p-4"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Background orbs */}
       <div className="absolute top-20 -left-20 w-72 h-72 bg-violet-600/10 rounded-full blur-3xl" />
