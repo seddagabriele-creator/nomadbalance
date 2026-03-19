@@ -3,31 +3,41 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Waves, Wind, Check, Timer } from "lucide-react";
+import { ArrowLeft, Waves, Wind, Check, Timer, Shell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 import { daySessionService } from "../api/services";
 import useDailyDefaults from "../hooks/useDailyDefaults";
-import { AUDIO_URLS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES } from "../constants";
+import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES } from "../constants";
 
 const FOCUS_SOUNDS = [
   {
-    id: "wind",
-    name: "Wind",
+    id: "40hz-wind",
+    name: "40 Hz Wind",
     icon: Wind,
-    url: AUDIO_URLS.wind,
-    description: "Natural wind ambience to mask distractions"
+    description: "40 Hz binaural wind – deep focus",
+  },
+  {
+    id: "40hz-ocean",
+    name: "40 Hz Ocean",
+    icon: Waves,
+    description: "40 Hz binaural ocean – flow state",
   },
 ];
 
 const RELAX_SOUNDS = [
   {
-    id: "wind",
-    name: "Wind",
-    icon: Wind,
-    url: AUDIO_URLS.wind,
-    description: "Gentle wind for peaceful breaks"
+    id: "10hz-binaural-ocean",
+    name: "10 Hz Ocean",
+    icon: Waves,
+    description: "10 Hz binaural ocean – calm & restore",
+  },
+  {
+    id: "10hz-binaural-wind",
+    name: "10 Hz Wind",
+    icon: Shell,
+    description: "10 Hz binaural wind – gentle relaxation",
   },
 ];
 
@@ -42,8 +52,8 @@ export default function Flow() {
   });
 
   const session = sessions[0] || null;
-  const currentFocusSound = session?.focus_sound || "wind";
-  const currentRelaxSound = session?.relax_sound || "wind";
+  const currentFocusSound = session?.focus_sound || "40hz-wind";
+  const currentRelaxSound = session?.relax_sound || "10hz-binaural-ocean";
 
   const [focusMinutes, setFocusMinutes] = useState(session?.focus_work_minutes || DEFAULT_WORK_MINUTES);
   const [breakMinutes, setBreakMinutes] = useState(session?.focus_break_minutes || DEFAULT_BREAK_MINUTES);

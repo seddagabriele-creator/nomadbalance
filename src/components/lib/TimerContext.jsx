@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { audioManager } from "./audioManager";
-import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, ONE_SECOND_MS, AUDIO_URLS } from "../../constants";
+import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, ONE_SECOND_MS, getAudioUrl } from "../../constants";
 
 const TimerContext = createContext();
 
@@ -11,6 +11,7 @@ export function TimerProvider({ children }) {
   const [workMinutes, setWorkMinutes] = useState(DEFAULT_WORK_MINUTES);
   const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_MINUTES);
   const [onSessionComplete, setOnSessionComplete] = useState(null);
+  const [focusSoundId, setFocusSoundId] = useState("40hz-wind");
   const intervalRef = useRef(null);
   const isRunningRef = useRef(false);
   const onSessionCompleteRef = useRef(null);
@@ -53,11 +54,12 @@ export function TimerProvider({ children }) {
 
   useEffect(() => {
     if (isRunning && !isBreak) {
-      audioManager.play(AUDIO_URLS.focus_default);
+      const url = getAudioUrl(focusSoundId);
+      if (url) audioManager.play(url);
     } else if (!isRunning) {
       audioManager.pause();
     }
-  }, [isRunning, isBreak]);
+  }, [isRunning, isBreak, focusSoundId]);
 
   const toggleTimer = () => {
     if (timeLeft === 0) {
@@ -112,6 +114,8 @@ export function TimerProvider({ children }) {
         initializeTimer,
         pauseTimer,
         resumeTimer,
+        focusSoundId,
+        setFocusSoundId,
       }}
     >
       {children}

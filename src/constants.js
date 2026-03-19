@@ -18,10 +18,18 @@ export const DEFAULT_FASTING_HOURS = 16;
 export const DEFAULT_EATING_WINDOW_START = "12:00";
 export const DEFAULT_MAX_MEALS = 3;
 
-// Audio URLs
-export const AUDIO_URLS = {
-  wind: "https://drive.google.com/uc?export=download&id=1MPfMRcZVDFE7jMIbz8y_oFrn0Oi_EADw",
-  focus_default: "https://files.catbox.moe/f0pwi6.mp3",
+// Audio — files hosted in Supabase Storage bucket "audio"
+const AUDIO_FILES = {
+  "40hz-wind":           "40hz+wind.mp3",
+  "40hz-ocean":          "40hz+ocean.mp3",
+  "10hz-binaural-ocean": "10hz-binaural+ocean.mp3",
+  "10hz-binaural-wind":  "10hz-binaural+wind.mp3",
+};
+
+export const getAudioUrl = (soundId) => {
+  const filename = AUDIO_FILES[soundId];
+  if (!filename) return null;
+  return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/audio/${filename}`;
 };
 
 // Default work hours
@@ -76,8 +84,8 @@ export const INITIAL_DAILY_DEFAULTS = {
   max_meals: DEFAULT_MAX_MEALS,
   focus_work_minutes: DEFAULT_WORK_MINUTES,
   focus_break_minutes: DEFAULT_BREAK_MINUTES,
-  focus_sound: "wind",
-  relax_sound: "wind",
+  focus_sound: "40hz-wind",
+  relax_sound: "10hz-binaural-ocean",
   body_breaks_target: DEFAULT_BODY_BREAKS_TARGET,
   exercise_selection: "auto",
   selected_groups: [],
