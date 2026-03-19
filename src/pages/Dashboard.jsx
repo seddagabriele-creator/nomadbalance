@@ -89,12 +89,6 @@ export default function Dashboard() {
   const [overdueBreaks, setOverdueBreaks] = useState(null); // batch overdue breaks dialog
   const breakCheckRef = React.useRef(null);
   const breakActionInProgress = React.useRef(false);
-  const timerRunningRef = React.useRef(timerRunning);
-  const timerOnBreakRef = React.useRef(timerOnBreak);
-  const timerTimeLeftRef = React.useRef(timerTimeLeft);
-  React.useEffect(() => { timerRunningRef.current = timerRunning; }, [timerRunning]);
-  React.useEffect(() => { timerOnBreakRef.current = timerOnBreak; }, [timerOnBreak]);
-  React.useEffect(() => { timerTimeLeftRef.current = timerTimeLeft; }, [timerTimeLeft]);
   const deskReturnedAt = React.useRef(null);
   // Local fallback for desk tracking when DB columns are missing
   const [localDeskStatus, setLocalDeskStatus] = useState("at_desk");
@@ -103,6 +97,13 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const today = getLocalDateString();
   const { pauseTimer, resumeTimer, isRunning: timerRunning, isBreak: timerOnBreak, timeLeft: timerTimeLeft } = useTimer();
+
+  const timerRunningRef = React.useRef(timerRunning);
+  const timerOnBreakRef = React.useRef(timerOnBreak);
+  const timerTimeLeftRef = React.useRef(timerTimeLeft);
+  React.useEffect(() => { timerRunningRef.current = timerRunning; }, [timerRunning]);
+  React.useEffect(() => { timerOnBreakRef.current = timerOnBreak; }, [timerOnBreak]);
+  React.useEffect(() => { timerTimeLeftRef.current = timerTimeLeft; }, [timerTimeLeft]);
   const { user: authUser } = useAuth();
 
   const { data: settings = [] } = useQuery({
