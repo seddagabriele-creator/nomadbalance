@@ -89,6 +89,12 @@ export default function Dashboard() {
   const [overdueBreaks, setOverdueBreaks] = useState(null); // batch overdue breaks dialog
   const breakCheckRef = React.useRef(null);
   const breakActionInProgress = React.useRef(false);
+  const timerRunningRef = React.useRef(timerRunning);
+  const timerOnBreakRef = React.useRef(timerOnBreak);
+  const timerTimeLeftRef = React.useRef(timerTimeLeft);
+  React.useEffect(() => { timerRunningRef.current = timerRunning; }, [timerRunning]);
+  React.useEffect(() => { timerOnBreakRef.current = timerOnBreak; }, [timerOnBreak]);
+  React.useEffect(() => { timerTimeLeftRef.current = timerTimeLeft; }, [timerTimeLeft]);
   const deskReturnedAt = React.useRef(null);
   // Local fallback for desk tracking when DB columns are missing
   const [localDeskStatus, setLocalDeskStatus] = useState("at_desk");
@@ -96,7 +102,7 @@ export default function Dashboard() {
 
   const queryClient = useQueryClient();
   const today = getLocalDateString();
-  const { pauseTimer, resumeTimer } = useTimer();
+  const { pauseTimer, resumeTimer, isRunning: timerRunning, isBreak: timerOnBreak, timeLeft: timerTimeLeft } = useTimer();
   const { user: authUser } = useAuth();
 
   const { data: settings = [] } = useQuery({
@@ -236,6 +242,11 @@ export default function Dashboard() {
         if (msSinceReturn < graceMinutes * 60 * 1000) return;
         deskReturnedAt.current = null; // Grace period over
       }
+
+      // If focus timer is in work phase with ≤5 min left, defer the break
+      // so it aligns with the upcoming focus break (handleSessionComplete will catch it)
+      const DEFER_THRESHOLD_SECONDS = 5 * 60;
+      if (timerRunningRef.current && !timerOnBreakRef.current && timerTimeLeftRef.current > 0 && timerTimeLeftRef.current <= DEFER_THRESHOLD_SECONDS) return;
 
       const schedule = session.body_break_schedule || [];
       const dueBreaks = schedule.filter(
