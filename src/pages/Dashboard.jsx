@@ -38,6 +38,36 @@ const toMinutes = (t) => {
   return h * 60 + m;
 };
 
+// Play a gentle two-tone chime for notifications
+function playNotificationChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // First tone
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    gain1.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.3);
+    // Second tone (higher)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.15); // G5
+    gain2.gain.setValueAtTime(0, ctx.currentTime);
+    gain2.gain.setValueAtTime(0.25, ctx.currentTime + 0.15);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+    osc2.start(ctx.currentTime + 0.15);
+    osc2.stop(ctx.currentTime + 0.6);
+  } catch (e) {
+    // Audio not available
+  }
+}
+
 export default function Dashboard() {
   const [showWizard, setShowWizard] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
@@ -141,6 +171,46 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [session]);
 
+  // Request notification permission early if enabled in settings
+  useEffect(() => {
+    if (userSettings.notifications_enabled !== false && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, [userSettings.notifications_enabled]);
+
+  // Check for task alarm deadlines every minute
+  const firedAlarmsRef = React.useRef(new Set());
+  useEffect(() => {
+    if (!session || session.status !== "active") return;
+    if (userSettings.notifications_enabled === false) return;
+
+    const checkTaskAlarms = () => {
+      const now = new Date();
+      const nowTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+      tasks.forEach((task) => {
+        if (!task.alarm_time || task.completed) return;
+        if (firedAlarmsRef.current.has(task.id)) return;
+        if (task.alarm_time === nowTime) {
+          firedAlarmsRef.current.add(task.id);
+          playNotificationChime();
+          toast(`Task reminder: ${task.title}`, { icon: "\u23F0", duration: 10000 });
+          if (Notification.permission === "granted") {
+            new Notification("Task Reminder", {
+              body: task.title,
+              icon: "/favicon.ico",
+              tag: `nomadbalance-task-${task.id}`,
+            });
+          }
+        }
+      });
+    };
+
+    checkTaskAlarms();
+    const interval = setInterval(checkTaskAlarms, ONE_MINUTE_MS);
+    return () => clearInterval(interval);
+  }, [session, tasks, userSettings.notifications_enabled]);
+
   // Check for due body breaks every minute (paused when away from desk)
   useEffect(() => {
     if (!session || session.status !== "active" || session.meeting_mode) return;
@@ -175,10 +245,21 @@ export default function Dashboard() {
       if (dueBreaks.length > 1) {
         // Multiple overdue: show batch dialog instead of one-by-one
         setOverdueBreaks(dueBreaks);
+        playNotificationChime();
+        // Send browser notification
+        if (Notification.permission === "granted") {
+          new Notification("Breaks to catch up!", {
+            body: `You have ${dueBreaks.length} exercise breaks waiting`,
+            icon: "/favicon.ico",
+            tag: "nomadbalance-break",
+          });
+        }
       } else if (dueBreaks.length === 1) {
         setActiveBreakNotification(dueBreaks[0]);
-        // Send browser notification if tab is not visible
-        if (document.hidden && Notification.permission === "granted") {
+        // Play notification sound
+        playNotificationChime();
+        // Send browser notification (always, not just when tab hidden)
+        if (Notification.permission === "granted") {
           const exercise = exercises.find((e) => e.id === dueBreaks[0].exercise_id);
           new Notification("Time for a break!", {
             body: exercise?.name || dueBreaks[0].exercise_name || "Move your body, clear your mind",
@@ -381,8 +462,19 @@ export default function Dashboard() {
       // Try to align breaks with focus break windows
       const cycleLength = (wizardData.focus_work_minutes || DEFAULT_WORK_MINUTES) + (wizardData.focus_break_minutes || DEFAULT_BREAK_MINUTES);
 
-      // Generate schedule with smart exercise selection
+      // Generate schedule aligned with focus timer break windows
       const schedule = [];
+
+      // Calculate all available focus break windows (when work phase ends → break starts)
+      const focusWork = wizardData.focus_work_minutes || DEFAULT_WORK_MINUTES;
+      const focusBreak = wizardData.focus_break_minutes || DEFAULT_BREAK_MINUTES;
+      const breakWindows = [];
+      for (let t = effectiveStart + focusWork; t < workEndMinutes; t += cycleLength) {
+        breakWindows.push(t);
+      }
+
+      // Distribute body breaks across focus break windows when possible
+      const usedWindowIndices = new Set();
 
       for (let i = 0; i < breaksCount; i++) {
         // Prioritize exercises not done recently
@@ -397,18 +489,40 @@ export default function Dashboard() {
         if (finalPool.length === 0) continue;
         const exercise = finalPool[Math.floor(Math.random() * finalPool.length)];
 
-        // Evenly space breaks from effective start to end
-        const interval = effectiveDuration / (breaksCount + 1);
-        const rawBreakTime = effectiveStart + interval * (i + 1);
+        let breakTime;
+        if (breakWindows.length > 0 && breaksCount <= breakWindows.length) {
+          // Evenly pick from available break windows
+          const windowIndex = Math.round((i + 0.5) * breakWindows.length / breaksCount - 0.5);
+          const clampedIdx = Math.max(0, Math.min(windowIndex, breakWindows.length - 1));
+          breakTime = breakWindows[clampedIdx];
+          usedWindowIndices.add(clampedIdx);
+        } else if (breakWindows.length > 0) {
+          // More breaks than windows: place at windows first, then evenly space remaining
+          if (i < breakWindows.length) {
+            breakTime = breakWindows[i];
+            usedWindowIndices.add(i);
+          } else {
+            const interval = effectiveDuration / (breaksCount + 1);
+            breakTime = effectiveStart + interval * (i + 1);
+            // Snap to nearest unused window if close
+            let bestWindow = -1, bestDist = Infinity;
+            breakWindows.forEach((w, idx) => {
+              if (!usedWindowIndices.has(idx)) {
+                const dist = Math.abs(breakTime - w);
+                if (dist < bestDist) { bestDist = dist; bestWindow = idx; }
+              }
+            });
+            if (bestWindow >= 0 && bestDist < cycleLength / 2) {
+              breakTime = breakWindows[bestWindow];
+              usedWindowIndices.add(bestWindow);
+            }
+          }
+        } else {
+          // No windows (very short workday): evenly space
+          const interval = effectiveDuration / (breaksCount + 1);
+          breakTime = effectiveStart + interval * (i + 1);
+        }
 
-        // Snap to nearest focus break window if possible
-        const cyclesSinceStart = (rawBreakTime - effectiveStart) / cycleLength;
-        const nearestCycleEnd = effectiveStart + Math.round(cyclesSinceStart) * cycleLength;
-        // The break window starts at cycleEnd - focusBreakMinutes
-        const breakWindowStart = nearestCycleEnd - (wizardData.focus_break_minutes || DEFAULT_BREAK_MINUTES);
-        // Only snap if within reasonable distance (half a cycle)
-        const snapDistance = Math.abs(rawBreakTime - breakWindowStart);
-        const breakTime = snapDistance < cycleLength / 2 ? breakWindowStart : rawBreakTime;
         // Clamp within work hours
         const clampedBreakTime = Math.max(effectiveStart + 5, Math.min(breakTime, workEndMinutes - 5));
 
@@ -485,6 +599,7 @@ export default function Dashboard() {
             await taskService.update(duplicateFromPrev.id, {
               session_id: newSession.id,
               order: maxOrder + orderOffset,
+              ...(task.alarm_time ? { alarm_time: task.alarm_time } : {}),
             });
           } else {
             orderOffset++;
@@ -493,6 +608,7 @@ export default function Dashboard() {
               title: task.title,
               order: maxOrder + orderOffset,
               completed: false,
+              ...(task.alarm_time ? { alarm_time: task.alarm_time } : {}),
             });
           }
         }
@@ -587,6 +703,32 @@ export default function Dashboard() {
       updateSession.mutate({
         focus_sessions_completed: (session.focus_sessions_completed || 0) + 1,
       });
+
+      // Check if there's a body break due now or in the next few minutes — trigger it immediately
+      // so exercise breaks align with focus timer break phase
+      if (!activeBreakNotification && !overdueBreaks && !breakActionInProgress.current) {
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        const lookAheadMinutes = (session.focus_break_minutes || DEFAULT_BREAK_MINUTES);
+        const schedule = session.body_break_schedule || [];
+        const nearbyBreak = schedule.find(
+          (b) => !b.completed && !b.skipped &&
+                 toMinutes(b.time) >= nowMinutes - 2 &&
+                 toMinutes(b.time) <= nowMinutes + lookAheadMinutes
+        );
+        if (nearbyBreak) {
+          setActiveBreakNotification(nearbyBreak);
+          playNotificationChime();
+          if (Notification.permission === "granted") {
+            const exercise = exercises.find((e) => e.id === nearbyBreak.exercise_id);
+            new Notification("Time for a break!", {
+              body: exercise?.name || nearbyBreak.exercise_name || "Move your body, clear your mind",
+              icon: "/favicon.ico",
+              tag: "nomadbalance-break",
+            });
+          }
+        }
+      }
     }
   };
 
@@ -1126,6 +1268,7 @@ export default function Dashboard() {
                       await taskService.update(duplicateFromPrev.id, {
                         session_id: session.id,
                         order: maxOrder + orderOffset,
+                        ...(task.alarm_time ? { alarm_time: task.alarm_time } : {}),
                       });
                     } else {
                       orderOffset++;
@@ -1134,6 +1277,7 @@ export default function Dashboard() {
                         title: task.title,
                         order: maxOrder + orderOffset,
                         completed: false,
+                        ...(task.alarm_time ? { alarm_time: task.alarm_time } : {}),
                       });
                     }
                   }
