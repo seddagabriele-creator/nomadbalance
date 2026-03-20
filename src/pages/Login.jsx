@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 
 export default function Login() {
   const { login, signup } = useAuth();
@@ -36,6 +38,17 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm"
       >
+        {/* Back to home */}
+        <div className="mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white/70 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to home
+          </Link>
+        </div>
+
         {/* Logo / Title */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white tracking-tight">

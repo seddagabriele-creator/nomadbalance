@@ -3,10 +3,11 @@ import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import Login from '@/pages/Login';
+import LandingPage from '@/pages/LandingPage';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -17,7 +18,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
 
-const AuthenticatedApp = () => {
+const AppRoutes = () => {
   const { isLoadingAuth, isAuthenticated } = useAuth();
 
   // Show loading spinner while checking auth
@@ -29,12 +30,19 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Not logged in → show login page
+  // Not logged in → public routes (landing + login)
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        {/* Redirect any authenticated route to landing */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
   }
 
-  // Render the main app
+  // Authenticated → app routes
   return (
     <Routes>
       <Route path="/" element={
@@ -42,6 +50,8 @@ const AuthenticatedApp = () => {
           <MainPage />
         </LayoutWrapper>
       } />
+      {/* Redirect /login to dashboard if already authenticated */}
+      <Route path="/login" element={<Navigate to="/" replace />} />
       {Object.entries(Pages).map(([path, Page]) => (
         <Route
           key={path}
@@ -66,7 +76,7 @@ function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
           <Router>
-            <AuthenticatedApp />
+            <AppRoutes />
           </Router>
           <Toaster />
           <SonnerToaster
