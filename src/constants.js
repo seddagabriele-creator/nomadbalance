@@ -12,6 +12,11 @@ export const DEFAULT_WORK_MINUTES = 45;
 export const DEFAULT_BREAK_MINUTES = 5;
 export const DEFAULT_BODY_BREAKS_TARGET = 6;
 
+// Smart away detection
+export const AWAY_WARNING_DELAY_MS = 30 * ONE_MINUTE_MS; // 30 min hidden → send warning
+export const AWAY_GRACE_AFTER_WARNING_MS = 5 * ONE_MINUTE_MS; // 5 min to respond before auto-away
+export const BREAK_NO_RESPONSE_AWAY_MS = 10 * ONE_MINUTE_MS; // 10 min ignoring a break → auto-away
+
 // Fasting / Eating window defaults
 export const DEFAULT_FASTING_PRESET = "16/8";
 export const DEFAULT_FASTING_HOURS = 16;
