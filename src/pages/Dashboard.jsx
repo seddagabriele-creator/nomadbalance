@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
 import { useAuth } from "../lib/AuthContext";
 import { hasDailyDefaults, getDailyDefaults } from "../hooks/useDailyDefaults";
-import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, getEatingHours, calculateEatingWindowEnd } from "../constants";
+import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, AWAY_WARNING_DELAY_MS, AWAY_GRACE_AFTER_WARNING_MS, BREAK_NO_RESPONSE_AWAY_MS, getEatingHours, calculateEatingWindowEnd } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -90,6 +90,8 @@ export default function Dashboard() {
   const breakCheckRef = React.useRef(null);
   const breakActionInProgress = React.useRef(false);
   const deskReturnedAt = React.useRef(null);
+  const breakShownAt = React.useRef(null); // track when break notification was shown
+  const breakNoResponseTimer = React.useRef(null);
   // Local fallback for desk tracking when DB columns are missing
   const [localDeskStatus, setLocalDeskStatus] = useState("at_desk");
   const [localAwaySince, setLocalAwaySince] = useState(null);
@@ -286,6 +288,32 @@ export default function Dashboard() {
     return () => clearInterval(breakCheckRef.current);
   }, [session, activeBreakNotification, overdueBreaks, userSettings, exercises]);
 
+
+  // Auto-away if break notification is ignored for 10 min
+  useEffect(() => {
+    if (activeBreakNotification || (overdueBreaks && overdueBreaks.length > 0)) {
+      breakShownAt.current = Date.now();
+      breakNoResponseTimer.current = setTimeout(() => {
+        if (!isAway) {
+          markAsAway();
+          toast("No response to break — you've been set to Away.", { icon: "☕" });
+        }
+      }, BREAK_NO_RESPONSE_AWAY_MS);
+    } else {
+      // Break was answered (start/skip/snooze) → clear timer
+      breakShownAt.current = null;
+      if (breakNoResponseTimer.current) {
+        clearTimeout(breakNoResponseTimer.current);
+        breakNoResponseTimer.current = null;
+      }
+    }
+    return () => {
+      if (breakNoResponseTimer.current) {
+        clearTimeout(breakNoResponseTimer.current);
+        breakNoResponseTimer.current = null;
+      }
+    };
+  }, [activeBreakNotification, overdueBreaks, isAway, markAsAway]);
 
   const activeExercise = React.useMemo(() => {
     if (!activeBreakNotification) return null;
@@ -833,30 +861,64 @@ export default function Dashboard() {
     }
   };
 
-  // Auto "Not at Desk" when browser tab is hidden/closed
+  // Smart auto-away: warn after 30 min of tab hidden, then auto-away after 5 min grace
+  const awayWarningTimer = React.useRef(null);
+  const awayAutoTimer = React.useRef(null);
+
+  const markAsAway = React.useCallback(() => {
+    if (!session?.id || isAway) return;
+    pauseTimer();
+    const now = new Date().toISOString();
+    if (hasDeskColumns) {
+      daySessionService.update(session.id, {
+        desk_status: "away",
+        away_since: now,
+      }).then(() => queryClient.invalidateQueries({ queryKey: ["daySession"] }));
+    } else {
+      setLocalDeskStatus("away");
+      setLocalAwaySince(now);
+    }
+  }, [session, isAway, hasDeskColumns, pauseTimer, queryClient]);
+
   useEffect(() => {
     if (!session || session.status !== "active") return;
 
+    const clearAwayTimers = () => {
+      if (awayWarningTimer.current) { clearTimeout(awayWarningTimer.current); awayWarningTimer.current = null; }
+      if (awayAutoTimer.current) { clearTimeout(awayAutoTimer.current); awayAutoTimer.current = null; }
+    };
+
     const handleVisibilityChange = () => {
-      if (document.hidden && !isAway && session?.id) {
-        // Tab hidden: mark as away
-        pauseTimer();
-        const now = new Date().toISOString();
-        if (hasDeskColumns) {
-          daySessionService.update(session.id, {
-            desk_status: "away",
-            away_since: now,
-          }).then(() => queryClient.invalidateQueries({ queryKey: ["daySession"] }));
-        } else {
-          setLocalDeskStatus("away");
-          setLocalAwaySince(now);
-        }
+      if (document.hidden && !isAway) {
+        // Tab hidden → start 30 min countdown
+        awayWarningTimer.current = setTimeout(() => {
+          // Send warning notification
+          if (Notification.permission === "granted") {
+            new Notification("Are you still there?", {
+              body: "You've been away for 30 minutes. We'll pause your session soon.",
+              icon: "/favicon.ico",
+              tag: "nomadbalance-away-warning",
+            });
+          }
+          playNotificationChime();
+          // Start 5 min grace period before auto-away
+          awayAutoTimer.current = setTimeout(() => {
+            markAsAway();
+            toast("You've been set to Away automatically.", { icon: "☕" });
+          }, AWAY_GRACE_AFTER_WARNING_MS);
+        }, AWAY_WARNING_DELAY_MS);
+      } else if (!document.hidden) {
+        // Tab visible again → cancel all pending timers
+        clearAwayTimers();
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [session, isAway, hasDeskColumns]);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearAwayTimers();
+    };
+  }, [session, isAway, markAsAway]);
 
   const handleResetDay = () => {
     if (session && window.confirm("Do you really want to reset the day?")) {
@@ -1061,21 +1123,30 @@ export default function Dashboard() {
               animate={{ opacity: 1 }}
               className="mt-4 flex items-center justify-around rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3"
             >
-              <div className="text-center">
+              <div className="text-center group relative cursor-default">
                 <p className="text-base font-bold text-white">{session?.focus_sessions_completed || 0}</p>
                 <p className="text-[9px] text-white/40 uppercase tracking-wider">Sessions</p>
+                <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/90 px-2.5 py-1 text-[10px] text-white/80 opacity-0 transition-opacity group-hover:opacity-100 shadow-lg">
+                  Focus sessions completed today
+                </span>
               </div>
               <div className="w-px h-6 bg-white/10" />
-              <div className="text-center">
+              <div className="text-center group relative cursor-default">
                 <p className="text-base font-bold text-white">{session?.body_breaks_done || 0}/{session?.body_breaks_target || 0}</p>
                 <p className="text-[9px] text-white/40 uppercase tracking-wider">Breaks</p>
+                <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/90 px-2.5 py-1 text-[10px] text-white/80 opacity-0 transition-opacity group-hover:opacity-100 shadow-lg">
+                  Exercise breaks done / planned
+                </span>
               </div>
               <div className="w-px h-6 bg-white/10" />
-              <div className="text-center">
+              <div className="text-center group relative cursor-default">
                 <p className="text-base font-bold text-white">
                   {((session?.focus_sessions_completed || 0) * (session?.focus_work_minutes || DEFAULT_WORK_MINUTES))} min
                 </p>
                 <p className="text-[9px] text-white/40 uppercase tracking-wider">Focus</p>
+                <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/90 px-2.5 py-1 text-[10px] text-white/80 opacity-0 transition-opacity group-hover:opacity-100 shadow-lg">
+                  Total deep focus time today
+                </span>
               </div>
             </motion.div>
 
