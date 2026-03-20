@@ -8,6 +8,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import Login from '@/pages/Login';
 import LandingPage from '@/pages/LandingPage';
+import UpdatePassword from '@/pages/UpdatePassword';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -19,7 +20,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AppRoutes = () => {
-  const { isLoadingAuth, isAuthenticated } = useAuth();
+  const { isLoadingAuth, isAuthenticated, isRecovery } = useAuth();
 
   // Show loading spinner while checking auth
   if (isLoadingAuth) {
@@ -30,12 +31,23 @@ const AppRoutes = () => {
     );
   }
 
+  // Password recovery flow → show update password page
+  if (isRecovery && isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="*" element={<Navigate to="/update-password" replace />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
+      </Routes>
+    );
+  }
+
   // Not logged in → public routes (landing + login)
   if (!isAuthenticated) {
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
         {/* Redirect any authenticated route to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -52,6 +64,7 @@ const AppRoutes = () => {
       } />
       {/* Redirect /login to dashboard if already authenticated */}
       <Route path="/login" element={<Navigate to="/" replace />} />
+      <Route path="/update-password" element={<UpdatePassword />} />
       {Object.entries(Pages).map(([path, Page]) => (
         <Route
           key={path}
