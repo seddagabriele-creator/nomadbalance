@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen, Bell, BellOff } from "lucide-react";
+import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen, Bell, BellOff, LogOut } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -18,6 +19,7 @@ import { DEFAULT_WORK_HOURS, FASTING_PRESETS, calculateEatingWindowEnd } from ".
 export default function Settings() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const { defaults: dailyDefaults, setDefaults: saveDailyDefaults } = useDailyDefaults();
   const [localDefaults, setLocalDefaults] = useState(dailyDefaults);
 
@@ -584,6 +586,27 @@ export default function Settings() {
             <Save className="w-4 h-4 mr-2" />
             Save Settings
           </Button>
+
+          {/* Logout */}
+          <section className="bg-white/5 backdrop-blur-xl border border-red-500/20 rounded-2xl p-6" aria-label="Account">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-white">Log out</h2>
+                <p className="text-xs text-white/40">Sign out of your account</p>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  await logout();
+                  navigate("/login");
+                }}
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Log out
+              </Button>
+            </div>
+          </section>
         </div>
       </div>
     </div>
