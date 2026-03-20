@@ -289,32 +289,6 @@ export default function Dashboard() {
   }, [session, activeBreakNotification, overdueBreaks, userSettings, exercises]);
 
 
-  // Auto-away if break notification is ignored for 10 min
-  useEffect(() => {
-    if (activeBreakNotification || (overdueBreaks && overdueBreaks.length > 0)) {
-      breakShownAt.current = Date.now();
-      breakNoResponseTimer.current = setTimeout(() => {
-        if (!isAway) {
-          markAsAway();
-          toast("No response to break — you've been set to Away.", { icon: "☕" });
-        }
-      }, BREAK_NO_RESPONSE_AWAY_MS);
-    } else {
-      // Break was answered (start/skip/snooze) → clear timer
-      breakShownAt.current = null;
-      if (breakNoResponseTimer.current) {
-        clearTimeout(breakNoResponseTimer.current);
-        breakNoResponseTimer.current = null;
-      }
-    }
-    return () => {
-      if (breakNoResponseTimer.current) {
-        clearTimeout(breakNoResponseTimer.current);
-        breakNoResponseTimer.current = null;
-      }
-    };
-  }, [activeBreakNotification, overdueBreaks, isAway, markAsAway]);
-
   const activeExercise = React.useMemo(() => {
     if (!activeBreakNotification) return null;
     return exercises.find((e) => e.id === activeBreakNotification.exercise_id) || null;
@@ -879,6 +853,32 @@ export default function Dashboard() {
       setLocalAwaySince(now);
     }
   }, [session, isAway, hasDeskColumns, pauseTimer, queryClient]);
+
+  // Auto-away if break notification is ignored for 10 min
+  useEffect(() => {
+    if (activeBreakNotification || (overdueBreaks && overdueBreaks.length > 0)) {
+      breakShownAt.current = Date.now();
+      breakNoResponseTimer.current = setTimeout(() => {
+        if (!isAway) {
+          markAsAway();
+          toast("No response to break — you've been set to Away.", { icon: "☕" });
+        }
+      }, BREAK_NO_RESPONSE_AWAY_MS);
+    } else {
+      // Break was answered (start/skip/snooze) → clear timer
+      breakShownAt.current = null;
+      if (breakNoResponseTimer.current) {
+        clearTimeout(breakNoResponseTimer.current);
+        breakNoResponseTimer.current = null;
+      }
+    }
+    return () => {
+      if (breakNoResponseTimer.current) {
+        clearTimeout(breakNoResponseTimer.current);
+        breakNoResponseTimer.current = null;
+      }
+    };
+  }, [activeBreakNotification, overdueBreaks, isAway, markAsAway]);
 
   useEffect(() => {
     if (!session || session.status !== "active") return;
