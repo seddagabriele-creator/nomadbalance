@@ -1061,21 +1061,30 @@ export default function Dashboard() {
               animate={{ opacity: 1 }}
               className="mt-4 flex items-center justify-around rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3"
             >
-              <div className="text-center">
+              <div className="text-center group relative cursor-default">
                 <p className="text-base font-bold text-white">{session?.focus_sessions_completed || 0}</p>
                 <p className="text-[9px] text-white/40 uppercase tracking-wider">Sessions</p>
+                <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/90 px-2.5 py-1 text-[10px] text-white/80 opacity-0 transition-opacity group-hover:opacity-100 shadow-lg">
+                  Focus sessions completed today
+                </span>
               </div>
               <div className="w-px h-6 bg-white/10" />
-              <div className="text-center">
+              <div className="text-center group relative cursor-default">
                 <p className="text-base font-bold text-white">{session?.body_breaks_done || 0}/{session?.body_breaks_target || 0}</p>
                 <p className="text-[9px] text-white/40 uppercase tracking-wider">Breaks</p>
+                <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/90 px-2.5 py-1 text-[10px] text-white/80 opacity-0 transition-opacity group-hover:opacity-100 shadow-lg">
+                  Exercise breaks done / planned
+                </span>
               </div>
               <div className="w-px h-6 bg-white/10" />
-              <div className="text-center">
+              <div className="text-center group relative cursor-default">
                 <p className="text-base font-bold text-white">
                   {((session?.focus_sessions_completed || 0) * (session?.focus_work_minutes || DEFAULT_WORK_MINUTES))} min
                 </p>
                 <p className="text-[9px] text-white/40 uppercase tracking-wider">Focus</p>
+                <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/90 px-2.5 py-1 text-[10px] text-white/80 opacity-0 transition-opacity group-hover:opacity-100 shadow-lg">
+                  Total deep focus time today
+                </span>
               </div>
             </motion.div>
 
