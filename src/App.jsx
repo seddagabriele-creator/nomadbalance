@@ -8,6 +8,9 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import Login from '@/pages/Login';
 import LandingPage from '@/pages/LandingPage';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import CookiePolicy from '@/pages/CookiePolicy';
+import TermsOfService from '@/pages/TermsOfService';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -30,19 +33,22 @@ const AppRoutes = () => {
     );
   }
 
-  // Not logged in → public routes (landing + login)
+  // Not logged in → public routes (landing + login + legal pages)
   if (!isAuthenticated) {
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/cookies" element={<CookiePolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
         {/* Redirect any authenticated route to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   }
 
-  // Authenticated → app routes
+  // Authenticated → app routes + legal pages still accessible
   return (
     <Routes>
       <Route path="/" element={
@@ -52,6 +58,10 @@ const AppRoutes = () => {
       } />
       {/* Redirect /login to dashboard if already authenticated */}
       <Route path="/login" element={<Navigate to="/" replace />} />
+      {/* Legal pages always accessible */}
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/cookies" element={<CookiePolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
       {Object.entries(Pages).map(([path, Page]) => (
         <Route
           key={path}

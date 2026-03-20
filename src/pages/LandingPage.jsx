@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -116,13 +116,11 @@ export default function LandingPage() {
     <div className="min-h-screen bg-slate-950 text-white overflow-hidden">
       {/* ====== HERO ====== */}
       <header className="relative">
-        {/* Background effects */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] bg-violet-600/8 rounded-full blur-3xl" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] max-w-[500px] max-h-[500px] bg-cyan-600/8 rounded-full blur-3xl" />
         </div>
 
-        {/* Nav */}
         <nav className="relative z-10 max-w-5xl mx-auto px-4 py-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -131,28 +129,17 @@ export default function LandingPage() {
             <span className="text-lg font-bold tracking-tight">NomadBalance</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              to="/login"
-              className="text-sm text-white/60 hover:text-white transition-colors px-3 py-2"
-            >
+            <Link to="/login" className="text-sm text-white/60 hover:text-white transition-colors px-3 py-2">
               Log in
             </Link>
-            <Link
-              to="/login"
-              className="text-sm font-semibold bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg px-4 py-2 transition-colors"
-            >
+            <Link to="/login" className="text-sm font-semibold bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg px-4 py-2 transition-colors">
               Sign up free
             </Link>
           </div>
         </nav>
 
-        {/* Hero content */}
         <div className="relative z-10 max-w-3xl mx-auto px-4 pt-16 pb-24 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white/60 mb-6">
               <Sparkles className="w-3 h-3 text-cyan-400" />
               Free &middot; No install &middot; Works offline
@@ -170,17 +157,11 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                to="/login"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-bold text-base shadow-lg shadow-violet-500/20 transition-all"
-              >
+              <Link to="/login" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-bold text-base shadow-lg shadow-violet-500/20 transition-all">
                 Start for free
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <a
-                href="#features"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 font-medium text-base transition-all"
-              >
+              <a href="#features" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 font-medium text-base transition-all">
                 See how it works
                 <ChevronRight className="w-4 h-4" />
               </a>
@@ -191,20 +172,12 @@ export default function LandingPage() {
 
       {/* ====== FEATURES ====== */}
       <section id="features" className="max-w-5xl mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-center mb-14"
-        >
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
-            Four pillars for a balanced workday
-          </h2>
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">Four pillars for a balanced workday</h2>
           <p className="text-white/40 text-base max-w-xl mx-auto">
             NomadBalance organizes your entire day around four areas that matter most when you work long hours at a screen.
           </p>
         </motion.div>
-
         <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
           {FEATURES.map((f, i) => (
             <FeatureCard key={f.title} {...f} index={i} />
@@ -214,15 +187,8 @@ export default function LandingPage() {
 
       {/* ====== HOW IT WORKS ====== */}
       <section className="max-w-5xl mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-center mb-14"
-        >
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
-            How a typical day looks
-          </h2>
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-14">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">How a typical day looks</h2>
           <p className="text-white/40 text-base max-w-xl mx-auto">
             NomadBalance works best when you follow the rhythm. Here's what a day looks like.
           </p>
@@ -236,14 +202,7 @@ export default function LandingPage() {
             { icon: Droplets, time: "Meal time", text: "The app knows your eating window and work schedule. Tap to log meals. It tracks how many you've had and how long until the window closes." },
             { icon: Moon, time: "End of day", text: "Close the day with a guided breathing session (4-7-8 or Box Breathing). Review your stats, check completed tasks, and sign off feeling good." },
           ].map((step, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ delay: i * 0.08 }}
-              className="flex gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]"
-            >
+            <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ delay: i * 0.08 }} className="flex gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
               <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
                 <step.icon className="w-5 h-5 text-white/40" />
               </div>
@@ -258,30 +217,15 @@ export default function LandingPage() {
 
       {/* ====== EXERCISE GROUPS ====== */}
       <section className="max-w-5xl mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-center mb-10"
-        >
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
-            27 exercises, 5 muscle groups
-          </h2>
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">27 exercises, 5 muscle groups</h2>
           <p className="text-white/40 text-base max-w-xl mx-auto">
             Every movement is designed for people who sit at a desk. Each exercise includes dosage, execution instructions, anti-cheating cues, and modifications.
           </p>
         </motion.div>
-
         <div className="max-w-2xl mx-auto space-y-3">
           {EXERCISE_GROUPS.map((group, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.06 }}
-              className="flex items-center gap-3 p-4 rounded-xl bg-orange-500/[0.06] border border-orange-500/[0.12]"
-            >
+            <motion.div key={i} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }} className="flex items-center gap-3 p-4 rounded-xl bg-orange-500/[0.06] border border-orange-500/[0.12]">
               <CheckCircle className="w-5 h-5 text-orange-400 shrink-0" />
               <p className="text-white/70 text-sm">{group}</p>
             </motion.div>
@@ -291,27 +235,12 @@ export default function LandingPage() {
 
       {/* ====== MORE FEATURES ====== */}
       <section className="max-w-5xl mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-center mb-10"
-        >
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
-            And there's more
-          </h2>
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">And there's more</h2>
         </motion.div>
-
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {SECONDARY_FEATURES.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
-              className="p-5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
-            >
+            <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} className="p-5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
               <f.icon className="w-5 h-5 text-white/30 mb-3" />
               <h3 className="text-sm font-semibold text-white mb-1">{f.label}</h3>
               <p className="text-white/40 text-xs leading-relaxed">{f.desc}</p>
@@ -322,40 +251,18 @@ export default function LandingPage() {
 
       {/* ====== FAQ ====== */}
       <section className="max-w-2xl mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-center mb-10"
-        >
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
-            Frequently asked questions
-          </h2>
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">Frequently asked questions</h2>
         </motion.div>
-
         <div className="space-y-2">
           {FAQ.map((item, i) => (
-            <div
-              key={i}
-              className="rounded-xl border border-white/[0.06] overflow-hidden"
-            >
-              <button
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full flex items-center justify-between p-4 text-left hover:bg-white/[0.02] transition-colors"
-              >
+            <div key={i} className="rounded-xl border border-white/[0.06] overflow-hidden">
+              <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-4 text-left hover:bg-white/[0.02] transition-colors">
                 <span className="text-sm font-medium text-white/80 pr-4">{item.q}</span>
-                <ChevronRight
-                  className={`w-4 h-4 text-white/30 shrink-0 transition-transform duration-200 ${
-                    openFaq === i ? "rotate-90" : ""
-                  }`}
-                />
+                <ChevronRight className={`w-4 h-4 text-white/30 shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-90" : ""}`} />
               </button>
               {openFaq === i && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  className="px-4 pb-4"
-                >
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="px-4 pb-4">
                   <p className="text-white/50 text-sm leading-relaxed">{item.a}</p>
                 </motion.div>
               )}
@@ -366,20 +273,12 @@ export default function LandingPage() {
 
       {/* ====== CTA ====== */}
       <section className="max-w-3xl mx-auto px-4 py-20 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="bg-gradient-to-br from-violet-500/10 to-cyan-500/10 border border-white/10 rounded-3xl p-10 md:p-14"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-gradient-to-br from-violet-500/10 to-cyan-500/10 border border-white/10 rounded-3xl p-10 md:p-14">
           <h2 className="text-3xl font-extrabold mb-3">Ready to take care of your workday?</h2>
           <p className="text-white/50 mb-8 max-w-lg mx-auto">
             NomadBalance is free. No credit card, no install. Create an account and start your first day in under a minute.
           </p>
-          <Link
-            to="/login"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-bold text-base shadow-lg shadow-violet-500/20 transition-all"
-          >
+          <Link to="/login" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-bold text-base shadow-lg shadow-violet-500/20 transition-all">
             Create free account
             <ArrowRight className="w-4 h-4" />
           </Link>
@@ -396,11 +295,17 @@ export default function LandingPage() {
               </div>
               <span className="text-sm font-semibold text-white/60">NomadBalance</span>
             </div>
-            <div className="flex items-center gap-6 text-xs text-white/30">
-              <span>&copy; {new Date().getFullYear()} NomadBalance</span>
-              <span>&middot;</span>
-              <span>Focus, Fuel, Move, Plan</span>
+            <div className="flex items-center gap-4 text-xs text-white/40">
+              <Link to="/privacy" className="hover:text-white/70 transition-colors">Privacy Policy</Link>
+              <span className="text-white/20">|</span>
+              <Link to="/cookies" className="hover:text-white/70 transition-colors">Cookie Policy</Link>
+              <span className="text-white/20">|</span>
+              <Link to="/terms" className="hover:text-white/70 transition-colors">Terms of Service</Link>
             </div>
+          </div>
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span className="text-xs text-white/25">&copy; {new Date().getFullYear()} NomadBalance</span>
+            <span className="text-xs text-white/25">Focus, Fuel, Move, Plan</span>
           </div>
           <div className="mt-6 pt-6 border-t border-white/[0.04]">
             <p className="text-xs text-white/20 leading-relaxed max-w-2xl">
