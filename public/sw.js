@@ -24,8 +24,11 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET and cross-origin API requests
+  // Skip non-GET requests
   if (request.method !== "GET") return;
+
+  // Never cache auth callback requests — let them reach the app directly
+  if (url.pathname.startsWith("/auth/")) return;
 
   // For navigation requests: network-first with cache fallback
   if (request.mode === "navigate") {

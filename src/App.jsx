@@ -12,6 +12,7 @@ import UpdatePassword from '@/pages/UpdatePassword';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import CookiePolicy from '@/pages/CookiePolicy';
 import TermsOfService from '@/pages/TermsOfService';
+import AuthCallback from '@/pages/AuthCallback';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -38,8 +39,9 @@ const AppRoutes = () => {
   if (isRecovery && isAuthenticated) {
     return (
       <Routes>
-        <Route path="*" element={<Navigate to="/update-password" replace />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="*" element={<Navigate to="/update-password" replace />} />
       </Routes>
     );
   }
@@ -49,6 +51,7 @@ const AppRoutes = () => {
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/login" element={<Login />} />
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -68,6 +71,7 @@ const AppRoutes = () => {
           <MainPage />
         </LayoutWrapper>
       } />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       {/* Redirect /login to dashboard if already authenticated */}
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="/update-password" element={<UpdatePassword />} />

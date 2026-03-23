@@ -10,14 +10,9 @@ export const AuthProvider = ({ children }) => {
   const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
-    // Check current session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setIsAuthenticated(!!session?.user);
-      setIsLoadingAuth(false);
-    });
-
-    // Listen for auth state changes (login, logout, token refresh)
+    // Listen for auth state changes FIRST (before getSession)
+    // This prevents a race condition where getSession returns null
+    // while the SDK is still processing auth tokens from the URL
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
@@ -29,6 +24,13 @@ export const AuthProvider = ({ children }) => {
       }
     );
 
+    // Then check current session as fallback
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session?.user);
+      setIsLoadingAuth(false);
+    });
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -39,7 +41,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signup = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
     if (error) throw error;
     return data;
   };
@@ -52,7 +60,7 @@ export const AuthProvider = ({ children }) => {
 
   const resetPassword = async (email) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/update-password`,
+      redirectTo: `${window.location.origin}/auth/callback`,
     });
     if (error) throw error;
     return data;
