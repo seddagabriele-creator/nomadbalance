@@ -48,6 +48,17 @@ export const daySessionService = {
     );
   },
 
+  listAll: async () => {
+    const userId = await getUserId();
+    return unwrap(
+      await supabase
+        .from("day_sessions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("date", { ascending: false })
+    );
+  },
+
   listRecent: async (limit = 30) => {
     const userId = await getUserId();
     return unwrap(
