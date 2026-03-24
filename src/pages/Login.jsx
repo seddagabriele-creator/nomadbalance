@@ -1,8 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
+
+// Map Supabase error messages to user-friendly ones (avoid leaking internals)
+const sanitizeAuthError = (message) => {
+  const lower = (message || "").toLowerCase();
+  if (lower.includes("invalid login credentials")) return "Invalid email or password.";
+  if (lower.includes("email not confirmed")) return "Please confirm your email before logging in.";
+  if (lower.includes("user already registered")) return "An account with this email already exists.";
+  if (lower.includes("rate limit") || lower.includes("too many requests")) return "Too many attempts. Please wait a moment and try again.";
+  if (lower.includes("password")) return "Password must be at least 6 characters.";
+  if (lower.includes("email")) return "Please enter a valid email address.";
+  return "Something went wrong. Please try again.";
+};
 
 export default function Login() {
   const { login, signup, resetPassword } = useAuth();
@@ -14,10 +26,20 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const failCountRef = useRef(0);
+  const lockoutUntilRef = useRef(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    // Client-side brute force protection: lock after 5 consecutive failures
+    if (Date.now() < lockoutUntilRef.current) {
+      const secondsLeft = Math.ceil((lockoutUntilRef.current - Date.now()) / 1000);
+      setError(`Too many attempts. Please wait ${secondsLeft} seconds.`);
+      return;
+    }
+
     setLoading(true);
     try {
       if (isForgotPassword) {
@@ -29,8 +51,16 @@ export default function Login() {
       } else {
         await login(email, password);
       }
+      failCountRef.current = 0;
     } catch (err) {
-      setError(err.message || "Authentication failed");
+      failCountRef.current += 1;
+      if (failCountRef.current >= 5) {
+        lockoutUntilRef.current = Date.now() + 30_000;
+        failCountRef.current = 0;
+        setError("Too many failed attempts. Please wait 30 seconds.");
+      } else {
+        setError(sanitizeAuthError(err.message));
+      }
     } finally {
       setLoading(false);
     }
