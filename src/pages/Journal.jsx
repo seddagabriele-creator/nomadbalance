@@ -54,7 +54,7 @@ export default function Journal() {
   // Filter tasks based on context
   const todayTasks = isInWorkDay
     ? allTasks.filter(t => t.session_id === session?.id)
-    : allTasks.filter(t => !t.session_id);
+    : allTasks.filter(t => !t.session_id && t.created_at && getLocalDateString(new Date(t.created_at)) === today);
 
   const previousTasks = isInWorkDay
     ? previousUncompletedTasks
