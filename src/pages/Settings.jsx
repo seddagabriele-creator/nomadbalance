@@ -6,20 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen, Bell, BellOff, LogOut } from "lucide-react";
-import { useAuth } from "@/lib/AuthContext";
+import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen, Bell, BellOff, Trash2 } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
-import { userSettingsService } from "../api/services";
+import { userSettingsService, daySessionService, taskService } from "../api/services";
 import useDailyDefaults from "../hooks/useDailyDefaults";
 import { DEFAULT_WORK_HOURS, FASTING_PRESETS, calculateEatingWindowEnd } from "../constants";
 
 export default function Settings() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { logout } = useAuth();
   const { defaults: dailyDefaults, setDefaults: saveDailyDefaults } = useDailyDefaults();
   const [localDefaults, setLocalDefaults] = useState(dailyDefaults);
 
@@ -587,28 +585,119 @@ export default function Settings() {
             Save Settings
           </Button>
 
-          {/* Logout */}
-          <section className="bg-white/5 backdrop-blur-xl border border-red-500/20 rounded-2xl p-6" aria-label="Account">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-white">Log out</h2>
-                <p className="text-xs text-white/40">Sign out of your account</p>
-              </div>
-              <Button
-                variant="ghost"
-                onClick={async () => {
-                  await logout();
-                  navigate("/login");
-                }}
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Log out
-              </Button>
-            </div>
-          </section>
+          {/* Delete All Data */}
+          <DeleteAllDataSection />
         </div>
       </div>
     </div>
+  );
+}
+
+function DeleteAllDataSection() {
+  const [step, setStep] = useState(0); // 0=idle, 1=confirm, 2=type DELETE
+  const [confirmText, setConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const handleDelete = async () => {
+    if (confirmText !== "DELETE") return;
+    setIsDeleting(true);
+    try {
+      await daySessionService.deleteAll();
+      await taskService.deleteAll();
+      await userSettingsService.deleteAll();
+      queryClient.clear();
+      toast.success("All data deleted successfully");
+      navigate("/login");
+    } catch (e) {
+      toast.error("Failed to delete data: " + e.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (step === 0) {
+    return (
+      <section className="bg-white/5 backdrop-blur-xl border border-red-500/20 rounded-2xl p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Delete all data</h2>
+            <p className="text-xs text-white/40">Remove all sessions, tasks, and settings</p>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={() => setStep(1)}
+            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === 1) {
+    return (
+      <section className="bg-red-500/10 backdrop-blur-xl border border-red-500/30 rounded-2xl p-6 space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-red-400 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Are you sure?
+          </h2>
+          <p className="text-xs text-white/50 mt-1">
+            This will permanently delete all your sessions, tasks, and settings. This action cannot be undone.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => setStep(0)}
+            className="text-white/60 hover:text-white hover:bg-white/10 text-sm flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => setStep(2)}
+            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm flex-1"
+          >
+            Yes, delete everything
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="bg-red-500/10 backdrop-blur-xl border border-red-500/30 rounded-2xl p-6 space-y-4">
+      <div>
+        <h2 className="text-sm font-semibold text-red-400">Type DELETE to confirm</h2>
+        <p className="text-xs text-white/50 mt-1">This is permanent and cannot be undone.</p>
+      </div>
+      <Input
+        value={confirmText}
+        onChange={(e) => setConfirmText(e.target.value)}
+        placeholder="Type DELETE"
+        className="bg-white/5 border-red-500/30 text-white placeholder:text-white/20"
+      />
+      <div className="flex gap-2">
+        <Button
+          variant="ghost"
+          onClick={() => { setStep(0); setConfirmText(""); }}
+          className="text-white/60 hover:text-white hover:bg-white/10 text-sm flex-1"
+        >
+          Cancel
+        </Button>
+        <Button
+          disabled={confirmText !== "DELETE" || isDeleting}
+          onClick={handleDelete}
+          className="bg-red-600 hover:bg-red-500 text-white text-sm flex-1 disabled:opacity-30"
+        >
+          {isDeleting ? "Deleting..." : "Delete all data"}
+        </Button>
+      </div>
+    </section>
   );
 }
