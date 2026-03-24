@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Play, Pencil, Coffee, Activity, BarChart3 } from "lucide-react";
+import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Play, Pencil, Coffee, Activity, BarChart3, LogOut } from "lucide-react";
 import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
@@ -31,6 +31,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 const toMinutes = (t) => {
@@ -106,7 +107,8 @@ export default function Dashboard() {
   React.useEffect(() => { timerRunningRef.current = timerRunning; }, [timerRunning]);
   React.useEffect(() => { timerOnBreakRef.current = timerOnBreak; }, [timerOnBreak]);
   React.useEffect(() => { timerTimeLeftRef.current = timerTimeLeft; }, [timerTimeLeft]);
-  const { user: authUser } = useAuth();
+  const { user: authUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const { data: settings = [] } = useQuery({
     queryKey: ["userSettings"],
@@ -1023,7 +1025,7 @@ export default function Dashboard() {
                     </DropdownMenuItem>
                   </Link>
                   {(isActive || isCompleted) && (
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={handleResetDay}
                       className="text-amber-400 hover:bg-white/10 cursor-pointer"
                     >
@@ -1031,6 +1033,17 @@ export default function Dashboard() {
                       Reset Day
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      await logout();
+                      navigate("/login");
+                    }}
+                    className="text-red-400 hover:bg-white/10 cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Log out
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

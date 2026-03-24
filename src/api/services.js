@@ -59,6 +59,16 @@ export const daySessionService = {
     );
   },
 
+  deleteAll: async () => {
+    const userId = await getUserId();
+    return unwrap(
+      await supabase
+        .from("day_sessions")
+        .delete()
+        .eq("user_id", userId)
+    );
+  },
+
   listRecent: async (limit = 30) => {
     const userId = await getUserId();
     return unwrap(
@@ -155,6 +165,13 @@ export const taskService = {
       await supabase.from("tasks").delete().eq("user_id", userId).eq("session_id", sessionId)
     );
   },
+
+  deleteAll: async () => {
+    const userId = await getUserId();
+    return unwrap(
+      await supabase.from("tasks").delete().eq("user_id", userId)
+    );
+  },
 };
 
 // Exercise service
@@ -223,6 +240,13 @@ export const userSettingsService = {
         .insert({ ...cleanSettings, user_id: userId })
         .select()
         .single()
+    );
+  },
+
+  deleteAll: async () => {
+    const userId = await getUserId();
+    return unwrap(
+      await supabase.from("user_settings").delete().eq("user_id", userId)
     );
   },
 };
