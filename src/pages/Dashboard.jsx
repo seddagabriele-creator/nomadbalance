@@ -294,6 +294,33 @@ export default function Dashboard() {
     return exercises.find((e) => e.id === activeBreakNotification.exercise_id) || null;
   }, [activeBreakNotification, exercises]);
 
+  const createSession = useMutation({
+    mutationFn: (data) => daySessionService.create({ ...data, date: today, status: "active", started_at: new Date().toTimeString().slice(0, 5) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
+    onError: (error) => {
+      toast.error("Failed to start day session");
+      console.error("Create session error:", error);
+    },
+  });
+
+  const updateSession = useMutation({
+    mutationFn: (data) => daySessionService.update(session.id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
+    onError: (error) => {
+      toast.error("Failed to update session");
+      console.error("Update session error:", error);
+    },
+  });
+
+  const taskUpdateMutation = useMutation({
+    mutationFn: ({ taskId, data }) => taskService.update(taskId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (error) => {
+      toast.error("Failed to update task");
+      console.error("Task update error:", error);
+    },
+  });
+
   const handleBreakStart = () => {
     // Just marks the beginning — exercise view is shown via phase change
   };
@@ -405,33 +432,6 @@ export default function Dashboard() {
     ).then(() => queryClient.invalidateQueries({ queryKey: ["userSettings"] }))
      .catch(() => {}); // localStorage already set as fallback
   };
-
-  const createSession = useMutation({
-    mutationFn: (data) => daySessionService.create({ ...data, date: today, status: "active", started_at: new Date().toTimeString().slice(0, 5) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
-    onError: (error) => {
-      toast.error("Failed to start day session");
-      console.error("Create session error:", error);
-    },
-  });
-
-  const updateSession = useMutation({
-    mutationFn: (data) => daySessionService.update(session.id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
-    onError: (error) => {
-      toast.error("Failed to update session");
-      console.error("Update session error:", error);
-    },
-  });
-
-  const taskUpdateMutation = useMutation({
-    mutationFn: ({ taskId, data }) => taskService.update(taskId, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
-    onError: (error) => {
-      toast.error("Failed to update task");
-      console.error("Task update error:", error);
-    },
-  });
 
   const handleStartDay = async (wizardData, tasks, selectedGroups, mealsAlreadyHad = 0) => {
     try {
