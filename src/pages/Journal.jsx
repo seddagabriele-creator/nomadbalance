@@ -52,13 +52,15 @@ export default function Journal() {
   );
 
   // Filter tasks based on context
+  // Without a session: todayTasks is empty, previousTasks shows uncompleted from past sessions
+  // With a session: todayTasks shows session tasks, previousTasks shows uncompleted from other sessions
   const todayTasks = isInWorkDay
     ? allTasks.filter(t => t.session_id === session?.id)
-    : allTasks.filter(t => !t.completed);
+    : [];
 
   const previousTasks = isInWorkDay
     ? previousUncompletedTasks
-    : [];
+    : allTasks.filter(t => t.session_id && !t.completed);
 
   const sortedTodayTasks = [...todayTasks].sort((a, b) => a.order - b.order);
   const sortedPreviousTasks = [...previousTasks].sort((a, b) => a.order - b.order);
@@ -87,7 +89,7 @@ export default function Journal() {
 
   const completeAllPreviousTasks = useMutation({
     mutationFn: async () => {
-      const promises = previousUncompletedTasks.map(task =>
+      const promises = previousTasks.map(task =>
         taskService.update(task.id, {
           completed: true,
           completed_at: new Date().toISOString(),
@@ -304,14 +306,14 @@ export default function Journal() {
           </div>
 
           <div className="flex items-center gap-2">
-            {previousUncompletedTasks.length > 0 && isInWorkDay && (
+            {previousTasks.length > 0 && (
               <Button
                 onClick={() => setShowCompleteConfirm(true)}
                 variant="ghost"
                 className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
-                Complete {previousUncompletedTasks.length} old
+                Complete {previousTasks.length} old
               </Button>
             )}
             {!isInWorkDay && (
@@ -910,17 +912,17 @@ export default function Journal() {
               <h3 className="text-white font-bold text-lg">Complete old tasks?</h3>
             </div>
             <p className="text-white/60 text-sm mb-2">
-              This will mark <strong className="text-white">{previousUncompletedTasks.length} task{previousUncompletedTasks.length > 1 ? "s" : ""}</strong> as completed:
+              This will mark <strong className="text-white">{previousTasks.length} task{previousTasks.length > 1 ? "s" : ""}</strong> as completed:
             </p>
             <div className="bg-white/5 rounded-xl p-3 border border-white/10 mb-6 space-y-1.5 max-h-40 overflow-y-auto">
-              {previousUncompletedTasks.slice(0, 5).map((task, i) => (
+              {previousTasks.slice(0, 5).map((task, i) => (
                 <div key={task.id} className="flex items-center gap-2 text-sm">
                   <Circle className="w-3.5 h-3.5 text-amber-400/60 shrink-0" />
                   <span className="text-white/70 truncate">{task.title}</span>
                 </div>
               ))}
-              {previousUncompletedTasks.length > 5 && (
-                <p className="text-white/30 text-xs pl-5">...and {previousUncompletedTasks.length - 5} more</p>
+              {previousTasks.length > 5 && (
+                <p className="text-white/30 text-xs pl-5">...and {previousTasks.length - 5} more</p>
               )}
             </div>
             <div className="flex gap-3">
