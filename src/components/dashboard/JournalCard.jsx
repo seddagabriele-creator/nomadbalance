@@ -1,8 +1,11 @@
 import React from "react";
-import { Target, CheckCircle2, Circle } from "lucide-react";
+import { Target, CheckCircle2, Circle, Clock, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function JournalCard({ session, topTask, onToggleTask }) {
+  const hasAlarm = !!topTask?.alarm_time;
+  const hasNotes = !!topTask?.notes;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -35,9 +38,26 @@ export default function JournalCard({ session, topTask, onToggleTask }) {
                 <Circle className="w-4 h-4 text-white/40 hover:text-cyan-400 transition-colors" />
               )}
             </button>
-            <p className={`text-white font-semibold text-sm leading-relaxed ${topTask.completed ? 'line-through text-white/40' : ''}`}>
-              {topTask.title}
-            </p>
+            <div className="flex-1 min-w-0">
+              <p className={`text-white font-semibold text-sm leading-relaxed ${topTask.completed ? 'line-through text-white/40' : ''}`}>
+                {topTask.title}
+              </p>
+              {(hasAlarm || hasNotes) && (
+                <div className="flex items-center gap-2 mt-1.5">
+                  {hasAlarm && (
+                    <span className="flex items-center gap-1 text-[10px] text-amber-400/70">
+                      <Clock className="w-3 h-3" />
+                      {topTask.alarm_time}
+                    </span>
+                  )}
+                  {hasNotes && (
+                    <span className="flex items-center gap-1 text-[10px] text-cyan-400/50">
+                      <MessageSquare className="w-3 h-3" />
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <p className="text-white/30 text-sm italic">No tasks set</p>

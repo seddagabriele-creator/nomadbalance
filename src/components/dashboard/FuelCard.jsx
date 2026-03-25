@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Droplets, Utensils, Clock, CheckCircle } from "lucide-react";
+import { Droplets, Utensils, Clock, CheckCircle, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { ONE_MINUTE_MS } from "../../constants";
 
 function getSmartFuelStatus(session) {
   if (!session) {
-    return { label: "No data", detail: "Start your day", icon: "clock", extra: null };
+    return { label: "No data", detail: "Start your day", icon: "clock", extra: null, canLogMeal: false };
   }
 
   if (!session.eating_window_start || !session.eating_window_end) {
     const preset = session.fasting_preset || "16/8";
-    return { label: "Fasting", detail: "Window not set", icon: "droplets", extra: `${preset} protocol` };
+    return { label: "Fasting", detail: "Window not set", icon: "droplets", extra: `${preset} protocol`, canLogMeal: false };
   }
 
   const now = new Date();
@@ -49,6 +49,7 @@ function getSmartFuelStatus(session) {
       label: "Fasting",
       detail: `Window opens in ${fmtRemaining(remaining)}`,
       extra: `${mealsTarget} meals planned`,
+      canLogMeal: false,
     };
   } else if (isEating) {
     const windowRemaining = crossesMidnight
@@ -60,6 +61,7 @@ function getSmartFuelStatus(session) {
         label: `${mealsLogged.length}/${mealsTarget} meals`,
         detail: `${fmtRemaining(windowRemaining)} left`,
         extra: `${mealsLeft} meal${mealsLeft > 1 ? "s" : ""} to go`,
+        canLogMeal: true,
       };
     }
 
@@ -68,6 +70,7 @@ function getSmartFuelStatus(session) {
       label: "All meals done",
       detail: `Window: ${fmtRemaining(windowRemaining)} left`,
       extra: null,
+      canLogMeal: false,
     };
   } else {
     return {
@@ -75,11 +78,12 @@ function getSmartFuelStatus(session) {
       label: "Fasting",
       detail: `Window closed`,
       extra: `${mealsLogged.length}/${mealsTarget} meals today`,
+      canLogMeal: false,
     };
   }
 }
 
-export default function FuelCard({ session }) {
+export default function FuelCard({ session, onLogMeal }) {
   const [status, setStatus] = useState(() => getSmartFuelStatus(session));
 
   useEffect(() => {
@@ -123,6 +127,21 @@ export default function FuelCard({ session }) {
           <p className="text-emerald-400/50 text-[10px] pl-7 mt-1">{status.extra}</p>
         )}
       </div>
+      {status.canLogMeal && onLogMeal && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onLogMeal();
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="mt-2 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/20 transition-all"
+        >
+          <Plus className="w-3 h-3 text-emerald-400" />
+          <span className="text-[10px] font-medium text-emerald-400">Log Meal</span>
+        </button>
+      )}
     </motion.div>
   );
 }
