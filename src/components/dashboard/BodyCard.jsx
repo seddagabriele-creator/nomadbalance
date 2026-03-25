@@ -1,13 +1,14 @@
 import React from "react";
-import { Activity, ChevronRight } from "lucide-react";
+import { Activity, ChevronRight, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { DEFAULT_BODY_BREAKS_TARGET } from "../../constants";
 
-export default function BodyCard({ session }) {
+export default function BodyCard({ session, onSwapExercise }) {
   const breaksDone = session?.body_breaks_done || 0;
   const breaksTarget = session?.body_breaks_target || DEFAULT_BODY_BREAKS_TARGET;
   const schedule = session?.body_break_schedule || [];
-  const nextBreak = schedule.find(b => !b.completed);
+  const nextBreakIndex = schedule.findIndex(b => !b.completed);
+  const nextBreak = nextBreakIndex >= 0 ? schedule[nextBreakIndex] : null;
   const nextExercise = nextBreak?.exercise_name || "No exercise";
   const progressPercent = breaksTarget > 0 ? (breaksDone / breaksTarget) * 100 : 0;
 
@@ -28,8 +29,23 @@ export default function BodyCard({ session }) {
       <div className="flex-1 flex flex-col justify-center">
         <p className="text-white/50 text-xs mb-1">Next break</p>
         <div className="flex items-center gap-2">
-          <ChevronRight className="w-4 h-4 text-orange-400" />
-          <p className="text-white font-semibold text-sm">{nextExercise}</p>
+          <ChevronRight className="w-4 h-4 text-orange-400 flex-shrink-0" />
+          <p className="text-white font-semibold text-sm flex-1 leading-snug">{nextExercise}</p>
+          {nextBreak && session && onSwapExercise && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onSwapExercise(nextBreakIndex);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              className="w-6 h-6 flex-shrink-0 rounded-full hover:bg-white/10 flex items-center justify-center transition-all"
+              aria-label="Swap exercise"
+            >
+              <RefreshCw className="w-3 h-3 text-white/40 hover:text-orange-400" />
+            </button>
+          )}
         </div>
       </div>
       <div className="mt-4">

@@ -760,6 +760,43 @@ export default function Dashboard() {
     }
   };
 
+  // Quick action: change sound from FlowCard
+  const handleSoundChange = (soundUpdate) => {
+    if (session) updateSession.mutate(soundUpdate);
+  };
+
+  // Quick action: log meal from FuelCard
+  const handleQuickLogMeal = () => {
+    if (!session) return;
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const updated = [...(session.meals_logged || []), { time: timeStr }];
+    updateSession.mutate({ meals_logged: updated });
+    toast.success(`Meal logged at ${timeStr}`);
+  };
+
+  // Quick action: swap exercise from BodyCard
+  const handleQuickSwapExercise = (breakIndex) => {
+    if (!session) return;
+    const schedule = session.body_break_schedule || [];
+    const currentBreak = schedule[breakIndex];
+    if (!currentBreak) return;
+    const currentExercise = exercises.find((e) => e.id === currentBreak.exercise_id);
+    const currentGroup = currentExercise?.group;
+    const otherExercises = exercises.filter((e) => e.group !== currentGroup);
+    const pool = otherExercises.length > 0 ? otherExercises : exercises.filter((e) => e.id !== currentBreak.exercise_id);
+    if (pool.length === 0) return;
+    const newExercise = pool[Math.floor(Math.random() * pool.length)];
+    const updatedSchedule = schedule.map((b, i) =>
+      i === breakIndex ? { ...b, exercise_id: newExercise.id, exercise_name: newExercise.name } : b
+    );
+    queryClient.setQueryData(["daySession", today], (old) =>
+      (old || []).map((s) => s.id === session.id ? { ...s, body_break_schedule: updatedSchedule } : s)
+    );
+    updateSession.mutate({ body_break_schedule: updatedSchedule });
+    toast.success(`Swapped to ${newExercise.name}`);
+  };
+
   const toggleMeetingMode = () => {
     if (session) {
       if (!session.meeting_mode) {
@@ -1100,13 +1137,13 @@ export default function Dashboard() {
           ) : (
             <>
               <Link to={createPageUrl("Fuel")} className="h-[170px]">
-                <FuelCard session={session} />
+                <FuelCard session={session} onLogMeal={handleQuickLogMeal} />
               </Link>
               <Link to={createPageUrl("Flow")} className="h-[170px]">
-                <FlowCard session={session} onSessionComplete={handleSessionComplete} />
+                <FlowCard session={session} onSessionComplete={handleSessionComplete} onSoundChange={handleSoundChange} />
               </Link>
               <Link to={createPageUrl("Body")} className="h-[170px]">
-                <BodyCard session={session} />
+                <BodyCard session={session} onSwapExercise={handleQuickSwapExercise} />
               </Link>
               <Link to={createPageUrl("Journal")} className="h-[170px]">
                 <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />

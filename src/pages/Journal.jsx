@@ -522,19 +522,19 @@ export default function Journal() {
                                     </div>
                                   )}
                                 </div>
-                                {!isExpanded && (task.alarm_time || task.notes) && (
+                                {!isExpanded && (
                                   <div className="flex items-center gap-1 shrink-0 mt-px">
-                                    {task.alarm_time && (
-                                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px]">
-                                        <Clock className="w-2.5 h-2.5" />
-                                        <span>{task.alarm_time}</span>
-                                      </div>
-                                    )}
-                                    {task.notes && (
-                                      <div className="flex items-center px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px]">
-                                        <MessageSquare className="w-2.5 h-2.5" />
-                                      </div>
-                                    )}
+                                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                                      task.alarm_time ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/5 text-white/20'
+                                    }`}>
+                                      <Clock className="w-2.5 h-2.5" />
+                                      {task.alarm_time && <span>{task.alarm_time}</span>}
+                                    </div>
+                                    <div className={`flex items-center px-1.5 py-0.5 rounded-full text-[10px] ${
+                                      task.notes ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/20'
+                                    }`}>
+                                      <MessageSquare className="w-2.5 h-2.5" />
+                                    </div>
                                   </div>
                                 )}
                               </div>
@@ -840,19 +840,19 @@ export default function Journal() {
                                     </span>
                                   </button>
                                 )}
-                                {!selectionMode && !isExpanded && (task.alarm_time || task.notes) && (
+                                {!selectionMode && !isExpanded && (
                                   <div className="flex items-center gap-1 shrink-0 mt-px">
-                                    {task.alarm_time && (
-                                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px]">
-                                        <Clock className="w-2.5 h-2.5" />
-                                        <span>{task.alarm_time}</span>
-                                      </div>
-                                    )}
-                                    {task.notes && (
-                                      <div className="flex items-center px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px]">
-                                        <MessageSquare className="w-2.5 h-2.5" />
-                                      </div>
-                                    )}
+                                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                                      task.alarm_time ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 text-white/20'
+                                    }`}>
+                                      <Clock className="w-2.5 h-2.5" />
+                                      {task.alarm_time && <span>{task.alarm_time}</span>}
+                                    </div>
+                                    <div className={`flex items-center px-1.5 py-0.5 rounded-full text-[10px] ${
+                                      task.notes ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/20'
+                                    }`}>
+                                      <MessageSquare className="w-2.5 h-2.5" />
+                                    </div>
                                   </div>
                                 )}
                               </div>

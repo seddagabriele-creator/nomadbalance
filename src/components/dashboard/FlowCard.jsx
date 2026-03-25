@@ -1,11 +1,22 @@
 import React, { useEffect } from "react";
-import { Play, Pause, RotateCcw } from "lucide-react";
+import { Play, Pause, RotateCcw, Wind, Waves, Shell } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTimer } from "../lib/TimerContext";
 import { getDailyDefaults } from "../../hooks/useDailyDefaults";
 import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES } from "../../constants";
 
-export default function FlowCard({ session, onSessionComplete }) {
+const SOUND_OPTIONS = {
+  focus: [
+    { id: "40hz-wind", label: "Wind", icon: Wind },
+    { id: "40hz-ocean", label: "Ocean", icon: Waves },
+  ],
+  relax: [
+    { id: "10hz-binaural-ocean", label: "Ocean", icon: Waves },
+    { id: "10hz-binaural-wind", label: "Wind", icon: Shell },
+  ],
+};
+
+export default function FlowCard({ session, onSessionComplete, onSoundChange }) {
   const { timeLeft, isRunning, isBreak, workMinutes, breakMinutes, toggleTimer, resetTimer, initializeTimer, setFocusSoundId } = useTimer();
 
   const userDuration = (() => {
@@ -33,12 +44,33 @@ export default function FlowCard({ session, onSessionComplete }) {
   const seconds = timeLeft % 60;
   const progress = totalSeconds > 0 ? ((totalSeconds - timeLeft) / totalSeconds) * 100 : 0;
 
+  const currentFocusSound = session?.focus_sound || "40hz-wind";
+  const currentRelaxSound = session?.relax_sound || "10hz-binaural-ocean";
+  const soundType = isBreak ? "relax" : "focus";
+  const currentSound = isBreak ? currentRelaxSound : currentFocusSound;
+  const options = SOUND_OPTIONS[soundType];
+
+  const handleCycleSound = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!session || !onSoundChange) return;
+    const currentIndex = options.findIndex(s => s.id === currentSound);
+    const nextIndex = (currentIndex + 1) % options.length;
+    const nextSound = options[nextIndex];
+    const field = isBreak ? "relax_sound" : "focus_sound";
+    onSoundChange({ [field]: nextSound.id });
+    if (!isBreak) setFocusSoundId(nextSound.id);
+  };
+
+  const currentSoundObj = options.find(s => s.id === currentSound) || options[0];
+  const SoundIcon = currentSoundObj.icon;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="relative rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl overflow-hidden h-full p-6 pb-8 flex flex-col justify-between"
+      className="relative rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl overflow-hidden h-full p-6 pb-4 flex flex-col justify-between"
       role="region"
       aria-label="Focus timer"
     >
@@ -68,7 +100,7 @@ export default function FlowCard({ session, onSessionComplete }) {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-center gap-2 mt-3">
+      <div className="flex items-center justify-center gap-2 mt-2">
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -96,6 +128,20 @@ export default function FlowCard({ session, onSessionComplete }) {
           <RotateCcw className="w-3 h-3 text-white/50 hover:text-white/80" />
         </button>
       </div>
+
+      {/* Quick Sound Switcher */}
+      {session && (
+        <button
+          onClick={handleCycleSound}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="mt-2 flex items-center justify-center gap-1.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+          aria-label={`Current ${soundType} sound: ${currentSoundObj.label}. Tap to switch.`}
+        >
+          <SoundIcon className="w-3 h-3 text-white/40" />
+          <span className="text-[10px] text-white/40">{currentSoundObj.label}</span>
+        </button>
+      )}
     </motion.div>
   );
 }
