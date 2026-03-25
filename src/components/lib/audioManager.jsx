@@ -127,9 +127,11 @@ class AudioManager {
         const src = this.source;
         setTimeout(() => {
           try { src.stop(); } catch { /* already stopped */ }
+          try { src.disconnect(); } catch { /* already disconnected */ }
         }, 550);
       } catch {
         try { this.source.stop(); } catch { /* already stopped */ }
+        try { this.source.disconnect(); } catch { /* already disconnected */ }
       }
       this.source = null;
       this.isPlaying = false;

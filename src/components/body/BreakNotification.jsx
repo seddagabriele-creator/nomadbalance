@@ -21,10 +21,14 @@ export default function BreakNotification({
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef(null);
 
-  // Play notification chime on mount
+  // Play notification chime on mount (reuse singleton AudioContext)
   useEffect(() => {
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!window._nomadChimeCtx || window._nomadChimeCtx.state === "closed") {
+        window._nomadChimeCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = window._nomadChimeCtx;
+      if (ctx.state === "suspended") ctx.resume();
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.connect(gain1);
@@ -34,6 +38,7 @@ export default function BreakNotification({
       gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
       osc1.start(ctx.currentTime);
       osc1.stop(ctx.currentTime + 0.3);
+      setTimeout(() => { osc1.disconnect(); gain1.disconnect(); }, 400);
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.connect(gain2);
@@ -44,6 +49,7 @@ export default function BreakNotification({
       gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
       osc2.start(ctx.currentTime + 0.15);
       osc2.stop(ctx.currentTime + 0.6);
+      setTimeout(() => { osc2.disconnect(); gain2.disconnect(); }, 700);
     } catch (e) {}
   }, []);
 
