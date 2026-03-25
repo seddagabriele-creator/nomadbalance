@@ -9,7 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Target, Droplets, Timer, Activity, ArrowRight, ArrowLeft, Plus, Trash2, GripVertical, History, AlertTriangle, CheckCircle, Clock, RotateCcw, X, Pencil, Check } from "lucide-react";
 import { analyzeBreakFeasibility, calculateSessionConflict } from "../../utils/breakFeasibility";
 import { getLocalDateString } from "../../utils";
-import { FASTING_PRESETS, getEatingHours, calculateEatingWindowEnd } from "../../constants";
+import { FASTING_PRESETS, getEatingHours, calculateEatingWindowEnd, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_BODY_BREAKS_TARGET, DEFAULT_WORK_HOURS } from "../../constants";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -53,13 +53,13 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     eating_window_start_time: resumeSession.eating_window_start_time || resumeSession.eating_window_start || "12:00",
     custom_fasting_hours: resumeSession.custom_fasting_hours || null,
     max_meals: resumeSession.max_meals || 3,
-    focus_work_minutes: resumeSession.focus_work_minutes || 45,
-    focus_break_minutes: resumeSession.focus_break_minutes || 5,
+    focus_work_minutes: resumeSession.focus_work_minutes || DEFAULT_WORK_MINUTES,
+    focus_break_minutes: resumeSession.focus_break_minutes || DEFAULT_BREAK_MINUTES,
     focus_sound: resumeSession.focus_sound || "wind",
     relax_sound: resumeSession.relax_sound || "wind",
-    body_breaks_target: resumeSession.body_breaks_target || 6,
-    work_start_today: resumeSession.work_start_today || userSettings?.morning_work_start || "10:00",
-    work_end_today: resumeSession.work_end_today || userSettings?.afternoon_work_end || "19:00",
+    body_breaks_target: resumeSession.body_breaks_target || DEFAULT_BODY_BREAKS_TARGET,
+    work_start_today: resumeSession.work_start_today || userSettings?.morning_work_start || DEFAULT_WORK_HOURS.morning_start,
+    work_end_today: resumeSession.work_end_today || userSettings?.afternoon_work_end || DEFAULT_WORK_HOURS.afternoon_end,
   } : null;
 
   const defaults = resumeDefaults || loadedDefaults;
@@ -81,13 +81,13 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
     eating_window_start_time: defaults?.eating_window_start_time || "12:00",
     custom_fasting_hours: defaults?.custom_fasting_hours || null,
     max_meals: defaults?.max_meals || 3,
-    focus_work_minutes: defaults?.focus_work_minutes || 45,
-    focus_break_minutes: defaults?.focus_break_minutes || 5,
+    focus_work_minutes: defaults?.focus_work_minutes || DEFAULT_WORK_MINUTES,
+    focus_break_minutes: defaults?.focus_break_minutes || DEFAULT_BREAK_MINUTES,
     focus_sound: defaults?.focus_sound || "wind",
     relax_sound: defaults?.relax_sound || "wind",
-    body_breaks_target: defaults?.body_breaks_target || 6,
-    work_start_today: defaults?.work_start_today || userSettings?.morning_work_start || "10:00",
-    work_end_today: defaults?.work_end_today || userSettings?.afternoon_work_end || "19:00",
+    body_breaks_target: defaults?.body_breaks_target || DEFAULT_BODY_BREAKS_TARGET,
+    work_start_today: defaults?.work_start_today || userSettings?.morning_work_start || DEFAULT_WORK_HOURS.morning_start,
+    work_end_today: defaults?.work_end_today || userSettings?.afternoon_work_end || DEFAULT_WORK_HOURS.afternoon_end,
   });
   const [mealsAlreadyHad, setMealsAlreadyHad] = useState(0);
   const [selectedPreset, setSelectedPreset] = useState(0);
@@ -176,11 +176,11 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
       eating_window_start: null,
       custom_fasting_hours: previousSession.custom_fasting_hours || data.custom_fasting_hours,
       max_meals: previousSession.max_meals || data.max_meals,
-      focus_work_minutes: previousSession.focus_work_minutes || 45,
-      focus_break_minutes: previousSession.focus_break_minutes || 5,
+      focus_work_minutes: previousSession.focus_work_minutes || DEFAULT_WORK_MINUTES,
+      focus_break_minutes: previousSession.focus_break_minutes || DEFAULT_BREAK_MINUTES,
       focus_sound: previousSession.focus_sound || "wind",
       relax_sound: previousSession.relax_sound || "wind",
-      body_breaks_target: previousSession.body_breaks_target || 6,
+      body_breaks_target: previousSession.body_breaks_target || DEFAULT_BODY_BREAKS_TARGET,
     };
 
     // Use previous exercise selection (tasks are NOT carried over —
