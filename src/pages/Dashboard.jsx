@@ -1283,7 +1283,7 @@ export default function Dashboard() {
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-white/40">Focus rhythm</span>
-                    <span className="text-white">{session?.focus_work_minutes || 45}/{session?.focus_break_minutes || 5} min</span>
+                    <span className="text-white">{session?.focus_work_minutes || getDailyDefaults().focus_work_minutes || DEFAULT_WORK_MINUTES}/{session?.focus_break_minutes || getDailyDefaults().focus_break_minutes || DEFAULT_BREAK_MINUTES} min</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/40">Active breaks</span>
