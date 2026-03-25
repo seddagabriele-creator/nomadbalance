@@ -1141,7 +1141,7 @@ export default function Dashboard() {
           {isLoading ? (
             <>
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="h-[170px] rounded-2xl bg-white/5 border border-white/10 animate-pulse p-5">
+                <div key={i} className="min-h-[170px] rounded-2xl bg-white/5 border border-white/10 animate-pulse p-5">
                   <div className="w-8 h-8 rounded-xl bg-white/10 mb-3" />
                   <div className="w-20 h-3 rounded bg-white/10 mb-2" />
                   <div className="w-28 h-2 rounded bg-white/5" />
@@ -1150,16 +1150,16 @@ export default function Dashboard() {
             </>
           ) : (
             <>
-              <Link to={createPageUrl("Fuel")} className="h-[170px]">
+              <Link to={createPageUrl("Fuel")} className="min-h-[170px]">
                 <FuelCard session={session} onLogMeal={handleQuickLogMeal} />
               </Link>
-              <Link to={createPageUrl("Flow")} className="h-[170px]">
+              <Link to={createPageUrl("Flow")} className="min-h-[170px]">
                 <FlowCard session={session} onSessionComplete={handleSessionComplete} onSoundChange={handleSoundChange} />
               </Link>
-              <Link to={createPageUrl("Body")} className="h-[170px]">
+              <Link to={createPageUrl("Body")} className="min-h-[170px]">
                 <BodyCard session={session} onSwapExercise={handleQuickSwapExercise} />
               </Link>
-              <Link to={createPageUrl("Journal")} className="h-[170px]">
+              <Link to={createPageUrl("Journal")} className="min-h-[170px]">
                 <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />
               </Link>
             </>

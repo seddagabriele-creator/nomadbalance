@@ -22,7 +22,6 @@ function getSmartFuelStatus(session) {
 
   const startMin = toMin(session.eating_window_start);
   const endMin = toMin(session.eating_window_end);
-
   const mealsLogged = session.meals_logged || [];
   const mealsTarget = session.max_meals || 3;
   const mealsLeft = Math.max(0, mealsTarget - mealsLogged.length);
@@ -33,7 +32,6 @@ function getSmartFuelStatus(session) {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 
-  // Handle midnight wraparound (e.g. 20:00 — 04:00)
   const crossesMidnight = endMin <= startMin;
   const isEating = crossesMidnight
     ? (nowMinutes >= startMin || nowMinutes < endMin)
@@ -44,42 +42,17 @@ function getSmartFuelStatus(session) {
 
   if (isBefore) {
     const remaining = startMin - nowMinutes;
-    return {
-      icon: "droplets",
-      label: "Fasting",
-      detail: `Window opens in ${fmtRemaining(remaining)}`,
-      extra: `${mealsTarget} meals planned`,
-      canLogMeal: false,
-    };
+    return { icon: "droplets", label: "Fasting", detail: `Opens in ${fmtRemaining(remaining)}`, extra: `${mealsTarget} meals planned`, canLogMeal: false };
   } else if (isEating) {
     const windowRemaining = crossesMidnight
       ? (nowMinutes >= startMin ? (1440 - nowMinutes + endMin) : (endMin - nowMinutes))
       : (endMin - nowMinutes);
     if (mealsLeft > 0) {
-      return {
-        icon: "utensils",
-        label: `${mealsLogged.length}/${mealsTarget} meals`,
-        detail: `${fmtRemaining(windowRemaining)} left`,
-        extra: `${mealsLeft} meal${mealsLeft > 1 ? "s" : ""} to go`,
-        canLogMeal: true,
-      };
+      return { icon: "utensils", label: `${mealsLogged.length}/${mealsTarget} meals`, detail: `${fmtRemaining(windowRemaining)} left`, extra: null, canLogMeal: true };
     }
-
-    return {
-      icon: "check",
-      label: "All meals done",
-      detail: `Window: ${fmtRemaining(windowRemaining)} left`,
-      extra: null,
-      canLogMeal: false,
-    };
+    return { icon: "check", label: "All meals done", detail: `${fmtRemaining(windowRemaining)} left`, extra: null, canLogMeal: false };
   } else {
-    return {
-      icon: "droplets",
-      label: "Fasting",
-      detail: `Window closed`,
-      extra: `${mealsLogged.length}/${mealsTarget} meals today`,
-      canLogMeal: false,
-    };
+    return { icon: "droplets", label: "Fasting", detail: "Window closed", extra: `${mealsLogged.length}/${mealsTarget} meals today`, canLogMeal: false };
   }
 }
 
@@ -90,15 +63,12 @@ export default function FuelCard({ session, onLogMeal }) {
     setStatus(getSmartFuelStatus(session));
     const interval = setInterval(() => setStatus(getSmartFuelStatus(session)), ONE_MINUTE_MS);
     return () => clearInterval(interval);
-  }, [session]);
+  }, [session?.eating_window_start, session?.eating_window_end, session?.meals_logged?.length, session?.max_meals]);
 
   const IconComp =
-    status.icon === "utensils"
-      ? Utensils
-      : status.icon === "droplets"
-        ? Droplets
-        : status.icon === "check"
-          ? CheckCircle
+    status.icon === "utensils" ? Utensils
+      : status.icon === "droplets" ? Droplets
+        : status.icon === "check" ? CheckCircle
           : Clock;
 
   return (
@@ -106,37 +76,37 @@ export default function FuelCard({ session, onLogMeal }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
-      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 flex flex-col justify-between h-full"
+      className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-5 flex flex-col h-full"
       role="region"
       aria-label="Fuel status"
     >
-      <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-400/10 rounded-full -translate-y-6 translate-x-6" />
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-          <Droplets className="w-4 h-4 text-emerald-400" />
+      {/* Title */}
+      <div className="flex items-center gap-2 mb-auto">
+        <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+          <Droplets className="w-3 h-3 text-emerald-400" />
         </div>
-        <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Fuel</span>
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">Fuel</span>
       </div>
-      <div className="flex-1 flex flex-col justify-center">
-        <div className="flex items-center gap-2 mb-1">
-          <IconComp className="w-5 h-5 text-white/70" />
+
+      {/* Status */}
+      <div className="py-3">
+        <div className="flex items-center gap-2 mb-0.5">
+          <IconComp className="w-4 h-4 text-white/50" />
           <p className="text-white font-semibold text-sm">{status.label}</p>
         </div>
-        <p className="text-white/50 text-xs pl-7">{status.detail}</p>
+        <p className="text-white/40 text-xs pl-6">{status.detail}</p>
         {status.extra && (
-          <p className="text-emerald-400/50 text-[10px] pl-7 mt-1">{status.extra}</p>
+          <p className="text-emerald-400/40 text-[10px] pl-6 mt-0.5">{status.extra}</p>
         )}
       </div>
+
+      {/* Quick action */}
       {status.canLogMeal && onLogMeal && (
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onLogMeal();
-          }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onLogMeal(); }}
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className="mt-2 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/20 transition-all"
+          className="flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
         >
           <Plus className="w-3 h-3 text-emerald-400" />
           <span className="text-[10px] font-medium text-emerald-400">Log Meal</span>

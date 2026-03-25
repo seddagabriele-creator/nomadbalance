@@ -5,16 +5,12 @@ import { useTimer } from "../lib/TimerContext";
 import { getDailyDefaults } from "../../hooks/useDailyDefaults";
 import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES } from "../../constants";
 
-const SOUND_OPTIONS = {
-  focus: [
-    { id: "40hz-wind", label: "Wind", icon: Wind },
-    { id: "40hz-ocean", label: "Ocean", icon: Waves },
-  ],
-  relax: [
-    { id: "10hz-binaural-ocean", label: "Ocean", icon: Waves },
-    { id: "10hz-binaural-wind", label: "Wind", icon: Shell },
-  ],
-};
+const ALL_SOUNDS = [
+  { id: "40hz-wind", label: "Wind", icon: Wind, type: "focus" },
+  { id: "40hz-ocean", label: "Ocean", icon: Waves, type: "focus" },
+  { id: "10hz-binaural-ocean", label: "Ocean", icon: Waves, type: "relax" },
+  { id: "10hz-binaural-wind", label: "Wind", icon: Shell, type: "relax" },
+];
 
 export default function FlowCard({ session, onSessionComplete, onSoundChange }) {
   const { timeLeft, isRunning, isBreak, workMinutes, breakMinutes, toggleTimer, resetTimer, initializeTimer, setFocusSoundId } = useTimer();
@@ -29,119 +25,114 @@ export default function FlowCard({ session, onSessionComplete, onSoundChange }) 
 
   const sessionWorkMinutes = session?.focus_work_minutes || userDuration.work;
   const sessionBreakMinutes = session?.focus_break_minutes || userDuration.break;
-  const totalSeconds = isBreak ? breakMinutes * 60 : workMinutes * 60;
 
   useEffect(() => {
     initializeTimer(sessionWorkMinutes, sessionBreakMinutes, onSessionComplete);
   }, [sessionWorkMinutes, sessionBreakMinutes, onSessionComplete, initializeTimer]);
 
-  // Sync selected focus sound from session to timer context
   useEffect(() => {
     if (session?.focus_sound) setFocusSoundId(session.focus_sound);
   }, [session?.focus_sound, setFocusSoundId]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const progress = totalSeconds > 0 ? ((totalSeconds - timeLeft) / totalSeconds) * 100 : 0;
 
   const currentFocusSound = session?.focus_sound || "40hz-wind";
   const currentRelaxSound = session?.relax_sound || "10hz-binaural-ocean";
-  const soundType = isBreak ? "relax" : "focus";
-  const currentSound = isBreak ? currentRelaxSound : currentFocusSound;
-  const options = SOUND_OPTIONS[soundType];
+  const activeSound = isBreak ? currentRelaxSound : currentFocusSound;
+  const activeSoundObj = ALL_SOUNDS.find(s => s.id === activeSound) || ALL_SOUNDS[0];
 
   const handleCycleSound = (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!session || !onSoundChange) return;
-    const currentIndex = options.findIndex(s => s.id === currentSound);
-    const nextIndex = (currentIndex + 1) % options.length;
-    const nextSound = options[nextIndex];
-    const field = isBreak ? "relax_sound" : "focus_sound";
-    onSoundChange({ [field]: nextSound.id });
-    if (!isBreak) setFocusSoundId(nextSound.id);
+    // Cycle through ALL sounds (focus + relax)
+    const currentIndex = ALL_SOUNDS.findIndex(s => s.id === activeSound);
+    const nextIndex = (currentIndex + 1) % ALL_SOUNDS.length;
+    const nextSound = ALL_SOUNDS[nextIndex];
+    // Update the right field based on the sound type
+    if (nextSound.type === "focus") {
+      onSoundChange({ focus_sound: nextSound.id });
+      setFocusSoundId(nextSound.id);
+    } else {
+      onSoundChange({ relax_sound: nextSound.id });
+    }
   };
 
-  const currentSoundObj = options.find(s => s.id === currentSound) || options[0];
-  const SoundIcon = currentSoundObj.icon;
+  const SoundIcon = activeSoundObj.icon;
+  const soundLabel = activeSoundObj.type === "focus"
+    ? `Focus: ${activeSoundObj.label}`
+    : `Relax: ${activeSoundObj.label}`;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="relative rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl overflow-hidden h-full p-6 pb-4 flex flex-col justify-between"
+      className="relative rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl overflow-hidden h-full p-5 flex flex-col"
       role="region"
       aria-label="Focus timer"
     >
-      <div className="absolute top-0 left-0 w-24 h-24 bg-violet-400/10 rounded-full -translate-y-6 -translate-x-6" />
-
-      {/* Title */}
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-xl bg-violet-500/20 flex items-center justify-center">
-          <Play className="w-3.5 h-3.5 text-violet-400" />
+      {/* Title row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-violet-500/20 flex items-center justify-center">
+            <Play className="w-3 h-3 text-violet-400" />
+          </div>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-violet-400">Flow</span>
         </div>
-        <span className="text-xs font-semibold uppercase tracking-widest text-violet-400">Flow</span>
         {isBreak && (
-          <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-medium">
+          <span className="text-[9px] bg-amber-500/15 text-amber-300 px-2 py-0.5 rounded-full font-medium">
             BREAK
           </span>
         )}
       </div>
 
       {/* Timer */}
-      <div className="flex flex-col items-center justify-center flex-1">
-        <div className="text-3xl font-bold text-white tabular-nums" aria-live="polite" aria-atomic="true">
+      <div className="flex-1 flex flex-col items-center justify-center py-3">
+        <div className="text-3xl font-bold text-white tabular-nums tracking-tight" aria-live="polite" aria-atomic="true">
           {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
         </div>
-        <div className="text-xs text-white/40 uppercase tracking-wider mt-1">
-          {isBreak ? "Break time" : "Focus time"}
+        <div className="text-[10px] text-white/30 uppercase tracking-wider mt-1">
+          {isBreak ? "Break" : "Focus"}
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-2 mt-2">
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleTimer();
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          className="w-7 h-7 rounded-full bg-violet-600 hover:bg-violet-500 flex items-center justify-center transition-all shadow-lg"
-          aria-label={isRunning ? "Pause timer" : "Start timer"}
-        >
-          {isRunning ? <Pause className="w-3 h-3 text-white" /> : <Play className="w-3 h-3 text-white ml-0.5" />}
-        </button>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            resetTimer();
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          className="w-6 h-6 hover:bg-white/10 rounded-full flex items-center justify-center transition-all"
-          aria-label="Reset timer"
-        >
-          <RotateCcw className="w-3 h-3 text-white/50 hover:text-white/80" />
-        </button>
+      {/* Controls + Sound */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleTimer(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="w-7 h-7 rounded-full bg-violet-600 hover:bg-violet-500 flex items-center justify-center transition-colors"
+            aria-label={isRunning ? "Pause timer" : "Start timer"}
+          >
+            {isRunning ? <Pause className="w-3 h-3 text-white" /> : <Play className="w-3 h-3 text-white ml-0.5" />}
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetTimer(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+            aria-label="Reset timer"
+          >
+            <RotateCcw className="w-3 h-3 text-white/30" />
+          </button>
+        </div>
+        {session && (
+          <button
+            onClick={handleCycleSound}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-white/5 transition-colors"
+            aria-label={`Sound: ${soundLabel}. Tap to switch.`}
+          >
+            <SoundIcon className="w-3 h-3 text-white/25" />
+            <span className="text-[9px] text-white/25">{soundLabel}</span>
+          </button>
+        )}
       </div>
-
-      {/* Quick Sound Switcher */}
-      {session && (
-        <button
-          onClick={handleCycleSound}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          className="mt-2 flex items-center justify-center gap-1.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
-          aria-label={`Current ${soundType} sound: ${currentSoundObj.label}. Tap to switch.`}
-        >
-          <SoundIcon className="w-3 h-3 text-white/40" />
-          <span className="text-[10px] text-white/40">{currentSoundObj.label}</span>
-        </button>
-      )}
     </motion.div>
   );
 }
