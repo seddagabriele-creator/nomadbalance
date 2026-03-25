@@ -79,13 +79,14 @@ export function TimerProvider({ children }) {
   };
 
   const initializeTimer = useCallback((work, breakTime, callback) => {
+    const prevWork = workMinutesRef.current;
     setWorkMinutes(work);
     setBreakMinutes(breakTime);
     if (callback) setOnSessionComplete(() => callback);
 
-    // Only set initial time if no session is active (timeLeft === 0)
-    // This prevents resetting a paused timer on re-renders
-    if (timeLeftRef.current === 0) {
+    // Set initial time if timer hasn't started yet (timeLeft === 0),
+    // or if work duration changed while timer is not running (e.g. settings update)
+    if (timeLeftRef.current === 0 || (!isRunningRef.current && prevWork !== work)) {
       setTimeLeft(work * 60);
     }
   }, []);

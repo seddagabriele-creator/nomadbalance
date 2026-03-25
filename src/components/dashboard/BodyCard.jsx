@@ -1,10 +1,11 @@
 import React from "react";
 import { Activity, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { DEFAULT_BODY_BREAKS_TARGET } from "../../constants";
 
 export default function BodyCard({ session }) {
   const breaksDone = session?.body_breaks_done || 0;
-  const breaksTarget = session?.body_breaks_target || 4;
+  const breaksTarget = session?.body_breaks_target || DEFAULT_BODY_BREAKS_TARGET;
   const schedule = session?.body_break_schedule || [];
   const nextBreak = schedule.find(b => !b.completed);
   const nextExercise = nextBreak?.exercise_name || "No exercise";

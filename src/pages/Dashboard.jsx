@@ -470,8 +470,8 @@ export default function Dashboard() {
         const parts = (t || fallback).split(":");
         return parseInt(parts[0]) * 60 + parseInt(parts[1]);
       };
-      const workStartMinutes = parseTime(wizardData.work_start_today, "10:00");
-      const workEndMinutes = parseTime(wizardData.work_end_today, "19:00");
+      const workStartMinutes = parseTime(wizardData.work_start_today, DEFAULT_WORK_HOURS.morning_start);
+      const workEndMinutes = parseTime(wizardData.work_end_today, DEFAULT_WORK_HOURS.afternoon_end);
       const effectiveStart = Math.max(nowMinutes, workStartMinutes);
       const effectiveDuration = workEndMinutes - effectiveStart;
 
@@ -1283,7 +1283,7 @@ export default function Dashboard() {
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-white/40">Focus rhythm</span>
-                    <span className="text-white">{session?.focus_work_minutes || 45}/{session?.focus_break_minutes || 5} min</span>
+                    <span className="text-white">{session?.focus_work_minutes || getDailyDefaults().focus_work_minutes || DEFAULT_WORK_MINUTES}/{session?.focus_break_minutes || getDailyDefaults().focus_break_minutes || DEFAULT_BREAK_MINUTES} min</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/40">Active breaks</span>

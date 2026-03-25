@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
+import { DEFAULT_WORK_MINUTES } from "../constants";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -144,7 +145,7 @@ export default function Reports() {
     // ── Totals ──
     const totalExercises = sorted.reduce((sum, s) => sum + (s.body_breaks_done || 0), 0);
     const totalFocusSessions = sorted.reduce((sum, s) => sum + (s.focus_sessions_completed || 0), 0);
-    const totalFocusMinutes = sorted.reduce((sum, s) => sum + (s.focus_sessions_completed || 0) * (s.focus_work_minutes || 45), 0);
+    const totalFocusMinutes = sorted.reduce((sum, s) => sum + (s.focus_sessions_completed || 0) * (s.focus_work_minutes || DEFAULT_WORK_MINUTES), 0);
 
     // ── Exercise completion rate ──
     let totalScheduled = 0;
@@ -203,7 +204,7 @@ export default function Reports() {
     const weekStats = (arr) => ({
       days: arr.length,
       exercises: arr.reduce((sum, s) => sum + (s.body_breaks_done || 0), 0),
-      focusMinutes: arr.reduce((sum, s) => sum + (s.focus_sessions_completed || 0) * (s.focus_work_minutes || 45), 0),
+      focusMinutes: arr.reduce((sum, s) => sum + (s.focus_sessions_completed || 0) * (s.focus_work_minutes || DEFAULT_WORK_MINUTES), 0),
       tasks: 0,
     });
     const thisWeek = weekStats(thisWeekSessions);
@@ -232,7 +233,7 @@ export default function Reports() {
       weekMap[wk].days++;
       weekMap[wk].exercises += s.body_breaks_done || 0;
       weekMap[wk].focusSessions += s.focus_sessions_completed || 0;
-      weekMap[wk].focusMinutes += (s.focus_sessions_completed || 0) * (s.focus_work_minutes || 45);
+      weekMap[wk].focusMinutes += (s.focus_sessions_completed || 0) * (s.focus_work_minutes || DEFAULT_WORK_MINUTES);
     });
     allTasks.forEach((t) => {
       if (!t.completed_at) return;
@@ -262,7 +263,7 @@ export default function Reports() {
     let bestDay = null;
     let bestDayScore = 0;
     sorted.forEach((s) => {
-      const focusH = ((s.focus_sessions_completed || 0) * (s.focus_work_minutes || 45)) / 60;
+      const focusH = ((s.focus_sessions_completed || 0) * (s.focus_work_minutes || DEFAULT_WORK_MINUTES)) / 60;
       const exercises = s.body_breaks_done || 0;
       const tasks = tasksByDate[s.date] || 0;
       const score = focusH + exercises + tasks;
@@ -280,7 +281,7 @@ export default function Reports() {
     // Max focus in a day
     let maxFocusDay = { date: null, minutes: 0 };
     sorted.forEach((s) => {
-      const mins = (s.focus_sessions_completed || 0) * (s.focus_work_minutes || 45);
+      const mins = (s.focus_sessions_completed || 0) * (s.focus_work_minutes || DEFAULT_WORK_MINUTES);
       if (mins > maxFocusDay.minutes) maxFocusDay = { date: s.date, minutes: mins };
     });
 
