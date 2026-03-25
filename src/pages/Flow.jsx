@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Waves, Wind, Check, Timer, Shell } from "lucide-react";
+import { ArrowLeft, Waves, Wind, Check, Timer, Shell, Headphones } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
@@ -129,6 +129,12 @@ export default function Flow() {
               Immerse yourself in carefully crafted soundscapes designed to enhance concentration during work
               and promote relaxation during breaks. Let the flow carry you.
             </p>
+            <div className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
+              <Headphones className="w-4 h-4 text-violet-400 flex-shrink-0" />
+              <p className="text-xs text-violet-300/80">
+                Use headphones for the best binaural beats experience
+              </p>
+            </div>
           </section>
 
           {/* Duration Controls */}
