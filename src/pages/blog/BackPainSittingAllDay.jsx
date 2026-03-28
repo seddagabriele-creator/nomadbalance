@@ -1,10 +1,13 @@
 import React from "react";
+import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Bone, Activity, StretchHorizontal, ShieldCheck, Monitor, Timer, Stethoscope } from "lucide-react";
 
 export default function BackPainSittingAllDay() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Back Pain From Sitting All Day? A Remote Worker's Recovery Guide" description="Understanding why desk work destroys your back and a complete plan to fix and prevent the damage." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -166,6 +169,9 @@ export default function BackPainSittingAllDay() {
               Start your recovery plan
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="back-pain-sitting-all-day" />
         </div>
       </article>
     </div>

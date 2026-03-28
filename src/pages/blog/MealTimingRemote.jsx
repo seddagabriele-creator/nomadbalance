@@ -1,10 +1,13 @@
 import React from "react";
+import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, Sun, Utensils, Calendar, Brain, CheckCircle, AlertTriangle } from "lucide-react";
 
 export default function MealTimingRemote() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Meal Timing for Remote Workers: When to Eat for Peak Performance" description="Strategic meal timing aligned with your work schedule for sustained energy and better focus." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -182,6 +185,9 @@ export default function MealTimingRemote() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="meal-timing-remote-workers" />
         </div>
       </article>
     </div>

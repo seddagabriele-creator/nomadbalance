@@ -3,10 +3,14 @@ User-agent: *
 
 # Allow public content pages
 Allow: /
+Allow: /blog
+Allow: /blog/
+Allow: /guide/
+Allow: /about
+Allow: /contact
 Allow: /privacy
 Allow: /cookies
 Allow: /terms
-Allow: /guide/
 
 # Block app routes (behind authentication)
 Disallow: /dashboard

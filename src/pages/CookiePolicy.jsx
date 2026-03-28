@@ -1,10 +1,12 @@
 import React from "react";
+import SEO from "@/components/SEO";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap } from "lucide-react";
 
 export default function CookiePolicy() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Cookie Policy" description="NomadBalance cookie policy. Understand how we use cookies and similar technologies on our site." />
       {/* Nav */}
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">

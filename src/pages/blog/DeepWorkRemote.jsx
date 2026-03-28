@@ -1,10 +1,13 @@
 import React from "react";
+import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Brain, Shield, Clock, Layers, Target, CheckCircle, Lightbulb } from "lucide-react";
 
 export default function DeepWorkRemote() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Deep Work in a Remote Environment: How to Achieve Real Focus" description="Strategies for creating distraction-free focus blocks when your office is your living room." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -166,6 +169,9 @@ export default function DeepWorkRemote() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="deep-work-remote-environment" />
         </div>
       </article>
     </div>

@@ -1,10 +1,13 @@
 import React from "react";
+import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, BellOff, Users, Smartphone, Eye, Home, CheckCircle, Shield } from "lucide-react";
 
 export default function ManagingDistractions() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Managing Distractions When Working From Home" description="Practical techniques to handle interruptions from family, notifications, and your own wandering mind." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -161,6 +164,9 @@ export default function ManagingDistractions() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="managing-distractions-work-from-home" />
         </div>
       </article>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import SEO from "@/components/SEO";
 import { useAuth } from "@/lib/AuthContext";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -68,6 +69,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 px-4">
+      <SEO title="Log In" noindex />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
