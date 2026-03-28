@@ -1,10 +1,12 @@
 import React from "react";
+import SEO from "@/components/SEO";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Grid3X3, Layers, SortDesc, PieChart, ShieldAlert, XCircle, CheckCircle, Brain } from "lucide-react";
 
 export default function TaskPrioritization() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Task Prioritization for Remote Workers: Beyond the To-Do List" description="Methods for deciding what to work on when everything feels urgent and nobody is telling you what to do." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">

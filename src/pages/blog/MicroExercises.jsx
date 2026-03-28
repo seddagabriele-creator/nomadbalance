@@ -1,10 +1,12 @@
 import React from "react";
+import SEO from "@/components/SEO";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Activity, RotateCcw, Timer, BarChart3, CalendarClock, Heart } from "lucide-react";
 
 export default function MicroExercises() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Micro-Exercises: 2-Minute Movements That Prevent Desk Pain" description="Quick targeted exercises you can do between meetings without changing clothes or breaking a sweat." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">

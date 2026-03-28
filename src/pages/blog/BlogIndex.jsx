@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import SEO from "@/components/SEO";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Timer, Droplets, Activity, Target } from "lucide-react";
 import { BLOG_POSTS } from "./blogData";
@@ -25,6 +26,7 @@ export default function BlogIndex() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Blog: Remote Work Productivity, Focus, Health & Planning" description="Expert articles on remote work productivity, focus techniques, nutrition, desk exercises, and daily planning for digital nomads and remote professionals." />
       <nav className="max-w-4xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">

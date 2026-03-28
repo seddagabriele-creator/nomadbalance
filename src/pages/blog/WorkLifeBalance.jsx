@@ -1,10 +1,12 @@
 import React from "react";
+import SEO from "@/components/SEO";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Globe, Clock, Shield, Users, Heart, Sunset } from "lucide-react";
 
 export default function WorkLifeBalance() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Work-Life Balance for Digital Nomads: Structure Without Rigidity" description="How to create healthy routines that travel with you, no matter which time zone you wake up in." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">

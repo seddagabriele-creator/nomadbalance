@@ -1,10 +1,12 @@
 import React from "react";
+import SEO from "@/components/SEO";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, MessageSquare, Target, Clock, Heart, FolderKanban, Wrench, CheckCircle } from "lucide-react";
 
 export default function BestAppsRemoteWorkers() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <SEO title="Best Apps for Remote Workers in 2026: The Essential Toolkit" description="The must-have tools for communication, focus, health, and productivity when working remotely." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
