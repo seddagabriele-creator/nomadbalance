@@ -14,6 +14,13 @@ import CookiePolicy from '@/pages/CookiePolicy';
 import TermsOfService from '@/pages/TermsOfService';
 import AuthCallback from '@/pages/AuthCallback';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import BlogIndex from '@/pages/blog/BlogIndex';
+import AboutPage from '@/pages/AboutPage';
+import ContactPage from '@/pages/ContactPage';
+// Guide pages
+import PomodoroGuide from '@/pages/guides/PomodoroGuide';
+import FastingGuide from '@/pages/guides/FastingGuide';
+import DeskExercisesGuide from '@/pages/guides/DeskExercisesGuide';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -57,6 +64,12 @@ const AppRoutes = () => {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/cookies" element={<CookiePolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/blog" element={<BlogIndex />} />
+        <Route path="/guide/pomodoro-focus-timer" element={<PomodoroGuide />} />
+        <Route path="/guide/intermittent-fasting-for-professionals" element={<FastingGuide />} />
+        <Route path="/guide/desk-exercises-remote-workers" element={<DeskExercisesGuide />} />
         {/* Redirect any authenticated route to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -75,10 +88,16 @@ const AppRoutes = () => {
       {/* Redirect /login to dashboard if already authenticated */}
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="/update-password" element={<UpdatePassword />} />
-      {/* Legal pages always accessible */}
+      {/* Public pages always accessible */}
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/cookies" element={<CookiePolicy />} />
       <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/blog" element={<BlogIndex />} />
+      <Route path="/guide/pomodoro-focus-timer" element={<PomodoroGuide />} />
+      <Route path="/guide/intermittent-fasting-for-professionals" element={<FastingGuide />} />
+      <Route path="/guide/desk-exercises-remote-workers" element={<DeskExercisesGuide />} />
       {Object.entries(Pages).map(([path, Page]) => (
         <Route
           key={path}
