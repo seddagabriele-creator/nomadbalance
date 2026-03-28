@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, Shuffle, Brain, Clock, Layers, MessageSquare, Target, CheckCircle } from "lucide-react";
+import { ArrowLeft, Zap, Shuffle, Brain, Clock, Layers, MessageSquare, CheckCircle, Target } from "lucide-react";
 
 export default function ContextSwitching() {
   return (
@@ -21,166 +21,151 @@ export default function ContextSwitching() {
       <article className="max-w-3xl mx-auto px-4 py-10 pb-20">
         <div className="flex items-center gap-2 mb-4">
           <span className="px-2.5 py-1 rounded-full bg-violet-500/20 text-violet-400 text-xs font-medium">Focus</span>
-          <span className="text-white/30 text-xs">10 min read</span>
+          <span className="text-white/30 text-xs">7 min read</span>
         </div>
         <h1 className="text-3xl font-extrabold mb-3">The Hidden Cost of Context Switching for Remote Workers</h1>
-        <p className="text-white/40 text-sm mb-10">Why jumping between tasks, channels, and conversations is silently destroying your productivity — and evidence-based strategies to stop the bleeding.</p>
+        <p className="text-white/40 text-sm mb-10">Research shows it takes 23 minutes to refocus after an interruption. Here's how to minimize switching.</p>
 
         <div className="space-y-10 text-white/70 text-sm leading-relaxed">
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Shuffle className="w-5 h-5 text-violet-400" />
-              What Context Switching Really Costs
+              What Context Switching Actually Costs You
             </h2>
             <p className="mb-3">
-              Context switching is the act of shifting your attention from one task, project, or communication thread to another. In computer science, the term describes the overhead cost when a processor switches between different processes — it must save the state of the current process, load the state of the new one, and warm up the relevant caches. Your brain works in a remarkably similar way, and the overhead costs are far greater than most people realize.
+              Context switching — the act of shifting your attention from one task or project to another — is one of the most expensive habits in knowledge work, and one of the least visible. Unlike wasted time in meetings, which is at least measurable, the cost of context switching hides in the gaps between tasks, in the minutes you spend reorienting after each interruption, and in the diminished quality of work you produce while your attention is fragmented.
             </p>
             <p className="mb-3">
-              Gloria Mark, a professor of informatics at the University of California, Irvine, has spent over two decades studying attention and interruption in workplace environments. Her research, including extensive observational studies with screen-monitoring software and physiological sensors, has produced a startling finding: the average knowledge worker switches tasks every three minutes and five seconds. After each switch, it takes an average of 23 minutes and 15 seconds to return to the original task with the same level of engagement.
-            </p>
-            <p className="mb-3">
-              Let that sink in. If you switch tasks just ten times during a workday — which is far fewer than the average — you lose nearly four hours to recovery time alone. This is not time spent being lazy or distracted in an obvious way. From the outside, you appear to be working the entire time. But your cognitive performance is degraded because your brain is still processing residual information from the previous context while trying to load the new one.
+              The landmark research on this topic comes from Gloria Mark, a professor of informatics at the University of California, Irvine. In a series of studies spanning more than a decade, Mark and her colleagues observed knowledge workers in their natural environments, tracking every task switch, interruption, and recovery period. Their findings are striking: the average knowledge worker is interrupted or switches tasks every 3 minutes and 5 seconds during their workday. After each interruption, it takes an average of 23 minutes and 15 seconds to return to the same level of focus on the original task.
             </p>
             <p>
-              For remote workers, the situation is often worse than in traditional offices. Remote work tools — Slack, email, project management platforms, video conferencing — each represent a distinct context. Having multiple tools open simultaneously creates a constant temptation to switch between them. A Slack notification during a coding session. An email alert during a design review. A calendar popup during a writing sprint. Each one triggers a context switch, and each switch carries the hidden cost that Mark's research has quantified.
+              Consider what these numbers mean in practice. If you switch tasks ten times in a morning (a conservative estimate for most remote workers juggling Slack, email, code, and meetings), you lose approximately four hours of productive time — not because you are idle, but because you are operating at reduced cognitive capacity while your brain repeatedly reloads context. You feel busy, you are at your desk, you are typing — but the quality and speed of your output is a fraction of what it would be during sustained, uninterrupted focus. This is the hidden cost: it looks like work, but it produces far less value.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Brain className="w-5 h-5 text-violet-400" />
-              Attention Residue: The Ghost of Tasks Past
+              Attention Residue and the Multitasking Myth
             </h2>
             <p className="mb-3">
-              The mechanism behind the context switching penalty is called attention residue, a concept developed by Sophie Leroy at the University of Washington. When you switch from Task A to Task B, your attention does not make a clean break. A portion of your cognitive resources remains allocated to Task A — thinking about where you left off, worrying about unresolved decisions, maintaining the mental models you built. This residue occupies working memory, reducing the capacity available for Task B.
+              The cognitive mechanism behind the cost of context switching is what Sophie Leroy calls "attention residue." When you move from Task A to Task B, your brain does not instantly and completely disengage from Task A. Part of your cognitive resources remain allocated to the previous task — especially if it was incomplete, complex, or emotionally engaging. This residue occupies working memory slots that would otherwise be available for Task B, reducing your effective intelligence and creative capacity.
             </p>
             <p className="mb-3">
-              Leroy's experiments demonstrated this elegantly. Participants who were interrupted in the middle of a task and asked to switch to a new one performed significantly worse on the new task compared to those who had completed the first task before switching. The residue was strongest when the first task involved an unresolved problem or pending decision — exactly the kind of situation that is common in knowledge work.
+              Leroy's research, published in <em>Organizational Behavior and Human Decision Processes</em>, demonstrated that attention residue is not just a subjective feeling of being scattered. Participants who switched between tasks without completing the first one performed measurably worse on cognitive tests than those who finished one task before starting another. The performance deficit was significant and consistent across different types of tasks.
             </p>
             <p className="mb-3">
-              What makes attention residue particularly insidious is that it is invisible to introspection. You do not feel your working memory being occupied. You simply feel slightly slower, slightly less creative, slightly more prone to errors — and you attribute it to tiredness, difficulty of the task, or insufficient coffee. The true cause is the accumulated residue from multiple context switches loading down your cognitive system like too many browser tabs consuming RAM.
+              This finding directly contradicts the popular belief in multitasking. What people call multitasking is almost always rapid context switching — jumping between tasks so quickly that it feels simultaneous. True multitasking (performing two cognitively demanding tasks at literally the same time) is neurologically impossible for tasks that require the same brain regions. Your brain has a single executive attention system, and it can only engage deeply with one complex task at a time.
             </p>
             <p>
-              Remote work environments amplify the residue problem because communication is asynchronous and fragmented. In an office, a conversation happens and concludes. On Slack, a thread starts at 9 AM, receives a reply at 10:30 AM, and you respond at 11 AM — each interaction creating a fresh wave of attention residue as you reload the context of the conversation, think about your response, and then try to return to whatever you were doing.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-violet-400" />
-              The Multitasking Myth
-            </h2>
-            <p className="mb-3">
-              Many people believe they are good at multitasking. Research consistently shows they are wrong. What feels like multitasking is actually rapid context switching — your brain cannot simultaneously perform two tasks that require directed attention. It can only alternate between them, paying the switching cost each time.
-            </p>
-            <p className="mb-3">
-              A landmark study by Stanford psychologist Clifford Nass found that people who frequently media-multitask (using multiple digital media streams simultaneously) performed worse on tests of attention, memory, and task-switching compared to infrequent multitaskers. This was the opposite of what the researchers expected. Heavy multitaskers were not better at switching — they were worse, because their chronic exposure to multiple streams impaired their ability to filter out irrelevant information and maintain focus on a single task.
-            </p>
-            <p className="mb-3">
-              The implications for remote workers are direct. Having Slack open alongside your primary work application, with email in another tab and a video meeting pending, creates exactly the kind of multi-stream environment that Nass's research shows degrades cognitive performance. Even if you are not actively engaging with all these streams, their mere presence creates a background attentional load. Your brain is monitoring them for activity, consuming resources that could otherwise support deeper engagement with your primary task.
-            </p>
-            <p>
-              The solution is not to become better at multitasking — that is a neurological impossibility for demanding cognitive tasks. The solution is to stop pretending you can multitask and instead adopt a sequential, single-task approach that respects how your brain actually works.
+              Stanford research led by Clifford Nass found that people who describe themselves as heavy multitaskers actually perform worse on every measure of cognitive performance — including task switching itself — compared to people who multitask less. The irony is notable: the people who believe they are best at juggling multiple tasks are demonstrably the worst at it. Heavy multitasking does not build a skill; it trains your brain to be easily distracted. It is a habit that feels productive while systematically undermining productivity.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Layers className="w-5 h-5 text-violet-400" />
-              Task Batching: The Antidote to Constant Switching
+              Batching Similar Tasks Together
             </h2>
             <p className="mb-3">
-              Task batching is the practice of grouping similar tasks together and processing them in a dedicated block of time rather than interspersing them throughout the day. Because similar tasks share cognitive context — they use the same mental models, tools, and types of thinking — switching between them incurs a much lower cost than switching between dissimilar tasks.
+              Task batching is one of the most powerful antidotes to context switching, and it is surprisingly simple to implement. The idea is to group similar tasks together and handle them in a single, dedicated block rather than spreading them throughout the day. Instead of checking email every time a notification appears, you check email in two or three concentrated sessions. Instead of responding to Slack messages continuously, you process them in batches between focus blocks.
+            </p>
+            <p className="mb-3">
+              The reason batching works is that similar tasks share cognitive context. Answering five emails in a row requires loading your "email processing" mental framework once, whereas answering five emails scattered across the day requires loading it five separate times, with the associated context-switching costs each time. The same principle applies to code reviews, writing, administrative tasks, and meetings.
             </p>
             <p className="mb-4">
-              Effective batching for remote workers typically involves organizing your day into distinct blocks:
+              Effective batching categories for remote workers include:
             </p>
             <div className="space-y-3 mb-4">
               <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold mb-1">Communication Batch</p>
-                <p className="text-white/50 text-xs">Process all email, Slack messages, and asynchronous communication in one or two dedicated blocks per day. Respond to everything at once rather than trickling responses throughout the day. This batch uses "communication mode" thinking and keeps the residue contained.</p>
+                <p className="text-white font-semibold mb-1">Communication batch</p>
+                <p className="text-white/50 text-xs">Email, Slack messages, Loom reviews, pull request comments. Process all asynchronous communication in one or two daily blocks rather than continuously.</p>
               </div>
               <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold mb-1">Creative or Analytical Batch</p>
-                <p className="text-white/50 text-xs">Group your deepest cognitive work — writing, coding, designing, strategizing — into a single uninterrupted block, typically in the morning when cognitive resources are highest. This batch requires flow state, which takes time to enter and is easily disrupted.</p>
+                <p className="text-white font-semibold mb-1">Meeting batch</p>
+                <p className="text-white/50 text-xs">Cluster all meetings on two or three designated days if possible. A meeting-free day produces dramatically more deep work than a day with three meetings scattered across different hours, even if the total meeting time is the same.</p>
               </div>
               <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold mb-1">Administrative Batch</p>
-                <p className="text-white/50 text-xs">Group logistics tasks — updating project boards, filing documents, scheduling meetings, expense reports — into a single block. These tasks are individually small but disruptive when scattered across the day because each one creates a micro context switch.</p>
+                <p className="text-white font-semibold mb-1">Creative batch</p>
+                <p className="text-white/50 text-xs">Writing, design, complex problem-solving, architecture decisions. Group these during your peak energy hours and protect them fiercely from interruption.</p>
               </div>
               <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold mb-1">Meeting Batch</p>
-                <p className="text-white/50 text-xs">Consolidate all meetings into a contiguous block when possible. A day with four meetings scattered across it has virtually no deep work capacity. The same four meetings back-to-back leave the rest of the day open for focused effort.</p>
+                <p className="text-white font-semibold mb-1">Administrative batch</p>
+                <p className="text-white/50 text-xs">Expense reports, time tracking, status updates, scheduling. Handle all of these in a single daily block, ideally during a low-energy period when you would struggle with deep work anyway.</p>
               </div>
             </div>
             <p>
-              The transition between batches is where you pay the switching cost — but you pay it only three or four times per day instead of thirty or forty. Each batch is long enough for you to enter a focused state, do meaningful work, and complete tasks before switching contexts. The cumulative time savings are enormous: recovering from four context switches costs about 90 minutes, while recovering from forty costs over fifteen hours — more than a full workday of lost cognitive capacity.
+              The transition to batched work feels uncomfortable at first, especially if you are accustomed to responding to messages immediately. You may worry that people will think you are unresponsive or unavailable. In practice, the opposite tends to happen: your responses become more thoughtful and complete when you process them in focused batches, and your deep work output improves so visibly that colleagues notice and often adopt similar practices.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-violet-400" />
-              Communication Protocols That Protect Deep Work
+              Communication Protocols That Protect Focus
             </h2>
             <p className="mb-3">
-              Remote teams often default to a culture of instant availability. Slack messages are expected to receive replies within minutes. Emails are treated as urgent. Video calls are scheduled without regard for focus blocks. This culture is not malicious — it arises naturally when people cannot see whether a colleague is deeply focused or available for a chat. But it is devastating to deep work because it creates a baseline expectation of constant context switching.
+              Remote teams face a particular challenge with context switching because the tools that enable remote collaboration — Slack, Teams, email — are also the primary sources of interruption. In an office, a colleague who sees you wearing headphones and staring intently at your screen will probably think twice before interrupting. In a remote environment, they have no visual cues about your current state. A Slack message costs them nothing to send and may cost you 23 minutes of focus.
             </p>
             <p className="mb-3">
-              Changing this requires explicit communication protocols agreed upon at the team level. The most effective protocol is a tiered response time agreement. Tier one is for true emergencies requiring immediate response — these should be limited to phone calls or a designated urgent-only communication channel. Tier two is for important but non-urgent matters that warrant a response within two to four hours — standard Slack messages and email fall here. Tier three is for informational messages, updates, and non-time-sensitive requests that can be addressed within 24 hours.
+              The solution is not to stop communicating but to establish team-wide communication protocols that distinguish between urgent and non-urgent communication and route each appropriately. A simple but effective framework has three tiers: asynchronous (default), synchronous-scheduled (meetings), and synchronous-urgent (phone calls or a designated emergency channel).
             </p>
             <p className="mb-3">
-              When a team adopts this protocol, every member gains permission to batch their communication without anxiety. You no longer need to monitor Slack continuously because you know that anything truly urgent will come through the tier-one channel. This single change can reclaim hours of deep work capacity per day across the team.
+              Asynchronous communication should be the default for all remote work. This means Slack messages, emails, and project management comments, with an explicit expectation that responses may take hours rather than minutes. When a question is genuinely urgent — something that blocks another person's work or has a real-time deadline — it should go through the synchronous-urgent channel, which might be a phone call or a specific Slack channel that people actually monitor. By separating the channels, you can safely silence the non-urgent channels during focus blocks without worrying about missing true emergencies.
             </p>
-            <p className="mb-4">
-              Individual practices that support this protocol include:
+            <p className="mb-3">
+              At the individual level, communicate your focus schedule to your team. Update your Slack status to indicate when you are in a focus block and when you will next check messages. Something as simple as "Focusing until 11:30 — will respond then" sets clear expectations and gives colleagues the information they need to decide whether their message can wait or truly requires immediate attention. Most will wait.
             </p>
-            <ul className="space-y-2 pl-4">
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span><strong className="text-white">Status signals</strong> — use Slack status messages or shared calendar blocks to communicate when you are in a focus session, so colleagues know to use the appropriate tier</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span><strong className="text-white">Front-loading context</strong> — when sending a message, include all necessary context upfront so the recipient can respond in one interaction rather than requiring a back-and-forth thread</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span><strong className="text-white">Async-first mindset</strong> — default to asynchronous communication (messages, documents, recorded videos) and reserve synchronous communication (calls, meetings) for situations that genuinely require real-time interaction</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span><strong className="text-white">Office hours</strong> — establish predictable windows when you are available for ad-hoc questions, reducing the need for colleagues to interrupt you at random times</span>
-              </li>
-            </ul>
+            <p>
+              Some of the most productive remote teams implement "no meeting" days or "core focus hours" during which no one schedules meetings or expects real-time responses. These team-level agreements are far more powerful than individual efforts because they create a culture that values focused work rather than one that penalizes people for not responding to every message within five minutes. If you have influence over your team's norms, advocating for focus-protective communication protocols may be the single most impactful thing you can do for team productivity.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-violet-400" />
+              Scheduling Deep Work vs. Shallow Work
+            </h2>
+            <p className="mb-3">
+              The most effective way to minimize context switching is to proactively schedule your day rather than reactively responding to whatever demands arrive first. Cal Newport distinguishes between deep work (cognitively demanding tasks that produce high-value output) and shallow work (logistical tasks that are necessary but do not require significant cognitive effort). Each type requires a different kind of attention, and mixing them throughout the day maximizes context-switching costs.
+            </p>
+            <p className="mb-3">
+              A well-structured remote workday puts deep work in contiguous blocks during your peak energy hours and groups shallow work into separate blocks. For most people, this means doing deep work in the morning — when cortisol is naturally elevated, the day's distractions have not yet accumulated, and the brain's prefrontal cortex is freshest — and handling shallow work in the afternoon.
+            </p>
+            <p className="mb-3">
+              A practical daily structure might look like this: begin the day with a five-minute planning session to identify the one or two most important deep work tasks. From 9:00 to 11:00, work exclusively on the first deep task with all notifications disabled. From 11:00 to 11:30, process communications and handle quick requests. From 11:30 to 12:30, tackle the second deep work task. After lunch, schedule meetings, process email in a batch, handle administrative tasks, and do code reviews or collaborative work that requires less sustained concentration.
+            </p>
+            <p>
+              The crucial principle is that deep work blocks must be genuinely uninterrupted. A 90-minute "focus block" with three Slack check-ins is not a focus block — it is three 30-minute fragments separated by context switches, which is worse than no focus block at all because you never have time to reach deep focus. The transition from scattered attention to genuine flow typically takes 15 to 20 minutes. If your blocks are shorter than that, or if they include interruptions, you are paying the ramp-up cost repeatedly without ever reaching the state where your most valuable work happens.
+            </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Target className="w-5 h-5 text-violet-400" />
-              Designing a Low-Switch Day
+              Practical Strategies to Reduce Switching Right Now
             </h2>
-            <p className="mb-3">
-              The goal of all these strategies is to reduce the total number of context switches in your day from the typical thirty to fifty down to four or five. A low-switch day looks radically different from a normal remote workday, and the difference in output is striking.
+            <p className="mb-4">
+              If you are convinced that context switching is hurting your productivity (it almost certainly is), here are concrete actions you can take immediately:
             </p>
-            <p className="mb-3">
-              A practical low-switch template for a remote worker starts with a 90-minute deep work session immediately after your morning routine — no email, no Slack, no phone. This is followed by a 15-minute break and then a 30-minute communication batch where you process all messages that accumulated overnight and during your focus session. Another 90-minute deep work block follows, then lunch.
-            </p>
-            <p className="mb-3">
-              The afternoon begins with a meeting batch — consolidate all your calls and collaborative work here. After the last meeting, take a 15-minute break, then do a final communication batch to close out any open threads. End the day with a 60-to-90-minute deep work block for lower-intensity focused tasks.
-            </p>
-            <p className="mb-3">
-              In this template, you switch contexts only five times: deep work to communication, communication to deep work, deep work to meetings, meetings to communication, and communication to deep work. Compare that to the typical remote workday where you switch contexts every three minutes — roughly 160 switches in an eight-hour day. The difference in cognitive overhead is the difference between a computer running one program at a time and one thrashing between hundreds of processes with insufficient RAM.
-            </p>
+            <ol className="space-y-3 pl-4 list-decimal list-inside mb-4">
+              <li><strong className="text-white">Measure your switching frequency.</strong> For one day, make a tally mark every time you switch tasks or check a notification. Most people are shocked by the number. Awareness alone often motivates behavioral change.</li>
+              <li><strong className="text-white">Implement a two-hour morning focus block.</strong> Before checking email or Slack, spend the first two hours of your workday on your most important task. This single change often produces more high-quality output than the rest of the day combined.</li>
+              <li><strong className="text-white">Close all tabs except the ones you need.</strong> Open browser tabs are visual cues that pull your attention. If you need to save something for later, bookmark it and close the tab. Your working memory will thank you.</li>
+              <li><strong className="text-white">Use a "parking lot" for stray thoughts.</strong> Keep a small notepad next to your keyboard. When an unrelated thought intrudes during deep work ("I need to reply to that email," "I should book a dentist appointment"), jot it on the notepad and return to your task. This captures the thought without derailing your focus.</li>
+              <li><strong className="text-white">Set your Slack status and actually honor it.</strong> "Focusing until 11:30" means you do not check Slack until 11:30. No exceptions for "just a quick peek." Every peek costs you minutes of refocusing time.</li>
+              <li><strong className="text-white">Batch your meetings.</strong> If you have four 30-minute meetings this week, try to cluster them into one or two days rather than spreading one per day. A day with no meetings is exponentially more productive than a day with one meeting, because the meeting fragments the day into two short blocks that are rarely long enough for deep work.</li>
+              <li><strong className="text-white">Use transition rituals between task types.</strong> When you finish a deep work block and move to communication, take 60 seconds to close your work files, open your inbox, and mentally shift gears. This brief, intentional transition reduces attention residue by giving your brain a clear signal that one context is ending and another is beginning.</li>
+            </ol>
             <p>
-              The benefits compound over time. As you reduce daily context switching, you not only produce more but you finish the day with more mental energy remaining. This means better evenings, better sleep, better recovery, and a stronger cognitive baseline the next morning. It is a virtuous cycle that begins with the simple decision to stop treating interruptions as normal and start treating focus as the scarce, valuable resource it is.
+              The compound effect of these changes is substantial. Reducing your daily context switches from fifty to ten does not make you five times more productive in a linear sense, but the quality improvement in your deep work hours — where the most valuable output is generated — can feel transformative. Many remote workers who adopt these practices describe it as feeling like they have gained two or three extra hours in their day, not because they are working longer, but because the hours they work are finally being used at full cognitive capacity.
             </p>
           </section>
 
           <section className="bg-gradient-to-br from-violet-500/10 to-cyan-500/10 rounded-2xl p-6 border border-white/10">
-            <h2 className="text-lg font-bold text-white mb-2">Protect Your Focus with NomadBalance</h2>
+            <h2 className="text-lg font-bold text-white mb-2">Try it with NomadBalance</h2>
             <p className="mb-4">
-              NomadBalance helps you build a low-switch workday with structured focus sessions, timed communication breaks, and binaural beats that create an auditory boundary between deep work and everything else. Stop paying the hidden tax of constant context switching.
+              NomadBalance's focus timer helps you commit to uninterrupted work blocks, track your daily deep work hours, and build the consistency that makes context switching a thing of the past.
             </p>
             <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-xl text-white font-medium text-sm transition-colors">
               Get started for free

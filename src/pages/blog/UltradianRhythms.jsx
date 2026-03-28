@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, Clock, Activity, TrendingUp, Moon, Battery, Lightbulb, CheckCircle } from "lucide-react";
+import { ArrowLeft, Zap, Clock, Brain, Activity, TrendingUp, Battery, CheckCircle, Search } from "lucide-react";
 
 export default function UltradianRhythms() {
   return (
@@ -21,176 +21,149 @@ export default function UltradianRhythms() {
       <article className="max-w-3xl mx-auto px-4 py-10 pb-20">
         <div className="flex items-center gap-2 mb-4">
           <span className="px-2.5 py-1 rounded-full bg-violet-500/20 text-violet-400 text-xs font-medium">Focus</span>
-          <span className="text-white/30 text-xs">10 min read</span>
+          <span className="text-white/30 text-xs">8 min read</span>
         </div>
         <h1 className="text-3xl font-extrabold mb-3">Ultradian Rhythms: Why Your Body Works in 90-Minute Cycles</h1>
-        <p className="text-white/40 text-sm mb-10">Understanding the biological cycles that govern your energy, attention, and cognitive performance throughout the day — and how to work with them instead of against them.</p>
+        <p className="text-white/40 text-sm mb-10">Understanding your body's natural energy cycles and how to align your work schedule with them.</p>
 
         <div className="space-y-10 text-white/70 text-sm leading-relaxed">
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5 text-violet-400" />
-              The Basic Rest-Activity Cycle (BRAC)
+              What Are Ultradian Rhythms?
             </h2>
             <p className="mb-3">
-              In the 1950s, pioneering sleep researcher Nathaniel Kleitman made a discovery that would reshape our understanding of human performance. While studying sleep stages, Kleitman observed that the brain cycles through distinct phases of activity roughly every 90 minutes during sleep — what we now know as the progression from light sleep through deep sleep and into REM (rapid eye movement) sleep. But Kleitman went further. He hypothesized that this 90-minute rhythm does not stop when we wake up. Instead, it continues throughout the day, governing our waking alertness, focus, and energy levels. He called this the Basic Rest-Activity Cycle, or BRAC.
+              Most people are familiar with circadian rhythms — the roughly 24-hour cycle that governs your sleep-wake pattern. Far fewer are aware of ultradian rhythms, shorter cycles that repeat multiple times within a single day and profoundly affect your ability to concentrate, create, and solve problems. The word "ultradian" literally means "more frequent than once a day," and these cycles typically run between 80 and 120 minutes, with 90 minutes being the most commonly cited average.
             </p>
             <p className="mb-3">
-              The BRAC proposes that during waking hours, your body alternates between approximately 90 minutes of heightened alertness and cognitive capacity followed by approximately 20 minutes of reduced alertness during which the body and brain seek rest. This is not a conscious choice or a matter of motivation. It is a physiological rhythm driven by fluctuations in hormones, neurotransmitters, and autonomic nervous system activity, similar to how your heart beats without conscious effort.
-            </p>
-            <p className="mb-3">
-              Subsequent research has largely confirmed Kleitman's hypothesis. Studies using continuous EEG monitoring of awake subjects have found cyclical fluctuations in alertness with periods ranging from 80 to 120 minutes, with 90 minutes being the most common. Variations in performance on cognitive tasks — reaction time, sustained attention, working memory capacity — follow a similar oscillating pattern throughout the day.
+              The discovery of ultradian rhythms dates back to the 1950s and the work of Nathaniel Kleitman, the same physiologist who co-discovered REM sleep. Kleitman observed that during sleep, the brain cycles through stages roughly every 90 minutes — moving from light sleep to deep sleep to REM sleep and back again. He hypothesized that this 90-minute cycle did not stop when you woke up but continued throughout the day, influencing your alertness, cognitive performance, and physiological state. He called this the Basic Rest-Activity Cycle, or BRAC.
             </p>
             <p>
-              For remote workers, this has immediate practical implications. If your ability to focus naturally peaks and troughs in 90-minute waves, then structuring your workday around these waves — rather than against them — can dramatically improve both your output and your sense of wellbeing. Working through a trough is not just unpleasant; it is biologically inefficient, like trying to sprint while your body wants to walk.
+              Subsequent research has validated Kleitman's hypothesis. Studies measuring brain activity, hormone levels, alertness, and cognitive performance throughout the day consistently find a cyclical pattern with a period close to 90 minutes. During the active phase of the cycle, your brain is primed for focused, demanding work. During the rest phase, your cognitive resources are depleted, and your brain needs recovery — a period characterized by increased drowsiness, difficulty concentrating, and a strong pull toward daydreaming or physical movement. Ignoring this rest phase and pushing through with caffeine or willpower does not eliminate the cycle; it merely degrades the quality of both your work and your recovery.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-violet-400" />
-              The Neuroscience Behind the 90-Minute Cycle
+              <Brain className="w-5 h-5 text-violet-400" />
+              The Science of the Basic Rest-Activity Cycle
             </h2>
             <p className="mb-3">
-              Several physiological mechanisms drive the ultradian rhythm. The most significant involves fluctuations in the balance between the sympathetic and parasympathetic branches of the autonomic nervous system. During the active phase of the cycle, sympathetic tone is elevated — heart rate increases slightly, cortisol and norepinephrine levels rise, and the prefrontal cortex receives increased blood flow and glucose. This is when you are biologically primed for demanding cognitive work.
+              The BRAC is driven by fluctuations in several interconnected physiological systems. During the active phase, your sympathetic nervous system (the fight-or-flight system) is relatively dominant. Heart rate and blood pressure are slightly elevated. Cortisol and adrenaline provide a subtle boost to alertness. Your prefrontal cortex — the brain region responsible for planning, decision-making, and sustained attention — is well-supplied with the neurochemicals it needs to function at a high level.
             </p>
             <p className="mb-3">
-              As the active phase concludes, parasympathetic tone gradually increases. Heart rate slows, cortisol dips, and activity in the default mode network (the brain's resting-state network) increases. This is not fatigue in the traditional sense — it is a programmed shift toward restoration. Your brain uses this period to consolidate recently learned information, clear metabolic waste products, and replenish the neurotransmitters (particularly dopamine and norepinephrine) that fuel sustained attention.
+              As the active phase progresses and neural resources are consumed, the balance shifts. The parasympathetic nervous system (the rest-and-digest system) begins to assert itself. Adenosine, a byproduct of neural energy consumption, accumulates in the brain and promotes drowsiness. Your ability to maintain focused attention declines, and your mind begins to wander more frequently. This is not a sign of laziness or poor discipline — it is a biological signal that your brain needs a period of lower-intensity activity to restore its capacity for deep thinking.
             </p>
             <p className="mb-3">
-              Another contributing mechanism involves the buildup and clearance of adenosine, a byproduct of cellular energy metabolism. During intense cognitive work, neurons consume large amounts of ATP (adenosine triphosphate), and the resulting adenosine accumulates in the extracellular space. Adenosine binds to receptors in the brain that promote drowsiness and reduce neural excitability. During the rest phase of the ultradian cycle, adenosine levels decrease, restoring alertness for the next active phase. This, incidentally, is the same mechanism that caffeine exploits — caffeine blocks adenosine receptors, temporarily masking the fatigue signal.
+              Research by Peretz Lavie at the Technion in Israel demonstrated that these cycles align with measurable changes in cognitive performance. He found that tasks requiring sustained attention showed a clear cyclical pattern, with peaks of performance alternating with troughs roughly every 90 minutes. The performance differences between peak and trough were not trivial — participants in the trough phase made significantly more errors and took longer to complete the same tasks.
             </p>
             <p>
-              The key insight is that the rest phase is not wasted time. It is an active restoration process during which your brain performs essential maintenance. Skipping or powering through these rest phases with caffeine and willpower does not eliminate the need for them — it merely defers and intensifies it, leading to the afternoon crash that so many remote workers experience around 2 or 3 PM.
+              Perhaps the most striking finding from ultradian rhythm research is that rest phases are not optional for high performance. They are where your brain consolidates learning, clears metabolic waste, and replenishes the neurotransmitters needed for the next active phase. Skipping rest phases does not give you more productive time; it gives you more time working at reduced capacity. Over the course of a day, a person who works in alignment with their ultradian rhythms — alternating 90 minutes of focus with 20 minutes of rest — will typically produce higher quality work in fewer total hours than someone who grinds through an eight-hour day without meaningful breaks.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Search className="w-5 h-5 text-violet-400" />
+              How to Identify Your Personal Cycles
+            </h2>
+            <p className="mb-3">
+              While the average ultradian cycle lasts about 90 minutes, individual variation is significant. Some people have cycles closer to 75 minutes; others extend to 110 or even 120 minutes. Your personal cycle length also varies with factors like sleep quality, caffeine intake, time of day, and the type of work you are doing. Identifying your personal rhythm requires self-observation over several days.
+            </p>
+            <p className="mb-4">
+              Here is a practical method for discovering your cycle:
+            </p>
+            <ol className="space-y-3 pl-4 list-decimal list-inside mb-4">
+              <li><strong className="text-white">Track your energy for one week.</strong> Every 30 minutes during your workday, rate your focus and energy on a scale of 1 to 5. Use a simple spreadsheet or notebook. Do this without trying to change anything about your schedule — you want to observe your natural patterns, not create new ones.</li>
+              <li><strong className="text-white">Look for the peaks and valleys.</strong> After a week, review your data. You will likely see a wave pattern: periods of high energy and focus alternating with periods of low energy and distraction. Note the average time between peaks — this is approximately your ultradian cycle length.</li>
+              <li><strong className="text-white">Pay attention to physical signals.</strong> Yawning, difficulty concentrating, hunger, a desire to stand up and move, staring blankly at the screen — these are all signals that you are entering a rest phase. Once you start noticing these signals, you will realize they have been there all along; you were just overriding them.</li>
+              <li><strong className="text-white">Note your daily peak window.</strong> Most people have one or two periods during the day when their ultradian peaks are especially strong — when they feel like they could solve any problem. For many people, this is mid-morning (roughly 9:30 to 11:30 AM), but it varies. This is your prime time for the most demanding work.</li>
+            </ol>
+            <p>
+              Do not expect perfect regularity. Ultradian rhythms are biological tendencies, not digital clocks. Some days the cycles will be clear and consistent; other days they will be muddled by poor sleep, stress, or an unusual schedule. The goal is to understand your general pattern well enough to make better decisions about when to push and when to rest, not to schedule your life to the minute.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-violet-400" />
-              Identifying Your Personal Ultradian Rhythm
+              Aligning Your Work With Your Energy
             </h2>
             <p className="mb-3">
-              While the 90-minute average is well-supported by research, individual cycles vary. Some people have shorter cycles of about 75 minutes; others have longer cycles closer to 110 minutes. Your personal cycle length may also vary by time of day, with morning cycles tending to be shorter and more intense and afternoon cycles being longer and flatter.
+              Once you have a rough sense of your ultradian rhythm, you can begin to align your work schedule with it. The principle is straightforward: do your hardest, most cognitively demanding work during active phases, and handle lighter tasks or take genuine rest during recovery phases. This is the opposite of how most people work, which is to do whatever seems most urgent regardless of their energy state.
             </p>
             <p className="mb-3">
-              To identify your personal rhythm, you need to observe yourself systematically. For one week, set an alarm to go off every 30 minutes during your workday. When it sounds, rate your current energy and focus level on a scale of 1 to 5 and note what you were doing. After a week, plot these ratings on a timeline. You will likely see a wave pattern emerge, with peaks and troughs repeating at a fairly consistent interval.
+              In practice, this means scheduling your deep work — complex problem-solving, creative writing, strategic thinking, difficult code — during the active phases of your first and second ultradian cycles of the day. These morning cycles are typically the strongest because you have not yet accumulated significant cognitive fatigue. Reserve the afternoon cycles, when energy naturally dips, for meetings, email processing, administrative tasks, and collaborative work that does not require peak concentration.
             </p>
-            <p className="mb-4">
-              Common signs that you are entering the rest phase of your ultradian cycle include:
+            <p className="mb-3">
+              Remote workers have a significant advantage here compared to office workers. In an office, your schedule is largely dictated by when other people want to meet. At home, you have far more control over your calendar. Use that control ruthlessly. Block off your peak ultradian windows for deep work and mark them as busy in your calendar. Schedule meetings in your valleys or during the transition periods between cycles. If a meeting request comes in during your prime focus window, propose an alternative time whenever possible.
             </p>
-            <ul className="space-y-2 pl-4 mb-4">
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span><strong className="text-white">Increasing restlessness</strong> — you shift in your chair, stretch, or feel a growing urge to move your body</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span><strong className="text-white">Mind wandering</strong> — you re-read the same paragraph multiple times or find your thoughts drifting to unrelated topics</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span><strong className="text-white">Hunger or thirst cues</strong> — your body signals a desire for fuel or hydration as it prepares for metabolic restoration</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span><strong className="text-white">Yawning or sighing</strong> — these are involuntary attempts to increase oxygen intake and reset your respiratory rhythm</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span><strong className="text-white">Diminishing returns</strong> — tasks that felt easy 30 minutes ago now require disproportionate effort</span>
-              </li>
-            </ul>
             <p>
-              These are not signs of laziness or weakness. They are your body's built-in signals that the active phase has ended and the rest phase has begun. Learning to recognize and honor these signals is one of the most impactful productivity skills you can develop.
+              One common mistake is trying to force deep work during a recovery phase by using caffeine or sheer willpower. This can work in the short term, but it comes at a cost. Research suggests that overriding rest phases leads to lower quality work, increased stress hormones, and a longer recovery period afterward. You are effectively borrowing energy from future cycles. A better strategy is to accept the valley, spend 15 to 20 minutes on genuinely restful activity, and then begin the next active phase with a full tank of cognitive fuel.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Battery className="w-5 h-5 text-violet-400" />
-              Aligning Your Work With Your Energy
-            </h2>
-            <p className="mb-3">
-              Once you have identified your personal ultradian rhythm, the next step is to align your work schedule with it. The principle is straightforward: schedule your most cognitively demanding work for your active phases and reserve your rest phases for genuine recovery or low-demand tasks.
-            </p>
-            <p className="mb-3">
-              In practice, this means organizing your day into 90-minute focus blocks separated by 15-to-20-minute recovery periods. During a focus block, you work on a single demanding task — writing, coding, analyzing, designing — without interruption. During the recovery period, you step away from the screen, move your body, hydrate, and let your mind wander without directed purpose.
-            </p>
-            <p className="mb-3">
-              Most people can sustain four to five complete ultradian cycles of focused work per day, yielding six to seven and a half hours of genuine cognitive output. This is significantly more productive than the standard eight-hour workday, which typically produces only two to three hours of truly focused work interspersed with five to six hours of shallow tasks, context switching, and unproductive downtime.
-            </p>
-            <p className="mb-3">
-              For remote workers, this alignment is especially powerful because you have full control over your schedule. In an office, meetings are imposed on you regardless of where you are in your ultradian cycle. At home, you can schedule meetings during your natural troughs and protect your peaks for deep work. A meeting during a trough is barely a sacrifice — your focus was going to be low anyway. A meeting during a peak, by contrast, wastes your best cognitive hours on an activity that rarely demands them.
-            </p>
-            <p>
-              Pay particular attention to your first ultradian cycle of the day. For most people, this occurs in the first 90 minutes after reaching full wakefulness (which is typically 30 to 60 minutes after waking, once sleep inertia clears). This first cycle tends to be the strongest of the day — cortisol is at its natural daily peak, adenosine levels are low from overnight sleep, and willpower has not yet been depleted by decisions. Guard this cycle fiercely. It is your single most valuable block of productive time.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Moon className="w-5 h-5 text-violet-400" />
               Rest vs. Passive Entertainment: What Actually Recharges You
             </h2>
             <p className="mb-3">
-              The rest phase of the ultradian cycle requires actual rest — not a different type of stimulation. This is where most people go wrong. When they feel their focus waning, they switch from work to scrolling social media, watching YouTube clips, or reading news articles. These activities feel like breaks, but they are not. They still engage the same attentional systems and keep the sympathetic nervous system activated. Your brain does not get the parasympathetic recovery it needs, and the next active phase starts from a depleted baseline.
-            </p>
-            <p className="mb-3">
-              Research on attention restoration theory, developed by Rachel and Stephen Kaplan at the University of Michigan, identifies specific types of experiences that actually restore directed attention capacity. Exposure to natural environments — even looking at a tree through a window — activates involuntary attention (which does not fatigue) while allowing directed attention (which does fatigue) to recover. Physical movement, particularly walking, increases blood flow to the brain and promotes the clearance of metabolic waste.
+              Not all breaks are created equal, and this is where many remote workers undermine their own productivity. When a rest phase arrives and you feel your focus flagging, the instinct is to reach for something stimulating — scrolling through social media, watching a YouTube video, reading the news. These activities feel like rest because they are not work, but neurologically they are anything but restful. They keep your brain in an externally stimulated state, consuming attention and processing novel information, which prevents the genuine cognitive recovery that the rest phase is designed to provide.
             </p>
             <p className="mb-4">
-              Effective rest activities for the ultradian trough include:
+              True rest during an ultradian recovery phase looks boring. It looks like:
             </p>
-            <div className="space-y-3 mb-4">
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold mb-1">Walking (especially outdoors)</p>
-                <p className="text-white/50 text-xs">Combines physical movement, exposure to natural light, and visual engagement with the environment. Even a 10-minute walk around the block can significantly restore cognitive capacity.</p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold mb-1">Gentle stretching or yoga</p>
-                <p className="text-white/50 text-xs">Releases physical tension accumulated from sitting, activates the parasympathetic nervous system through deep breathing, and shifts attention from cognitive to somatic awareness.</p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold mb-1">Gazing at a distant view</p>
-                <p className="text-white/50 text-xs">Looking at objects 20 feet or more away relaxes the ciliary muscles of the eyes (strained by close-up screen work) and engages the brain's spatial processing systems, which are different from the verbal and analytical systems used during work.</p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold mb-1">Mindful breathing or brief meditation</p>
-                <p className="text-white/50 text-xs">Even three minutes of focused breathing reduces cortisol, activates the parasympathetic nervous system, and creates a clear psychological boundary between the completed work session and the rest period.</p>
-              </div>
-            </div>
+            <ul className="space-y-2 pl-4 mb-4">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Closing your eyes</strong> for five to ten minutes, with or without alpha-frequency binaural beats. This allows your visual cortex to rest and promotes the default mode network activity needed for memory consolidation.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Walking without a destination or podcast.</strong> Gentle physical movement increases blood flow to the brain while allowing your mind to wander freely. This is when many of your best ideas will surface — not during the focused work itself, but during the unstructured rest that follows.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Light stretching or yoga.</strong> Physical movement that does not require much cognitive engagement helps release the tension that accumulates during focused work while allowing your mind to reset.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Looking out a window at distant objects.</strong> After sustained near-focus on a screen, shifting to distant vision relaxes the ciliary muscles in your eyes and can provide a surprisingly refreshing change of cognitive state.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Making a warm drink mindfully.</strong> The simple, physical process of making tea or coffee can serve as a brief meditative reset — but only if you do it without simultaneously checking your phone.</span>
+              </li>
+            </ul>
             <p>
-              Notice what is absent from this list: checking your phone, browsing social media, watching videos, or reading articles. These activities may feel pleasurable in the moment, but they do not restore the cognitive resources you need for the next ultradian cycle. Treating rest as a genuine skill to develop — rather than a gap to fill with entertainment — is one of the most underrated productivity strategies available to remote workers.
+              The key distinction is between activities that restore cognitive capacity and activities that merely distract from cognitive fatigue. Social media scrolling is the latter — it distracts you from feeling tired without actually reducing the tiredness. When the break ends and you return to work, you are no more rested than when you started. True rest activities let your brain shift into default mode, process and consolidate recent information, and return to the next active phase genuinely refreshed. The difference in focus quality after a real rest period versus a scrolling break is immediately noticeable once you start paying attention.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-violet-400" />
-              Putting It All Together: A Sample Ultradian Day
+              <Activity className="w-5 h-5 text-violet-400" />
+              Putting Ultradian Rhythms Into Practice
             </h2>
             <p className="mb-3">
-              Here is what a workday structured around ultradian rhythms might look like for a remote worker. Assume a natural wake time of 7 AM with full alertness by 7:30 AM. The first ultradian cycle runs from approximately 7:30 to 9:00 AM — this is your peak deep work block. Spend it on the most challenging and important task of the day.
+              Transitioning to an ultradian-aligned work schedule does not require a complete overhaul of your routine. Start by making one change: protect your first 90 minutes of work each day for deep, focused work on your most important task. No email, no Slack, no meetings. Just 90 minutes of sustained attention on the thing that will create the most value. Follow that 90-minute block with a genuine 15 to 20 minute rest period.
             </p>
             <p className="mb-3">
-              From 9:00 to 9:20 AM, take a genuine recovery break. Walk outside, stretch, make tea, look out the window. No screens, no email, no Slack. At 9:20, your second cycle begins — another 90-minute deep work block lasting until about 10:50 AM. This is still a strong cognitive period, suitable for demanding creative or analytical work.
+              Once this first cycle feels natural — usually after a week or two — add a second protected cycle. Then begin to notice your energy patterns throughout the rest of the day and gradually reorganize your schedule to put demanding work in the peaks and lighter work in the valleys. Do not try to restructure your entire day at once; incremental change is more sustainable than radical overhauls.
             </p>
             <p className="mb-3">
-              The break at 10:50 can be slightly longer — 20 to 30 minutes — and is a natural time to check email and messages for the first time. Your third cycle, starting around 11:15 AM, may be suitable for slightly less demanding work — collaborative tasks, editing, review, or structured problem-solving.
-            </p>
-            <p className="mb-3">
-              After lunch (which ideally falls during the trough between your third and fourth cycles), expect a dip in cognitive performance. The post-lunch period is the weakest point of most people's day. This is a good time for meetings, administrative tasks, or lower-stakes work. Your fourth cycle, typically starting around 2:30 to 3:00 PM, brings a second wind — not as strong as the morning peak but sufficient for meaningful work if you rested properly during the preceding troughs.
+              A typical ultradian-optimized day for a remote worker might look like this: wake up and complete a morning routine. First 90-minute focus block from 9:00 to 10:30 on your most demanding task. Rest from 10:30 to 10:50. Second 90-minute focus block from 10:50 to 12:20. Lunch and a longer break from 12:20 to 1:15. Afternoon cycle of lighter work, meetings, and email from 1:15 to 3:00. A shorter focus block from 3:00 to 4:00 if energy permits. Wind down with planning and administrative tasks from 4:00 to 5:00.
             </p>
             <p>
-              By structuring your day this way, you honor your biology rather than fighting it. You accomplish more in four well-timed focus blocks than most people accomplish in eight hours of undifferentiated desk time. And because you are resting when your body asks for rest, you finish the day feeling tired but not destroyed — which means you recover overnight and start the next day from a full baseline rather than an accumulated deficit.
+              Notice that this schedule includes only three to four hours of true deep work, yet it is likely more productive than the typical eight-hour day of fragmented attention. The reason is simple: three hours of genuine focus, supported by proper rest between cycles, produces dramatically more output than eight hours of low-grade attention punctuated by constant interruptions. By working with your biology instead of against it, you can accomplish more in less time and finish the day feeling energized rather than depleted. For remote workers who have the autonomy to design their own schedules, this is perhaps the single most impactful change they can make.
             </p>
           </section>
 
           <section className="bg-gradient-to-br from-violet-500/10 to-cyan-500/10 rounded-2xl p-6 border border-white/10">
-            <h2 className="text-lg font-bold text-white mb-2">Align Your Work With Your Biology</h2>
+            <h2 className="text-lg font-bold text-white mb-2">Try it with NomadBalance</h2>
             <p className="mb-4">
-              NomadBalance is built around the science of ultradian rhythms. Set your focus sessions to 90 minutes, let binaural beats support each phase, and use guided active breaks to ensure genuine recovery between cycles. Work with your body, not against it.
+              NomadBalance's flexible timer supports 90-minute ultradian work cycles with built-in rest periods, binaural beats tuned for each phase, and energy tracking to help you discover your personal rhythm.
             </p>
             <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-xl text-white font-medium text-sm transition-colors">
               Get started for free

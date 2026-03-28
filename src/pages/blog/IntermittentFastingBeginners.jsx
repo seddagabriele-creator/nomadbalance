@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, Clock, Timer, Utensils, Dumbbell, Laptop, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Zap, BookOpen, ClipboardList, TrendingUp, CalendarDays, AlertTriangle, HelpCircle, CheckCircle } from "lucide-react";
 
 export default function IntermittentFastingBeginners() {
   return (
@@ -21,133 +21,208 @@ export default function IntermittentFastingBeginners() {
       <article className="max-w-3xl mx-auto px-4 py-10 pb-20">
         <div className="flex items-center gap-2 mb-4">
           <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium">Nutrition</span>
-          <span className="text-white/30 text-xs">9 min read</span>
+          <span className="text-white/30 text-xs">12 min read</span>
         </div>
-        <h1 className="text-3xl font-extrabold mb-3">Intermittent Fasting for Beginners: A Complete 2026 Guide</h1>
-        <p className="text-white/40 text-sm mb-10">Everything you need to know about intermittent fasting, from choosing the right protocol to managing hunger and timing your workouts. A practical, evidence-based guide for anyone ready to start.</p>
+        <h1 className="text-3xl font-extrabold mb-3">Intermittent Fasting for Beginners: Everything You Need to Know</h1>
+        <p className="text-white/40 text-sm mb-10">A comprehensive, evidence-based guide to intermittent fasting — what it is, how it works, every major protocol, how to start safely, and who should avoid it.</p>
 
         <div className="space-y-10 text-white/70 text-sm leading-relaxed">
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-emerald-400" />
-              What Intermittent Fasting Is and What It Is Not
+              <BookOpen className="w-5 h-5 text-emerald-400" />
+              What Is Intermittent Fasting and How Does It Work?
             </h2>
             <p className="mb-3">
-              Intermittent fasting is not a diet in the traditional sense. It does not tell you what to eat. Instead, it structures when you eat by cycling between defined periods of eating and fasting. Humans have fasted throughout history, whether for religious observance, out of necessity, or simply because food was not always available around the clock. What has changed in recent years is the scientific understanding of why these eating patterns affect the body the way they do, and how to use them intentionally.
+              Intermittent fasting is not a diet — it is an eating pattern. Unlike traditional diets that focus on what you eat, intermittent fasting focuses on when you eat. It cycles between defined periods of eating and periods of voluntary abstinence from food. During fasting windows, you consume no calories, though water, black coffee, and plain tea are generally permitted. During eating windows, you eat normally, ideally focusing on nutrient-dense whole foods.
             </p>
             <p className="mb-3">
-              During a fast, several things happen at the cellular level. Insulin levels drop significantly, which allows your body to access stored fat for energy more efficiently. Human growth hormone levels can increase, supporting muscle preservation and fat metabolism. A cellular cleanup process called autophagy ramps up, where your cells break down and recycle damaged proteins and organelles. These are not fringe claims. They are well-documented metabolic responses that have been studied in peer-reviewed research published in journals like the New England Journal of Medicine and Cell Metabolism.
+              The concept is not new. Humans evolved in environments where food was not constantly available, and our physiology is well-adapted to periods without eating. Every major religious tradition includes some form of fasting, and hunter-gatherer societies naturally experienced cycles of feast and famine. What is new is the growing body of scientific research demonstrating that deliberate fasting periods can produce measurable health benefits beyond simple calorie reduction.
             </p>
             <p className="mb-3">
-              It is equally important to understand what intermittent fasting is not. It is not a magic bullet for weight loss. It is not an excuse to eat junk food during your eating window because you "earned it" by fasting. It is not a form of punishment or extreme restriction. And it is absolutely not appropriate for everyone, a point we will address directly later in this guide. At its core, intermittent fasting is a tool for structuring your eating patterns in a way that aligns with your body's metabolic processes. Like any tool, its value depends entirely on how you use it.
+              When you fast, several things happen at the cellular level. After approximately 12 hours without food, your body begins to shift its primary fuel source from glucose (derived from recently consumed food) to stored body fat. Insulin levels drop significantly, which facilitates fat burning and improves insulin sensitivity. After 16 to 18 hours, a process called autophagy accelerates — this is your body's cellular recycling program, where damaged proteins and organelles are broken down and recycled into new cellular components. Research from Yoshinori Ohsumi, who won the 2016 Nobel Prize in Physiology or Medicine for his work on autophagy, showed that this process is crucial for cellular health and longevity.
             </p>
             <p>
-              The growing body of research in 2026 continues to support that time-restricted eating can improve insulin sensitivity, reduce inflammation markers, and support cognitive function. But the benefits only materialize when fasting is practiced consistently, sensibly, and in a way that fits your actual life. That is what this guide is designed to help you do.
+              Growth hormone levels also increase during fasting — studies show levels can rise by up to 500 percent during a 24-hour fast — which supports muscle preservation and fat metabolism. These hormonal and cellular changes explain why intermittent fasting can produce health benefits that go beyond what simple calorie restriction achieves, even when total calorie intake is identical.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Timer className="w-5 h-5 text-emerald-400" />
-              Popular Protocols: Finding the Right Fasting Schedule
+              <ClipboardList className="w-5 h-5 text-emerald-400" />
+              Every Major IF Protocol Explained
             </h2>
-            <p className="mb-3">
-              The most common intermittent fasting protocol is the 16:8 method, where you fast for 16 hours and eat within an 8-hour window. For most people, this looks like skipping breakfast and eating between noon and 8 PM, though you can shift the window to fit your schedule. The 16:8 approach is widely recommended for beginners because it is the least disruptive to normal life. You are already fasting while you sleep, so you are really just extending that fast by a few hours on either side.
+            <p className="mb-4">
+              There are several established intermittent fasting protocols, each with different fasting-to-eating ratios. The best protocol is the one that fits your lifestyle, preferences, and health goals. Here is a detailed breakdown of each approach:
             </p>
-            <p className="mb-3">
-              The 18:6 method tightens the eating window to six hours, such as eating between 1 PM and 7 PM. This protocol offers a longer fasting period, which may enhance autophagy and fat oxidation, but it requires more planning to ensure you consume adequate nutrition in a shorter window. Many people graduate to 18:6 after a few weeks on 16:8, finding that their appetite naturally adjusts and the shorter window feels comfortable rather than restrictive.
-            </p>
-            <p className="mb-3">
-              The 5:2 method takes a different approach entirely. Instead of daily time restriction, you eat normally five days per week and significantly reduce your calorie intake on two non-consecutive days, typically to around 500 to 600 calories. Some people prefer this approach because it does not require daily discipline. You only need to manage two challenging days per week, and the rest of the time you eat without watching the clock. Research from the University of Manchester has shown the 5:2 method to be comparable to continuous calorie restriction for weight management, with some participants finding it easier to sustain long-term.
-            </p>
+            <div className="space-y-3 mb-4">
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">16:8 Method (Lean Gains)</p>
+                <p className="text-white/50 text-xs">Fast for 16 hours, eat within an 8-hour window. This is the most popular protocol because it is the easiest to adopt — most people simply skip breakfast and eat between noon and 8 PM. The 16-hour fast is long enough to deplete liver glycogen and initiate meaningful fat burning while being short enough that most people can maintain it indefinitely without significant hunger or social disruption. This is the recommended starting point for beginners.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">18:6 Method</p>
+                <p className="text-white/50 text-xs">Fast for 18 hours, eat within a 6-hour window. A natural progression from 16:8 for those who find the shorter fast too easy. Eating between 12 PM and 6 PM or 1 PM and 7 PM are common configurations. The additional two fasting hours push you further into the fat-burning and autophagy zone, though the narrower eating window can make it harder to consume adequate calories and nutrients.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">5:2 Method</p>
+                <p className="text-white/50 text-xs">Eat normally five days per week, dramatically reduce calories (500-600 calories) on two non-consecutive days. Popularized by Dr. Michael Mosley, this approach appeals to people who dislike daily restrictions. The fasting days can be challenging, but knowing you eat normally the next day makes them psychologically manageable. Research from the University of Manchester found the 5:2 method equally effective as continuous calorie restriction for weight loss and insulin sensitivity improvement.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">Eat-Stop-Eat (24-Hour Fast)</p>
+                <p className="text-white/50 text-xs">One or two complete 24-hour fasts per week, eating normally on other days. For example, eat dinner at 7 PM on Monday and do not eat again until 7 PM on Tuesday. This is more advanced and can be difficult for beginners due to hunger and energy fluctuations. However, it maximizes autophagy and growth hormone responses.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">OMAD (One Meal a Day)</p>
+                <p className="text-white/50 text-xs">Eat all daily calories in a single meal, typically within a one-hour window. This is the most extreme common protocol and is not recommended for beginners. It can be difficult to consume adequate nutrients in a single meal, and the extended fasting period can cause significant energy fluctuations. Some experienced fasters find OMAD simplifies their day and sharpens their focus, but it requires careful nutritional planning.</p>
+              </div>
+            </div>
             <p>
-              OMAD, or one meal a day, is the most aggressive common protocol. You consume your entire daily caloric intake in a single meal, typically within a one-hour window. While some experienced fasters thrive on OMAD, it is not recommended for beginners. Eating enough nutrients in one sitting is genuinely difficult, and the prolonged fast can cause blood sugar instability, irritability, and difficulty concentrating if your body is not adapted. If OMAD interests you, work your way there gradually over several months rather than jumping in from day one.
+              For remote workers, the 16:8 method integrates naturally with work schedules. Skipping breakfast eliminates the morning food decision, and your peak fasting hours coincide with your morning focus period. Many practitioners report enhanced mental clarity during fasted morning work sessions, which aligns with the elevated norepinephrine and growth hormone levels that fasting produces.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Utensils className="w-5 h-5 text-emerald-400" />
-              How to Start Safely and What Breaks a Fast
+              <TrendingUp className="w-5 h-5 text-emerald-400" />
+              Evidence-Based Benefits of Intermittent Fasting
             </h2>
             <p className="mb-3">
-              The single most important piece of advice for starting intermittent fasting is to ease into it. If you currently eat from 7 AM to 10 PM, jumping straight to a 16:8 protocol is setting yourself up for a miserable first week. Instead, start by closing your eating window gradually. In the first week, stop eating by 8 PM and delay breakfast to 9 AM. The following week, push breakfast to 10 AM. Continue narrowing your window over two to three weeks until you reach your target fasting duration. This gradual approach gives your hormones, your hunger signals, and your habits time to adjust.
+              The research on intermittent fasting has grown substantially over the past decade, with studies published in major journals including the New England Journal of Medicine, Cell Metabolism, and The Lancet. Here is what the evidence reliably supports:
             </p>
             <p className="mb-3">
-              During your fasting window, you can and should drink water freely. Black coffee and plain tea are generally considered acceptable because they contain negligible calories and do not trigger a significant insulin response. However, adding milk, cream, sugar, or sweeteners to your coffee does break your fast. Even artificial sweeteners are debated, with some research suggesting they can trigger an insulin response despite containing zero calories. If you want the full metabolic benefits of fasting, keep your fasting beverages truly calorie-free.
+              Weight loss and fat loss are the most commonly sought benefits, and the evidence here is strong. A 2020 systematic review in the Annual Review of Nutrition found that intermittent fasting produces weight loss of 3 to 8 percent of body weight over 8 to 12 weeks, comparable to traditional caloric restriction. Importantly, intermittent fasting appears to preferentially reduce visceral fat — the metabolically dangerous fat that surrounds your organs — even when total weight loss is modest. This visceral fat reduction is particularly significant because visceral fat is strongly associated with type 2 diabetes, cardiovascular disease, and chronic inflammation.
             </p>
             <p className="mb-3">
-              The question of what technically breaks a fast depends on your goals. If your primary goal is weight loss, a splash of cream in your coffee is unlikely to derail your results because the caloric impact is minimal. But if you are fasting specifically for autophagy or gut rest, even small amounts of calories can interrupt those processes. A practical rule of thumb is that anything under 10 calories is unlikely to affect your fast meaningfully, but zero calories is the cleanest approach. Bone broth, bulletproof coffee, and diet sodas all fall into a gray area that depends on your individual goals and how strictly you want to adhere to the fast.
+              Insulin sensitivity improvement is one of the most robust findings. Fasting periods allow insulin levels to drop to baseline, which is something that never happens in people who eat frequently throughout the day. A study published in Cell Metabolism showed that time-restricted eating improved insulin sensitivity by 36 percent in men with prediabetes, even without weight loss. For the millions of people with insulin resistance — a precursor to type 2 diabetes — intermittent fasting offers a powerful, medication-free intervention.
+            </p>
+            <p className="mb-3">
+              Brain health benefits are supported by animal research and emerging human studies. Fasting increases the production of brain-derived neurotrophic factor (BDNF), a protein that supports the growth and survival of neurons. Higher BDNF levels are associated with improved learning, memory, and resistance to neurological disease. While large-scale human trials are still underway, the mechanistic evidence is compelling and consistent with the subjective reports of improved mental clarity that many intermittent fasters describe.
             </p>
             <p>
-              Managing hunger during your first few weeks is the biggest hurdle most beginners face. Hunger comes in waves, not as a steadily increasing sensation. When a wave hits, drink a large glass of water, go for a short walk, or simply wait 15 to 20 minutes. The wave will pass. Your body produces ghrelin, the hunger hormone, on a schedule based on when it expects food. As you shift your eating window, ghrelin production adjusts within one to two weeks. The hunger you feel in the first week is largely habitual, not a sign that your body is starving. Stay the course and it will diminish significantly.
+              Inflammation reduction is another well-documented benefit. A study in Nutrition Research found that intermittent fasting reduced markers of systemic inflammation including C-reactive protein, tumor necrosis factor alpha, and interleukin-6. Chronic low-grade inflammation is implicated in virtually every major disease of aging, from cardiovascular disease to cancer to Alzheimer's, making this anti-inflammatory effect potentially significant for long-term health.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Dumbbell className="w-5 h-5 text-emerald-400" />
-              Intermittent Fasting and Exercise Timing
+              <CalendarDays className="w-5 h-5 text-emerald-400" />
+              How to Start: Your Week-by-Week Plan
             </h2>
             <p className="mb-3">
-              One of the most common concerns beginners have is whether they can still exercise while fasting. The short answer is yes, but the timing and type of exercise matter. Fasted training, working out during your fasting window, can enhance fat oxidation because your insulin levels are low and your body is already mobilizing stored fat for fuel. Many people report feeling lighter and more focused during fasted workouts once they adapt to the practice.
+              The most common mistake beginners make is jumping directly into a 16:8 or longer fast. This leads to intense hunger, irritability, poor energy, and rapid abandonment. A gradual approach allows your hormones and habits to adapt, making the transition sustainable rather than miserable.
             </p>
-            <p className="mb-3">
-              However, high-intensity training and heavy strength work generally perform better when you have eaten. If you are doing a demanding weightlifting session or high-intensity interval training, scheduling that workout within your eating window or immediately before you break your fast will give you better performance and recovery. A practical approach is to place your most intense workouts near the start of your eating window so you can refuel shortly afterward with protein and carbohydrates for muscle recovery.
+            <p className="mb-4">
+              Follow this four-week progression:
             </p>
+            <ul className="space-y-2 pl-4 mb-4">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Week 1: 12:12 fast</strong> — stop eating after dinner (say, 8 PM) and do not eat again until 8 AM. This is barely different from most people's normal pattern but establishes the habit of defined eating windows and eliminates late-night snacking, which alone can produce noticeable results</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Week 2: 14:10 fast</strong> — push your first meal to 10 AM while keeping dinner at 8 PM. You are now experiencing a meaningful fasting period but the adjustment from week 1 is only two hours. Drink water and black coffee or tea in the morning to manage any hunger</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Week 3: 15:9 fast</strong> — move your first meal to 11 AM. Most people find that hunger in the morning diminishes significantly by week three as their ghrelin (hunger hormone) patterns adapt to the new schedule. Your body is learning that food arrives at 11, not at 7</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Week 4: 16:8 fast</strong> — first meal at noon, last meal by 8 PM. You have now arrived at the standard 16:8 protocol through a gradual process that has allowed your hormones, habits, and social routines to adapt. Most people find this schedule sustainable indefinitely</span>
+              </li>
+            </ul>
             <p className="mb-3">
-              Low to moderate intensity exercise, such as walking, yoga, light cycling, or stretching, works well in a fasted state and can even help suppress hunger. Many intermittent fasters find that a morning walk or light movement session makes the final hours of their fast easier to manage. The movement distracts from hunger, boosts alertness through increased blood flow, and can even enhance the fat-burning benefits of the fasted state.
+              During the transition, prioritize hydration. Many symptoms attributed to fasting — headaches, fatigue, brain fog — are actually dehydration symptoms. Aim for at least 2 to 3 liters of water during your fasting window. Adding a pinch of salt to your water supports electrolyte balance without breaking your fast. Black coffee and plain green tea are both permitted and provide mild appetite suppression that eases the transition.
             </p>
             <p>
-              If you choose to work out fasted, pay close attention to how you feel during the first two weeks. Dizziness, excessive fatigue, or inability to complete your normal workout volume are signs that your body has not yet adapted or that your overall nutrition needs adjustment. There is no badge of honor for pushing through a dangerous workout. Reduce intensity, shorten the session, or move it closer to your eating window until your body has had time to adapt to the new pattern.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Laptop className="w-5 h-5 text-emerald-400" />
-              Intermittent Fasting for Remote Workers: The Flexible Schedule Advantage
-            </h2>
-            <p className="mb-3">
-              Remote workers have a significant advantage when it comes to intermittent fasting that often goes unrecognized. Without the social pressure of office breakfasts, team lunches, and the break room donut box, you have complete control over your eating environment. There is no awkward conversation about why you are not eating at the 9 AM team breakfast. You simply start your workday with coffee and nobody is the wiser.
-            </p>
-            <p className="mb-3">
-              The flexible schedule that remote work provides also makes it easier to align your eating window with your most productive hours. Many remote workers find that their sharpest focus happens in the morning, during the fasted state. Without the cognitive fog that often follows a heavy breakfast, the morning hours become a window of exceptional clarity and concentration. You can schedule deep work sessions during your fast and use your eating window for less demanding tasks like email, administrative work, or meetings.
-            </p>
-            <p className="mb-3">
-              However, remote work also presents unique challenges for fasting. The kitchen is always ten steps away, making it easy to break your fast impulsively when a difficult task creates stress or boredom. The lack of external structure means there is no lunch bell telling you when to eat and when to stop. Building your own structure is essential. Set specific times for your eating window and treat them the same way you treat meeting times. Use a timer or app to track your fasting window so you have a clear visual reminder of your commitment.
-            </p>
-            <p>
-              For remote workers who travel across time zones, intermittent fasting actually simplifies things. Instead of trying to figure out when to eat local meals while your body clock is still on home time, you can simply fast through the confusion and break your fast when you feel settled. Many digital nomads report that fasting through travel days and jet lag recovery is easier than trying to eat on an unfamiliar schedule. Your body does not care what the local clock says. It cares about consistency in the rhythm of eating and not eating.
+              When you break your fast, resist the urge to eat a massive meal. Start with a moderate portion of protein and healthy fats — eggs, avocado, nuts, or grilled chicken are excellent choices. Protein stabilizes blood sugar and provides sustained satiety, preventing the energy crash that comes from breaking a fast with refined carbohydrates or sugar. Within your eating window, aim for two to three balanced meals that provide adequate protein (at least 0.7 grams per pound of body weight daily), healthy fats, complex carbohydrates, and micronutrients from vegetables and fruits.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-emerald-400" />
-              Common Mistakes and Who Should Avoid Intermittent Fasting
+              Common Mistakes and Who Should NOT Fast
             </h2>
             <p className="mb-3">
-              The most frequent mistake beginners make is compensating for the fast by overeating during their eating window. If you skip breakfast and then consume a 1,500-calorie lunch followed by constant snacking until dinner, you have not gained any metabolic benefit. Intermittent fasting works best when paired with mindful, balanced eating during your window. Focus on whole foods, adequate protein (at least 0.7 grams per pound of body weight), plenty of vegetables, healthy fats, and complex carbohydrates. The quality of what you eat still matters enormously.
+              The most frequent mistake is compensatory overeating during the eating window. If you fast for 16 hours and then consume 3,000 calories in 8 hours — far exceeding your daily needs — you will not lose weight regardless of the fasting schedule. Intermittent fasting creates a favorable hormonal environment for fat loss, but it does not override the fundamental energy balance equation. You still need to eat appropriate portions of quality food during your eating window.
             </p>
             <p className="mb-3">
-              Another common error is being too rigid too soon. Missing your eating window by 30 minutes or having a handful of almonds 15 minutes early does not ruin everything. Perfectionism leads to an all-or-nothing mentality where one small slip derails the entire practice. Consistency over weeks and months matters far more than perfection on any single day. If you hit your target fasting window 80 percent of the time, you are doing well. Social events, travel days, and life in general will sometimes disrupt the schedule. Adapt and resume rather than abandon the practice.
+              Another common error is excessive exercise during the adaptation period. While fasted training can be beneficial once you are adapted, intense workouts during your first two weeks of fasting often lead to hypoglycemia, excessive fatigue, and discouragement. Keep exercise moderate during the transition and gradually increase intensity as your body adapts to using stored fat as fuel.
             </p>
             <p className="mb-3">
-              Not drinking enough water is a surprisingly common problem. When you stop eating for extended periods, you lose a significant source of hydration since many foods contain water. Dehydration causes headaches, fatigue, and irritability that people often misattribute to the fast itself. Aim for at least eight glasses of water during your fasting window, more if you are exercising or in a warm climate. Adding a pinch of salt to your water can help with electrolyte balance during longer fasts.
+              Obsessing over the exact minute of your eating window is counterproductive. If your window is noon to 8 PM and you feel genuinely hungry at 11:30 AM, eating 30 minutes early is not a failure. The benefits of intermittent fasting come from the general pattern over weeks and months, not from militant adherence to exact times. Flexibility prevents the all-or-nothing thinking that causes people to abandon the practice entirely after a single imperfect day.
             </p>
+            <p className="mb-4">
+              Intermittent fasting is not appropriate for everyone. The following groups should avoid IF or consult a physician before starting:
+            </p>
+            <ul className="space-y-2 pl-4 mb-4">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Pregnant or breastfeeding women</strong> — caloric restriction and extended fasting can impair fetal development and milk production; nutrient timing is critical during these periods</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">People with a history of eating disorders</strong> — the restriction framework of IF can trigger or exacerbate disordered eating patterns including binge-restrict cycles</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Type 1 diabetics or those on insulin</strong> — fasting while on insulin or certain diabetes medications can cause dangerous hypoglycemia; medical supervision is essential</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Children and adolescents</strong> — growing bodies need consistent nutrient availability; fasting is not appropriate for anyone under 18</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">People who are underweight</strong> — if your BMI is below 18.5, fasting could further compromise your nutritional status and should be avoided</span>
+              </li>
+            </ul>
             <p>
-              Intermittent fasting is not appropriate for everyone. Pregnant or breastfeeding women should not fast. People with a history of eating disorders should approach fasting with extreme caution and ideally under professional guidance, as the restriction framework can trigger disordered patterns. Those with type 1 diabetes or who take medications that require food should consult their physician before starting. Children and teenagers who are still growing should not practice caloric restriction or time-restricted eating. And if you are underweight or recovering from illness, fasting can be actively harmful. When in doubt, talk to a healthcare provider who understands both your medical history and the current research on intermittent fasting before beginning any protocol.
+              If you are taking any medication, consult your physician before starting intermittent fasting. Some medications must be taken with food, and others (particularly blood sugar and blood pressure medications) may need dose adjustments as fasting changes your metabolic parameters.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-emerald-400" />
+              Frequently Asked Questions
+            </h2>
+            <div className="space-y-3 mb-4">
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">Does coffee break my fast?</p>
+                <p className="text-white/50 text-xs">Black coffee does not break your fast and may actually enhance the benefits by boosting fat oxidation and autophagy. However, adding cream, sugar, milk, or flavored creamers introduces calories that trigger an insulin response and technically break the fast. If you must add something, a tiny splash of heavy cream (under 10 calories) is unlikely to significantly impact your fasting state, but purists stick to black.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">Will I lose muscle while fasting?</p>
+                <p className="text-white/50 text-xs">Short fasting periods of 16 to 24 hours do not cause significant muscle loss, especially when combined with resistance training and adequate protein intake during your eating window. The increase in growth hormone during fasting actually helps preserve muscle mass. Muscle loss becomes a concern only with extended fasts (48 hours or more) or chronic caloric deficiency. Aim for at least 0.7 grams of protein per pound of body weight daily to maintain muscle.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">Can I exercise while fasting?</p>
+                <p className="text-white/50 text-xs">Yes, and many people prefer it. Fasted training can enhance fat oxidation and improve metabolic flexibility. Light to moderate exercise — walking, yoga, moderate cardio — is well-tolerated during fasting. For intense strength training, some people perform better fasted while others prefer eating first. Experiment to find what works for your body. If you train fasted, consume protein within two hours post-workout for optimal muscle recovery.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">Is intermittent fasting different for women?</p>
+                <p className="text-white/50 text-xs">Some research suggests that women may be more sensitive to caloric restriction signals, which can affect hormonal balance. Some women report menstrual irregularities with aggressive fasting protocols. A more moderate approach — 14:10 rather than 16:8, or fasting only five days per week — is often recommended as a starting point for women. Pay attention to your menstrual cycle, energy levels, and mood as indicators of whether your fasting protocol is appropriate.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold mb-1">How long does it take to see results?</p>
+                <p className="text-white/50 text-xs">Most people notice improved energy and mental clarity within the first one to two weeks. Measurable weight loss typically begins by week two or three. Significant body composition changes — visible fat loss and improved muscle definition — usually become apparent after six to eight weeks of consistent practice. Metabolic improvements such as better insulin sensitivity can be measured within four weeks but may take three to six months to fully manifest.</p>
+              </div>
+            </div>
+            <p>
+              The most important principle in intermittent fasting is sustainability. A protocol that you follow consistently for six months will produce far better results than an aggressive protocol that you abandon after two weeks. Start conservatively, listen to your body, and adjust based on how you feel and the results you observe. Intermittent fasting should enhance your life — if it makes you miserable, irritable, or obsessive about food, it is either the wrong protocol or the wrong approach for you entirely.
             </p>
           </section>
 
           <section className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-2xl p-6 border border-white/10">
-            <h2 className="text-lg font-bold text-white mb-2">Track Your Fasting Windows with NomadBalance</h2>
+            <h2 className="text-lg font-bold text-white mb-2">Support Your Fasting Schedule with NomadBalance</h2>
             <p className="mb-4">
-              NomadBalance includes a built-in fasting tracker designed for remote workers and digital nomads. Set your fasting protocol, receive gentle reminders when your eating window opens and closes, log how you feel during each fast, and see your consistency streaks over time. Pair it with energy and focus tracking to discover your optimal fasting schedule.
+              NomadBalance helps you maintain healthy eating rhythms alongside your work schedule. Set hydration reminders during your fasting window, schedule mindful eating breaks during your eating window, and track how your nutrition timing impacts your focus and energy throughout the workday.
             </p>
             <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white font-medium text-sm transition-colors">
-              Start tracking for free
+              Get started for free
             </Link>
           </section>
         </div>
