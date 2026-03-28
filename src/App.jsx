@@ -21,6 +21,35 @@ import ContactPage from '@/pages/ContactPage';
 import PomodoroGuide from '@/pages/guides/PomodoroGuide';
 import FastingGuide from '@/pages/guides/FastingGuide';
 import DeskExercisesGuide from '@/pages/guides/DeskExercisesGuide';
+// Blog articles
+import DeepWorkRemote from '@/pages/blog/DeepWorkRemote';
+import BinauralBeatsProductivity from '@/pages/blog/BinauralBeatsProductivity';
+import ManagingDistractions from '@/pages/blog/ManagingDistractions';
+import UltradianRhythms from '@/pages/blog/UltradianRhythms';
+import ContextSwitching from '@/pages/blog/ContextSwitching';
+import BloodSugarFocus from '@/pages/blog/BloodSugarFocus';
+import MealTimingRemote from '@/pages/blog/MealTimingRemote';
+import CaffeineStrategy from '@/pages/blog/CaffeineStrategy';
+import HydrationPerformance from '@/pages/blog/HydrationPerformance';
+import SittingDisease from '@/pages/blog/SittingDisease';
+import ErgonomicSetup from '@/pages/blog/ErgonomicSetup';
+import MicroExercises from '@/pages/blog/MicroExercises';
+import PostureCorrection from '@/pages/blog/PostureCorrection';
+import DailyPlanning from '@/pages/blog/DailyPlanning';
+import TaskPrioritization from '@/pages/blog/TaskPrioritization';
+import EndOfDayRitual from '@/pages/blog/EndOfDayRitual';
+import PreventingBurnout from '@/pages/blog/PreventingBurnout';
+import WorkLifeBalance from '@/pages/blog/WorkLifeBalance';
+// SEO Power articles
+import MorningRoutineRemoteWorkers from '@/pages/blog/MorningRoutineRemoteWorkers';
+import RemoteWorkProductivityTips from '@/pages/blog/RemoteWorkProductivityTips';
+import FocusMusicWorkProductivity from '@/pages/blog/FocusMusicWorkProductivity';
+import PomodoroVsTimeBlocking from '@/pages/blog/PomodoroVsTimeBlocking';
+import BestAppsRemoteWorkers from '@/pages/blog/BestAppsRemoteWorkers';
+import BackPainSittingAllDay from '@/pages/blog/BackPainSittingAllDay';
+import IntermittentFastingBeginners from '@/pages/blog/IntermittentFastingBeginners';
+import EyeStrainComputerScreen from '@/pages/blog/EyeStrainComputerScreen';
+import StayMotivatedWorkingFromHome from '@/pages/blog/StayMotivatedWorkingFromHome';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -70,6 +99,34 @@ const AppRoutes = () => {
         <Route path="/guide/pomodoro-focus-timer" element={<PomodoroGuide />} />
         <Route path="/guide/intermittent-fasting-for-professionals" element={<FastingGuide />} />
         <Route path="/guide/desk-exercises-remote-workers" element={<DeskExercisesGuide />} />
+        {/* Blog articles */}
+        <Route path="/blog/deep-work-remote-environment" element={<DeepWorkRemote />} />
+        <Route path="/blog/binaural-beats-productivity" element={<BinauralBeatsProductivity />} />
+        <Route path="/blog/managing-distractions-work-from-home" element={<ManagingDistractions />} />
+        <Route path="/blog/ultradian-rhythms-productivity" element={<UltradianRhythms />} />
+        <Route path="/blog/context-switching-hidden-cost" element={<ContextSwitching />} />
+        <Route path="/blog/blood-sugar-focus-connection" element={<BloodSugarFocus />} />
+        <Route path="/blog/meal-timing-remote-workers" element={<MealTimingRemote />} />
+        <Route path="/blog/caffeine-strategy-productivity" element={<CaffeineStrategy />} />
+        <Route path="/blog/hydration-cognitive-performance" element={<HydrationPerformance />} />
+        <Route path="/blog/sitting-disease-remote-work" element={<SittingDisease />} />
+        <Route path="/blog/ergonomic-home-office-setup" element={<ErgonomicSetup />} />
+        <Route path="/blog/micro-exercises-desk-workers" element={<MicroExercises />} />
+        <Route path="/blog/posture-correction-guide" element={<PostureCorrection />} />
+        <Route path="/blog/daily-planning-remote-productivity" element={<DailyPlanning />} />
+        <Route path="/blog/task-prioritization-methods" element={<TaskPrioritization />} />
+        <Route path="/blog/end-of-day-ritual-remote-work" element={<EndOfDayRitual />} />
+        <Route path="/blog/preventing-burnout-remote-workers" element={<PreventingBurnout />} />
+        <Route path="/blog/work-life-balance-digital-nomads" element={<WorkLifeBalance />} />
+        <Route path="/blog/morning-routine-remote-workers" element={<MorningRoutineRemoteWorkers />} />
+        <Route path="/blog/remote-work-productivity-tips" element={<RemoteWorkProductivityTips />} />
+        <Route path="/blog/focus-music-work-productivity" element={<FocusMusicWorkProductivity />} />
+        <Route path="/blog/pomodoro-vs-time-blocking" element={<PomodoroVsTimeBlocking />} />
+        <Route path="/blog/best-apps-remote-workers" element={<BestAppsRemoteWorkers />} />
+        <Route path="/blog/back-pain-sitting-all-day" element={<BackPainSittingAllDay />} />
+        <Route path="/blog/intermittent-fasting-beginners" element={<IntermittentFastingBeginners />} />
+        <Route path="/blog/eye-strain-computer-screen" element={<EyeStrainComputerScreen />} />
+        <Route path="/blog/stay-motivated-working-from-home" element={<StayMotivatedWorkingFromHome />} />
         {/* Redirect any authenticated route to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -98,6 +155,34 @@ const AppRoutes = () => {
       <Route path="/guide/pomodoro-focus-timer" element={<PomodoroGuide />} />
       <Route path="/guide/intermittent-fasting-for-professionals" element={<FastingGuide />} />
       <Route path="/guide/desk-exercises-remote-workers" element={<DeskExercisesGuide />} />
+      {/* Blog articles */}
+      <Route path="/blog/deep-work-remote-environment" element={<DeepWorkRemote />} />
+      <Route path="/blog/binaural-beats-productivity" element={<BinauralBeatsProductivity />} />
+      <Route path="/blog/managing-distractions-work-from-home" element={<ManagingDistractions />} />
+      <Route path="/blog/ultradian-rhythms-productivity" element={<UltradianRhythms />} />
+      <Route path="/blog/context-switching-hidden-cost" element={<ContextSwitching />} />
+      <Route path="/blog/blood-sugar-focus-connection" element={<BloodSugarFocus />} />
+      <Route path="/blog/meal-timing-remote-workers" element={<MealTimingRemote />} />
+      <Route path="/blog/caffeine-strategy-productivity" element={<CaffeineStrategy />} />
+      <Route path="/blog/hydration-cognitive-performance" element={<HydrationPerformance />} />
+      <Route path="/blog/sitting-disease-remote-work" element={<SittingDisease />} />
+      <Route path="/blog/ergonomic-home-office-setup" element={<ErgonomicSetup />} />
+      <Route path="/blog/micro-exercises-desk-workers" element={<MicroExercises />} />
+      <Route path="/blog/posture-correction-guide" element={<PostureCorrection />} />
+      <Route path="/blog/daily-planning-remote-productivity" element={<DailyPlanning />} />
+      <Route path="/blog/task-prioritization-methods" element={<TaskPrioritization />} />
+      <Route path="/blog/end-of-day-ritual-remote-work" element={<EndOfDayRitual />} />
+      <Route path="/blog/preventing-burnout-remote-workers" element={<PreventingBurnout />} />
+      <Route path="/blog/work-life-balance-digital-nomads" element={<WorkLifeBalance />} />
+      <Route path="/blog/morning-routine-remote-workers" element={<MorningRoutineRemoteWorkers />} />
+      <Route path="/blog/remote-work-productivity-tips" element={<RemoteWorkProductivityTips />} />
+      <Route path="/blog/focus-music-work-productivity" element={<FocusMusicWorkProductivity />} />
+      <Route path="/blog/pomodoro-vs-time-blocking" element={<PomodoroVsTimeBlocking />} />
+      <Route path="/blog/best-apps-remote-workers" element={<BestAppsRemoteWorkers />} />
+      <Route path="/blog/back-pain-sitting-all-day" element={<BackPainSittingAllDay />} />
+      <Route path="/blog/intermittent-fasting-beginners" element={<IntermittentFastingBeginners />} />
+      <Route path="/blog/eye-strain-computer-screen" element={<EyeStrainComputerScreen />} />
+      <Route path="/blog/stay-motivated-working-from-home" element={<StayMotivatedWorkingFromHome />} />
       {Object.entries(Pages).map(([path, Page]) => (
         <Route
           key={path}
