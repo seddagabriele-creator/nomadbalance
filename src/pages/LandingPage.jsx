@@ -129,6 +129,9 @@ export default function LandingPage() {
             <span className="text-lg font-bold tracking-tight">NomadBalance</span>
           </div>
           <div className="flex items-center gap-3">
+            <Link to="/blog" className="text-sm text-white/60 hover:text-white transition-colors px-3 py-2">
+              Blog
+            </Link>
             <Link to="/login" className="text-sm text-white/60 hover:text-white transition-colors px-3 py-2">
               Log in
             </Link>
@@ -295,7 +298,13 @@ export default function LandingPage() {
               </div>
               <span className="text-sm font-semibold text-white/60">NomadBalance</span>
             </div>
-            <div className="flex items-center gap-4 text-xs text-white/40">
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-white/40">
+              <Link to="/blog" className="hover:text-white/70 transition-colors">Blog</Link>
+              <span className="text-white/20">|</span>
+              <Link to="/about" className="hover:text-white/70 transition-colors">About</Link>
+              <span className="text-white/20">|</span>
+              <Link to="/contact" className="hover:text-white/70 transition-colors">Contact</Link>
+              <span className="text-white/20">|</span>
               <Link to="/privacy" className="hover:text-white/70 transition-colors">Privacy Policy</Link>
               <span className="text-white/20">|</span>
               <Link to="/cookies" className="hover:text-white/70 transition-colors">Cookie Policy</Link>
