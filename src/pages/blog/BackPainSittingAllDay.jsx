@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Bone, Activity, StretchHorizontal, ShieldCheck, Monitor, Timer, Stethoscope } from "lucide-react";
 
@@ -168,6 +169,9 @@ export default function BackPainSittingAllDay() {
               Start your recovery plan
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="back-pain-sitting-all-day" />
         </div>
       </article>
     </div>

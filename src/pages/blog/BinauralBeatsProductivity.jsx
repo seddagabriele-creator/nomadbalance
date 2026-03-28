@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Headphones, Brain, Activity, Volume2, Settings, CheckCircle, Lightbulb } from "lucide-react";
 
@@ -181,6 +182,9 @@ export default function BinauralBeatsProductivity() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="binaural-beats-productivity" />
         </div>
       </article>
     </div>

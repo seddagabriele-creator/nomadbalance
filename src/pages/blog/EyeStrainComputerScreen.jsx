@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Eye, MonitorSmartphone, Sun, Lightbulb, Timer, Stethoscope, CheckCircle } from "lucide-react";
 
@@ -193,6 +194,9 @@ export default function EyeStrainComputerScreen() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="eye-strain-computer-screen" />
         </div>
       </article>
     </div>

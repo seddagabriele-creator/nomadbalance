@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Brain, Shield, Clock, Layers, Target, CheckCircle, Lightbulb } from "lucide-react";
 
@@ -168,6 +169,9 @@ export default function DeepWorkRemote() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="deep-work-remote-environment" />
         </div>
       </article>
     </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, AlertTriangle, Activity, Heart, Flame, Monitor, Footprints, CheckCircle } from "lucide-react";
 
@@ -175,6 +176,9 @@ export default function SittingDisease() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="sitting-disease-remote-work" />
         </div>
       </article>
     </div>

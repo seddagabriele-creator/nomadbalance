@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, LayoutGrid, MessageCircleOff, Battery, Brain, Music, Coffee, CalendarCheck, RefreshCw, Smartphone, Users, Trophy } from "lucide-react";
 
@@ -202,6 +203,9 @@ export default function RemoteWorkProductivityTips() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="remote-work-productivity-tips" />
         </div>
       </article>
     </div>

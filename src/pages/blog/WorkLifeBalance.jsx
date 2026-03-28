@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Globe, Clock, Shield, Users, Heart, Sunset } from "lucide-react";
 
@@ -133,6 +134,9 @@ export default function WorkLifeBalance() {
               Build your portable routine
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="work-life-balance-digital-nomads" />
         </div>
       </article>
     </div>

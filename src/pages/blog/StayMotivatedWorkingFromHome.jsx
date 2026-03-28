@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Brain, Flame, Target, Users, Palette, Trophy, CheckCircle } from "lucide-react";
 
@@ -177,6 +178,9 @@ export default function StayMotivatedWorkingFromHome() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="stay-motivated-working-from-home" />
         </div>
       </article>
     </div>

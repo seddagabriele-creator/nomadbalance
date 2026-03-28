@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Sunrise, ListChecks, Clock, BarChart3, Battery, CheckCircle, FileText } from "lucide-react";
 
@@ -171,6 +172,9 @@ export default function DailyPlanning() {
               Start planning smarter
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="daily-planning-remote-productivity" />
         </div>
       </article>
     </div>

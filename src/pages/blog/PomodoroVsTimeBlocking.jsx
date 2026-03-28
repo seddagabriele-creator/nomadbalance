@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, Timer, LayoutGrid, Scale, Lightbulb, FlaskConical, CheckCircle } from "lucide-react";
 
@@ -189,6 +190,9 @@ export default function PomodoroVsTimeBlocking() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="pomodoro-vs-time-blocking" />
         </div>
       </article>
     </div>

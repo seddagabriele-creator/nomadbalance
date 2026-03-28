@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Droplets, Brain, AlertTriangle, Target, Bell, Beaker, CheckCircle } from "lucide-react";
 
@@ -194,6 +195,9 @@ export default function HydrationPerformance() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="hydration-cognitive-performance" />
         </div>
       </article>
     </div>

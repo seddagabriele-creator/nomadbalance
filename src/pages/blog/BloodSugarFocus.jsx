@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Brain, Apple, TrendingDown, Utensils, Leaf, Clock, CheckCircle } from "lucide-react";
 
@@ -181,6 +182,9 @@ export default function BloodSugarFocus() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="blood-sugar-focus-connection" />
         </div>
       </article>
     </div>

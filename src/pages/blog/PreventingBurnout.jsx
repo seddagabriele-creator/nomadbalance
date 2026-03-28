@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Flame, ThermometerSun, Search, Wifi, HeartPulse, Shield, CheckCircle } from "lucide-react";
 
@@ -185,6 +186,9 @@ export default function PreventingBurnout() {
               Build sustainable habits
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="preventing-burnout-remote-workers" />
         </div>
       </article>
     </div>

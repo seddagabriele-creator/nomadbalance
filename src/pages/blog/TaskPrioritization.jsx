@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Grid3X3, Layers, SortDesc, PieChart, ShieldAlert, XCircle, CheckCircle, Brain } from "lucide-react";
 
@@ -201,6 +202,9 @@ export default function TaskPrioritization() {
               Start prioritizing better
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="task-prioritization-methods" />
         </div>
       </article>
     </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Shuffle, Brain, Clock, Layers, MessageSquare, CheckCircle, Target } from "lucide-react";
 
@@ -173,6 +174,9 @@ export default function ContextSwitching() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="context-switching-hidden-cost" />
         </div>
       </article>
     </div>

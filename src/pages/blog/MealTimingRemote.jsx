@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, Sun, Utensils, Calendar, Brain, CheckCircle, AlertTriangle } from "lucide-react";
 
@@ -184,6 +185,9 @@ export default function MealTimingRemote() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="meal-timing-remote-workers" />
         </div>
       </article>
     </div>

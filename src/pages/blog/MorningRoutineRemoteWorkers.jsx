@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Sun, AlarmClock, Footprints, Utensils, ClipboardList, AlertTriangle, Plane } from "lucide-react";
 
@@ -149,6 +150,9 @@ export default function MorningRoutineRemoteWorkers() {
               Start your morning routine
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="morning-routine-remote-workers" />
         </div>
       </article>
     </div>

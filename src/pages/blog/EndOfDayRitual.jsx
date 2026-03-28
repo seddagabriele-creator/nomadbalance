@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Sunset, AlertOctagon, ClipboardList, Footprints, Laptop, Moon, CheckCircle } from "lucide-react";
 
@@ -177,6 +178,9 @@ export default function EndOfDayRitual() {
               Reclaim your evenings
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="end-of-day-ritual-remote-work" />
         </div>
       </article>
     </div>

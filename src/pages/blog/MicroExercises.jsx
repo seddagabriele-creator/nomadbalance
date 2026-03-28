@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Activity, RotateCcw, Timer, BarChart3, CalendarClock, Heart } from "lucide-react";
 
@@ -149,6 +150,9 @@ export default function MicroExercises() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="micro-exercises-desk-workers" />
         </div>
       </article>
     </div>

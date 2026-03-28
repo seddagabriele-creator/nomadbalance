@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, Brain, Activity, TrendingUp, Battery, CheckCircle, Search } from "lucide-react";
 
@@ -171,6 +172,9 @@ export default function UltradianRhythms() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="ultradian-rhythms-productivity" />
         </div>
       </article>
     </div>

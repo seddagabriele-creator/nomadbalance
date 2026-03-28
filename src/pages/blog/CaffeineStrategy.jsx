@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Coffee, Clock, Brain, AlertTriangle, TrendingUp, RefreshCw, CheckCircle } from "lucide-react";
 
@@ -185,6 +186,9 @@ export default function CaffeineStrategy() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="caffeine-strategy-productivity" />
         </div>
       </article>
     </div>

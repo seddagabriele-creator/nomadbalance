@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Monitor, AlertTriangle, Search, Dumbbell, SlidersHorizontal, Eye, CheckCircle, RefreshCw } from "lucide-react";
 
@@ -175,6 +176,9 @@ export default function PostureCorrection() {
               Start your posture reset
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="posture-correction-guide" />
         </div>
       </article>
     </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import RelatedArticles from "@/components/RelatedArticles";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Headphones, Brain, Music, VolumeX, ListMusic, MessageSquareOff, CheckCircle } from "lucide-react";
 
@@ -152,6 +153,9 @@ export default function FocusMusicWorkProductivity() {
               Get started for free
             </Link>
           </section>
+        
+
+          <RelatedArticles currentSlug="focus-music-work-productivity" />
         </div>
       </article>
     </div>
