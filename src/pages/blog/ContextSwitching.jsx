@@ -12,9 +12,9 @@ export default function ContextSwitching() {
           </div>
           <span className="text-lg font-bold tracking-tight">NomadBalance</span>
         </Link>
-        <Link to="/" className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors">
+        <Link to="/blog" className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          Back to home
+          Back to blog
         </Link>
       </nav>
 
