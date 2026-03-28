@@ -28,29 +28,28 @@ export function TimerProvider({ children }) {
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
   useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current);
-            if (!isBreakRef.current) {
-              onSessionCompleteRef.current?.();
-              setIsBreak(true);
-              setIsRunning(true);
-              audioManager.pause();
-              return breakMinutesRef.current * 60;
-            } else {
-              setIsBreak(false);
-              setIsRunning(false);
-              return workMinutesRef.current * 60;
-            }
+    if (!isRunning) return;
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current);
+          if (!isBreakRef.current) {
+            onSessionCompleteRef.current?.();
+            setIsBreak(true);
+            setIsRunning(true);
+            audioManager.pause();
+            return breakMinutesRef.current * 60;
+          } else {
+            setIsBreak(false);
+            setIsRunning(false);
+            return workMinutesRef.current * 60;
           }
-          return prev - 1;
-        });
-      }, ONE_SECOND_MS);
-    }
+        }
+        return prev - 1;
+      });
+    }, ONE_SECOND_MS);
     return () => clearInterval(intervalRef.current);
-  }, [isRunning, timeLeft]);
+  }, [isRunning]);
 
   useEffect(() => {
     if (isRunning && !isBreak) {

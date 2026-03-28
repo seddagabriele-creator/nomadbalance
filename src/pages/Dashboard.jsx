@@ -39,10 +39,20 @@ const toMinutes = (t) => {
   return h * 60 + m;
 };
 
+// Shared AudioContext singleton for notification chimes
+let _chimeCtx = null;
+function getChimeContext() {
+  if (!_chimeCtx || _chimeCtx.state === "closed") {
+    _chimeCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return _chimeCtx;
+}
+
 // Play a gentle two-tone chime for notifications
 function playNotificationChime() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getChimeContext();
+    if (ctx.state === "suspended") ctx.resume();
     // First tone
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
@@ -53,6 +63,8 @@ function playNotificationChime() {
     gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
     osc1.start(ctx.currentTime);
     osc1.stop(ctx.currentTime + 0.3);
+    // Disconnect after sound ends
+    setTimeout(() => { osc1.disconnect(); gain1.disconnect(); }, 400);
     // Second tone (higher)
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
@@ -64,6 +76,8 @@ function playNotificationChime() {
     gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
     osc2.start(ctx.currentTime + 0.15);
     osc2.stop(ctx.currentTime + 0.6);
+    // Disconnect after sound ends
+    setTimeout(() => { osc2.disconnect(); gain2.disconnect(); }, 700);
   } catch (e) {
     // Audio not available
   }
@@ -115,7 +129,7 @@ export default function Dashboard() {
     queryFn: () => userSettingsService.list(),
   });
 
-  const userSettings = settings[0] || {};
+  const userSettings = React.useMemo(() => settings[0] || {}, [settings]);
 
   // Sync onboarding state from backend: if backend says completed, dismiss onboarding and sync localStorage
   useEffect(() => {
@@ -288,7 +302,7 @@ export default function Dashboard() {
     try { checkBreaks(); } catch (e) { console.error("Break check error:", e); }
     breakCheckRef.current = setInterval(() => { try { checkBreaks(); } catch (e) { console.error("Break check error:", e); } }, ONE_MINUTE_MS);
     return () => clearInterval(breakCheckRef.current);
-  }, [session, activeBreakNotification, overdueBreaks, userSettings, exercises]);
+  }, [session?.id, session?.status, session?.meeting_mode, session?.body_break_schedule, activeBreakNotification, overdueBreaks, userSettings?.notifications_enabled, userSettings?.notification_start_time, userSettings?.notification_end_time, exercises, isAway]);
 
 
   const activeExercise = React.useMemo(() => {
@@ -1127,7 +1141,7 @@ export default function Dashboard() {
           {isLoading ? (
             <>
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="h-[170px] rounded-2xl bg-white/5 border border-white/10 animate-pulse p-5">
+                <div key={i} className="min-h-[170px] rounded-2xl bg-white/5 border border-white/10 animate-pulse p-5">
                   <div className="w-8 h-8 rounded-xl bg-white/10 mb-3" />
                   <div className="w-20 h-3 rounded bg-white/10 mb-2" />
                   <div className="w-28 h-2 rounded bg-white/5" />
@@ -1136,16 +1150,16 @@ export default function Dashboard() {
             </>
           ) : (
             <>
-              <Link to={createPageUrl("Fuel")} className="h-[170px]">
+              <Link to={createPageUrl("Fuel")} className="min-h-[170px]">
                 <FuelCard session={session} onLogMeal={handleQuickLogMeal} />
               </Link>
-              <Link to={createPageUrl("Flow")} className="h-[170px]">
+              <Link to={createPageUrl("Flow")} className="min-h-[170px]">
                 <FlowCard session={session} onSessionComplete={handleSessionComplete} onSoundChange={handleSoundChange} />
               </Link>
-              <Link to={createPageUrl("Body")} className="h-[170px]">
+              <Link to={createPageUrl("Body")} className="min-h-[170px]">
                 <BodyCard session={session} onSwapExercise={handleQuickSwapExercise} />
               </Link>
-              <Link to={createPageUrl("Journal")} className="h-[170px]">
+              <Link to={createPageUrl("Journal")} className="min-h-[170px]">
                 <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />
               </Link>
             </>

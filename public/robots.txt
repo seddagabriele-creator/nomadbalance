@@ -1,0 +1,24 @@
+# NomadBalance robots.txt
+User-agent: *
+
+# Allow public content pages
+Allow: /
+Allow: /privacy
+Allow: /cookies
+Allow: /terms
+Allow: /guide/
+
+# Block app routes (behind authentication)
+Disallow: /dashboard
+Disallow: /flow
+Disallow: /fuel
+Disallow: /body
+Disallow: /journal
+Disallow: /reports
+Disallow: /settings
+Disallow: /login
+Disallow: /auth/
+Disallow: /update-password
+
+# Sitemap
+Sitemap: https://nomadbalance.app/sitemap.xml
