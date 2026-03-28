@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, Eye, Monitor, Sun, Lightbulb, Clock, Glasses } from "lucide-react";
+import { ArrowLeft, Zap, Eye, MonitorSmartphone, Sun, Lightbulb, Timer, Stethoscope, CheckCircle } from "lucide-react";
 
 export default function EyeStrainComputerScreen() {
   return (
@@ -21,130 +21,171 @@ export default function EyeStrainComputerScreen() {
       <article className="max-w-3xl mx-auto px-4 py-10 pb-20">
         <div className="flex items-center gap-2 mb-4">
           <span className="px-2.5 py-1 rounded-full bg-orange-500/20 text-orange-400 text-xs font-medium">Movement</span>
-          <span className="text-white/30 text-xs">7 min read</span>
+          <span className="text-white/30 text-xs">8 min read</span>
         </div>
         <h1 className="text-3xl font-extrabold mb-3">Eye Strain From Computer Screens: Prevention and Relief for Remote Workers</h1>
-        <p className="text-white/40 text-sm mb-10">If your eyes feel dry, tired, or blurry by the end of a workday, you are not alone. Digital eye strain affects the majority of remote workers, but the right habits and setup can eliminate it almost entirely.</p>
+        <p className="text-white/40 text-sm mb-10">An evidence-based guide to understanding digital eye strain, the 20-20-20 rule, blue light facts, and practical steps to protect your vision during long screen days.</p>
 
         <div className="space-y-10 text-white/70 text-sm leading-relaxed">
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Eye className="w-5 h-5 text-orange-400" />
-              What Is Digital Eye Strain and Why Remote Workers Are Hit Hardest
+              Understanding Digital Eye Strain
             </h2>
             <p className="mb-3">
-              Digital eye strain, clinically known as computer vision syndrome, is a group of eye and vision-related problems that result from prolonged screen use. The American Optometric Association estimates that the condition affects roughly 65 to 90 percent of computer users, with symptoms intensifying in proportion to daily screen time. For remote workers who routinely spend eight to twelve hours in front of monitors, laptops, and phones, digital eye strain is not a possibility but a near certainty unless deliberate preventive measures are in place.
+              Digital eye strain, also called computer vision syndrome, affects an estimated 50 to 90 percent of people who work at screens for more than two hours daily. The American Optometric Association classifies it as a group of eye and vision-related problems that result from prolonged computer, tablet, phone, and e-reader use. The symptoms are familiar to almost every remote worker: dry eyes, headaches, blurred vision, neck and shoulder pain, and a general sense of visual fatigue that worsens as the day progresses.
             </p>
             <p className="mb-3">
-              The root cause is straightforward. When you stare at a screen, your eyes must constantly focus and refocus on pixelated characters that lack the sharp contrast of printed text. Your eye muscles work harder to maintain clarity at a fixed distance for hours at a time. Meanwhile, your blink rate drops dramatically. Normal blink rate is about 15 to 20 times per minute, but studies show that screen users blink only 5 to 7 times per minute. Each missed blink means less moisture spread across the corneal surface, leading to dryness, irritation, and that gritty feeling by mid-afternoon.
+              The underlying cause is straightforward but often misunderstood. When you focus on a screen, your eyes must continuously maintain a fixed focal distance — typically 50 to 70 centimeters — for hours at a time. Unlike natural visual tasks that involve constantly shifting focus between near and far objects, screen work locks your ciliary muscles (the tiny muscles that control your lens shape) in a sustained contracted state. This sustained contraction creates fatigue in the same way that holding a weight with an extended arm creates muscle fatigue. The muscles are not damaged — they are exhausted from continuous static effort.
             </p>
             <p className="mb-3">
-              The symptoms of computer vision syndrome extend beyond the eyes themselves. Headaches, particularly those concentrated around the forehead and temples, are one of the most common complaints. Neck and shoulder pain frequently accompany eye strain because people unconsciously lean forward or tilt their heads to compensate for visual discomfort. Blurred vision, double vision, and difficulty refocusing when looking away from the screen are all hallmarks of the condition.
+              Compounding this muscular fatigue is a significant reduction in blink rate. Research published in the journal Optometry and Vision Science found that people blink an average of 15 to 20 times per minute during normal conversation but only 3 to 4 times per minute during concentrated screen use. Each blink refreshes the tear film that protects and lubricates the corneal surface. When blink rate drops by 75 percent, the tear film breaks down between blinks, leaving the cornea exposed to air. This exposure causes the stinging, burning, dryness, and grittiness that millions of screen workers experience daily.
             </p>
             <p>
-              Remote workers face compounded risk because the boundaries between work screens and personal screens have dissolved. In a traditional office, you might leave your computer at 6 PM and spend the evening away from monitors. Working from home, many people close their laptop and immediately open a tablet or phone. The cumulative screen exposure can easily reach 14 or more hours per day, giving your eyes almost no recovery time during waking hours. Understanding the mechanics of digital eye strain is the first step toward systematically preventing it.
+              The symptoms are typically worse for remote workers than office workers because home environments often lack the ergonomic optimization of professional workspaces. Laptop screens are smaller and positioned lower, forcing users into forward head posture that compounds neck strain with visual strain. Home lighting is rarely optimized for screen work, and the absence of commutes and in-person meetings means the eyes get fewer natural breaks from near-focus tasks throughout the day.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-400" />
-              The 20-20-20 Rule: Simple Science That Actually Works
+              <Timer className="w-5 h-5 text-orange-400" />
+              The 20-20-20 Rule: Your First Line of Defense
             </h2>
             <p className="mb-3">
-              The 20-20-20 rule is the most widely recommended intervention for digital eye strain, and for good reason. The rule is simple: every 20 minutes, look at something 20 feet away for at least 20 seconds. This brief shift in focal distance allows the ciliary muscles inside your eyes to relax from the sustained contraction required for near-focus screen work. Think of it as stretching a muscle that has been held in a single position for too long.
+              The 20-20-20 rule is the single most effective intervention for digital eye strain, and it is remarkably simple: every 20 minutes, look at something 20 feet (approximately 6 meters) away for at least 20 seconds. This rule was developed by California optometrist Dr. Jeffrey Anshel and has since been endorsed by the American Academy of Ophthalmology as the primary recommendation for screen-related eye fatigue.
             </p>
             <p className="mb-3">
-              A 2023 study published in Contact Lens and Anterior Eye confirmed that participants who followed the 20-20-20 rule reported significantly fewer symptoms of digital eye strain compared to a control group. The researchers noted improvements in dryness, blurred vision, and headache frequency within just two weeks of consistent practice. The mechanism is well understood: shifting your gaze to a distant object forces your focusing muscles to fully relax, restoring them to a neutral state before the next bout of near work.
+              The science behind it is compelling. When you shift your focus from a near object to a distant one, the ciliary muscles relax from their contracted state, allowing the lens to flatten for distance vision. This relaxation period — even just 20 seconds — resets the accommodative system and prevents the sustained contraction that leads to fatigue and spasm. A 2023 study published in Contact Lens and Anterior Eye found that participants who followed the 20-20-20 rule reported a 50 percent reduction in eye strain symptoms compared to a control group that worked without breaks.
             </p>
             <p className="mb-3">
-              The practical challenge is remembering to do it. When you are deep in a coding session or drafting a document, 20 minutes evaporates without a conscious break. This is where timers become essential. A simple recurring alarm on your phone works, but dedicated break reminder applications are more effective because they can dim your screen or lock your computer briefly, making the break unavoidable rather than optional. The key is removing the decision from the moment. You should not be deciding whether to take a break. The system should decide for you.
+              The challenge is not understanding the rule but remembering to follow it. During focused work, 20 minutes passes quickly and the urge to maintain concentration overrides the impulse to look away. This is where technology helps. Set a recurring timer on your phone, use a browser extension like Eye Care 20 20 20, or use a focus app with built-in break reminders. The key is removing the rule from your conscious memory and making it an automated prompt that interrupts your work whether you remember or not.
             </p>
             <p>
-              During your 20-second distance gaze, make a conscious effort to blink fully several times. A complete blink, where the upper lid touches the lower lid, spreads a fresh layer of tears across your cornea and resets the moisture barrier that screen use depletes. Combining distance gazing with deliberate blinking produces a compounding benefit that neither intervention achieves alone. It takes less than 30 seconds, costs nothing, and when practiced consistently across a workday, it can eliminate the majority of eye strain symptoms most remote workers experience.
+              During your 20-second distance break, combine it with deliberate blinking. Close your eyes fully, hold for one second, then open. Repeat five to ten times. This forced blinking restores the tear film that has thinned during your 20-minute focus period. Some optometrists recommend the "10-10-10" variation for severe eye strain: every 10 minutes, look at something 10 feet away for 10 seconds. Adjust the intervals based on the severity of your symptoms and the intensity of your screen work.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Monitor className="w-5 h-5 text-orange-400" />
-              Screen Brightness, Positioning, and Monitor Settings That Protect Your Eyes
+              <MonitorSmartphone className="w-5 h-5 text-orange-400" />
+              The Truth About Blue Light
             </h2>
             <p className="mb-3">
-              Your monitor settings and physical positioning have an outsized impact on eye strain, yet most remote workers never adjust their defaults. The first principle is brightness matching. Your screen brightness should approximately match the brightness of your surrounding environment. If your screen is a glowing rectangle in a dim room, your pupils are constantly fighting between the bright display and the dark periphery. If your room is brightly lit but your screen is dim, your eyes strain to read low-contrast text. Hold a white sheet of paper next to your monitor. If the paper looks brighter, increase your screen brightness. If the screen looks brighter, decrease it.
+              Blue light from screens has been the subject of considerable marketing hype and public anxiety over the past several years. Blue light blocking glasses are a multi-billion-dollar industry built on the claim that the high-energy visible light emitted by screens damages your retinas and causes eye strain. The actual scientific evidence tells a more nuanced story.
             </p>
             <p className="mb-3">
-              Screen distance matters more than most people realize. The standard recommendation is to position your monitor at arm's length, roughly 20 to 26 inches from your eyes. Closer than that forces your ciliary muscles into tighter contraction. Farther away can cause you to lean forward unconsciously, introducing neck strain alongside eye strain. The top of the screen should be at or slightly below eye level so you gaze slightly downward at the center of the display. This downward gaze angle reduces the exposed surface area of your eyes, slowing tear evaporation.
+              First, the facts about blue light and eye damage. The amount of blue light emitted by screens is a tiny fraction of the blue light you receive from sunlight. Standing outside on an overcast day exposes your eyes to more blue light than staring at a screen for eight hours. A systematic review published in the journal Eye in 2023 concluded that there is no evidence that the amount of blue light emitted by consumer electronic devices causes retinal damage in humans. The studies that showed blue light causing cellular damage used intensities far exceeding what any screen produces, making those results inapplicable to normal screen use.
             </p>
             <p className="mb-3">
-              Text size is another underutilized adjustment. If you find yourself leaning toward the screen or squinting, your text is too small. Increase your operating system's display scaling to 125 or 150 percent. In code editors, bump your font size to 14 or 16 points. There is no productivity award for reading 10-point font on a 27-inch monitor from two feet away. Larger text reduces the precision demand on your focusing system and decreases the rate at which eye fatigue accumulates throughout the day.
+              Second, blue light and eye strain. A randomized controlled trial published in the American Journal of Ophthalmology found that blue light filtering lenses did not reduce eye strain symptoms compared to clear lenses in a population of screen workers. The discomfort people attribute to blue light is more accurately caused by the sustained near focus, reduced blink rate, and poor ergonomics described in the previous sections. Blue light blocking glasses may make some users feel subjectively better, but the evidence suggests this is primarily a placebo effect.
             </p>
             <p>
-              Contrast and color temperature also play a role. High contrast between text and background is easier on the eyes than low contrast. Pure white backgrounds with black text create maximum contrast, which is good, but the sheer brightness of a white page can cause discomfort in dim environments. Many developers prefer dark mode for this reason, though the evidence on dark versus light mode is mixed. What matters most is that your chosen theme provides clear contrast and that your screen brightness matches your ambient light. Experiment with your monitor's contrast setting and color temperature controls until reading feels effortless rather than effortful.
+              Where blue light does have a legitimate impact is on sleep. Blue light suppresses melatonin production, and exposure in the two to three hours before bedtime can delay sleep onset and reduce sleep quality. This is a well-established finding supported by research from Harvard Medical School. For this specific concern, using your device's built-in night mode (which shifts the screen to warmer tones in the evening) is effective and free. Apps like f.lux automate this color temperature shift based on time of day. This sleep-related intervention has genuine value — but it is about sleep hygiene, not eye strain prevention.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Sun className="w-5 h-5 text-orange-400" />
-              Blue Light: Separating Fact From Marketing Hype
+              Monitor Settings and Room Lighting
             </h2>
             <p className="mb-3">
-              Blue light has become one of the most marketed health concerns in recent years, fueling a multi-billion-dollar industry of blue light blocking glasses, screen filters, and software solutions. The reality is considerably more nuanced than the marketing suggests. Understanding what blue light actually does, and what it does not do, will save you money and help you focus on interventions that genuinely reduce eye strain.
+              Your monitor settings and ambient lighting have a significant impact on visual comfort, yet most remote workers never adjust their display beyond the factory defaults. Optimizing these settings takes five minutes and can reduce eye strain substantially.
             </p>
-            <p className="mb-3">
-              Blue light is a portion of the visible light spectrum with wavelengths between approximately 380 and 500 nanometers. It is emitted by screens, LED lighting, and most abundantly by the sun. The amount of blue light emitted by a computer monitor at typical usage distance is a small fraction of what you receive during a brief walk outside on a cloudy day. The concern that screen-emitted blue light causes permanent retinal damage has not been substantiated by peer-reviewed research at exposure levels typical of normal computer use. A 2021 meta-analysis published in the journal Eye found no clinically significant evidence that blue light filtering lenses reduced symptoms of digital eye strain compared to placebo lenses.
+            <p className="mb-4">
+              Key adjustments for comfortable screen viewing:
             </p>
-            <p className="mb-3">
-              Where blue light does have a documented effect is on your circadian rhythm. Blue light suppresses melatonin production, the hormone that signals your body to prepare for sleep. Exposure to blue light from screens in the two to three hours before bedtime can delay sleep onset and reduce sleep quality. This is a real and well-established effect, but it is a sleep issue, not an eye strain issue. Night mode features like Apple's Night Shift or Windows Night Light that shift your screen to warmer tones in the evening are worth using for sleep hygiene, not because they protect your eyes from strain.
-            </p>
+            <ul className="space-y-2 pl-4 mb-4">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Brightness matching</strong> — your screen brightness should approximately match the brightness of your surrounding environment; if the screen glows like a light source in the room, it is too bright; if it looks dull and gray, it is too dim; this match reduces the adaptation effort your pupils must make when you glance from screen to room and back</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Text size and contrast</strong> — increase your default text size until you can read comfortably without leaning forward; dark text on a light background produces less eye strain for extended reading than light text on dark background for most people, though dark mode reduces overall light emission which some find more comfortable</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Color temperature</strong> — set your display to a warm color temperature (5500K to 6500K) during the day; avoid the blue-heavy "cool" presets that many monitors default to; your operating system's night mode should shift this further to around 3500K in the evening hours</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Screen position</strong> — the center of your screen should be 15 to 20 degrees below eye level, at a distance of about 50 to 70 centimeters from your eyes; this downward gaze angle reduces the exposed surface area of your eyes, which slows tear evaporation compared to looking straight ahead or upward at a screen</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Glare elimination</strong> — position your screen perpendicular to windows, not facing them or with them directly behind you; overhead lights reflecting off the screen create veiling glare that forces your eyes to work harder; a matte screen protector eliminates reflections on glossy displays</span>
+              </li>
+            </ul>
             <p>
-              The practical takeaway is to skip expensive blue light glasses if your only goal is reducing eye strain. Your money is better spent on a high-quality monitor with adjustable brightness, proper ambient lighting, and a good pair of prescription lenses if you need vision correction. If you want to protect your sleep, use your operating system's built-in night mode after sunset and limit screen use in the hour before bed. These free or low-cost interventions address the actual mechanisms of both digital eye strain and blue light's circadian effects far more effectively than any coated lens.
+              Room lighting deserves equal attention. The ideal lighting for screen work is indirect, diffused light that illuminates the room evenly without creating bright spots or deep shadows. Avoid overhead fluorescent lights that create high-contrast environments. A desk lamp positioned to the side (not behind the screen, which creates glare, and not behind you, which casts shadows) provides task lighting that supplements ambient room light. If your workspace has a window, position your desk so the window is to the side rather than directly in front of or behind the screen. Natural light is excellent for your health and circadian rhythm, but direct sunlight competing with your screen forces your pupils into constant adjustment that accelerates fatigue.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Lightbulb className="w-5 h-5 text-orange-400" />
-              Home Office Lighting and Eye Exercises That Make a Difference
+              Eye Exercises and Relaxation Techniques
             </h2>
             <p className="mb-3">
-              The lighting in your home office is arguably as important as your monitor settings for preventing eye strain, yet it receives far less attention. The goal is to create even, diffused ambient light that minimizes contrast between your screen and its surroundings. Overhead fluorescent lighting and bare bulbs create harsh glare, while working in a dark room with only your screen illuminated forces your eyes to manage an extreme brightness differential that accelerates fatigue.
+              Just as your body benefits from stretching after prolonged sitting, your eyes benefit from specific exercises that relieve the tension created by sustained near focus. These exercises take one to two minutes and can be performed at your desk without equipment.
             </p>
             <p className="mb-3">
-              Position your desk so that windows are to the side rather than directly in front of or behind you. A window behind your monitor creates a bright background that competes with your screen. A window behind you reflects off the screen surface, creating glare. Side lighting provides ambient illumination without direct competition or reflection. If you cannot reposition your desk, use adjustable blinds or sheer curtains to diffuse incoming daylight. Adding a bias light, a soft LED strip placed behind your monitor, can reduce the perceived contrast between a bright screen and a dark wall, easing the strain on your eyes significantly.
+              Palming is the most accessible eye relaxation technique. Rub your palms together vigorously for ten seconds to generate warmth, then cup your palms over your closed eyes without pressing on the eyeballs. The warmth and complete darkness relax the ciliary muscles and provide a brief but complete visual rest. Hold for 30 to 60 seconds while taking slow, deep breaths. Many ophthalmologists recommend palming as the simplest way to relieve acute eye fatigue during a workday.
             </p>
             <p className="mb-3">
-              Eye exercises offer another layer of protection. The simplest and most effective is palming: rub your hands together for 10 seconds to warm them, then cup your palms over your closed eyes without pressing on the eyeballs. Hold for 30 seconds to a minute. The warmth and total darkness give your visual system a genuine rest. Another useful exercise is slow focus shifting: hold your thumb at arm's length, focus on it for five seconds, then shift your focus to an object across the room for five seconds. Repeat ten times. This exercise trains your focusing muscles to transition smoothly between near and far distances, reducing the stiffness that builds during hours of fixed-distance screen work.
+              Near-far focus shifting exercises the accommodative system through its full range of motion. Hold a pen or your thumb about 15 centimeters from your nose. Focus on it for five seconds, then shift your focus to an object across the room for five seconds. Alternate ten times. This rhythmic contraction and relaxation of the ciliary muscles prevents the sustained contraction that causes accommodative spasm — a condition where the focusing muscles lock up temporarily, causing blurred vision at distance after prolonged near work.
+            </p>
+            <p className="mb-3">
+              Figure-eight eye movements improve the flexibility and coordination of the extraocular muscles that control eye movement. Imagine a large figure eight on the wall about three meters away. Trace the figure eight slowly with your eyes, completing five rotations in one direction and five in the other. This exercise is particularly helpful for people who experience a pulling or aching sensation around their eyes after extended screen use.
             </p>
             <p>
-              Circular eye movements also help. With your eyes closed, slowly roll your eyes in a full circle, five times clockwise and five times counterclockwise. This stretches the extraocular muscles that control eye movement and relieves the tension that accumulates from staring at a relatively small area of screen real estate all day. These exercises take less than two minutes combined and, when performed two to three times during a workday, produce a noticeable reduction in end-of-day eye fatigue. They pair naturally with your 20-20-20 breaks, adding just a few seconds to an already short routine.
+              Conscious blinking exercises counteract the reduced blink rate that occurs during screen use. Every 20 minutes, perform ten slow, deliberate blinks: close your eyes fully, pause for one second, then open. Follow this with a sequence of five rapid blinks. This combination restores the tear film, distributes the lipid layer that prevents tear evaporation, and resets your blink reflex so that spontaneous blinking returns to a more normal rate for the next several minutes. If you suffer from chronic dry eyes during screen work, artificial tear drops (preservative-free varieties) used two to three times daily provide supplemental lubrication that complements your natural tear production.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Glasses className="w-5 h-5 text-orange-400" />
-              Computer Glasses, Break Timers, and Building a Sustainable System
+              <Stethoscope className="w-5 h-5 text-orange-400" />
+              When to See an Optometrist
             </h2>
             <p className="mb-3">
-              If you have followed the advice above and still experience persistent eye strain, it may be time to visit an optometrist about computer glasses. Unlike blue light glasses, which are primarily a marketing product, computer glasses are prescription lenses optimized for the specific focal distance of your screen. Many people who have perfect distance vision or whose standard prescription is optimized for driving or general use find that a slight prescription adjustment for the 20-to-26-inch screen distance dramatically reduces strain. Progressive lens wearers in particular often benefit from a dedicated pair of single-vision computer glasses, as the intermediate zone of progressive lenses is typically narrow and forces unnatural head positioning.
+              Most digital eye strain responds well to the behavioral and environmental changes described above. However, certain symptoms indicate a condition that requires professional assessment. Do not assume that all screen-related visual discomfort is "just eye strain" — some symptoms point to underlying vision problems that ergonomic adjustments cannot fix.
             </p>
-            <p className="mb-3">
-              Tell your optometrist exactly how far your screen is from your eyes and how many hours per day you spend at the computer. Some practitioners offer occupational lens designs specifically for desk work that provide a wide field of clear vision at screen distance with a smaller zone for reading distance below. The difference between generic glasses and task-specific computer glasses can be the difference between ending your workday with fatigued, aching eyes and forgetting you were looking at a screen all day.
+            <p className="mb-4">
+              Schedule an eye examination if you experience:
             </p>
-            <p className="mb-3">
-              The missing piece for most remote workers is not knowledge but consistency. You already know you should take breaks. You already know you should look away from the screen. The problem is that deep work, tight deadlines, and flow states override good intentions. This is where structured break timers move from nice-to-have to essential. A break timer that is integrated into your work rhythm, one that understands when you are in a focus session and when you need rest, removes the cognitive burden of self-monitoring and makes eye care automatic rather than aspirational.
-            </p>
+            <ul className="space-y-2 pl-4 mb-4">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Persistent blurred vision</strong> — if your vision remains blurry after looking away from the screen and does not clear within a few minutes, you may have an uncorrected refractive error (nearsightedness, farsightedness, or astigmatism) that screen work is exposing</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Double vision</strong> — seeing two overlapping images indicates a binocular vision problem such as convergence insufficiency, which is common but often undiagnosed and responds well to vision therapy</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Chronic dry eyes despite hydration and blinking exercises</strong> — persistent dryness may indicate meibomian gland dysfunction or another tear film disorder that requires specific treatment beyond behavioral changes</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Frequent headaches localized around the eyes or temples</strong> — while eye strain can cause headaches, frequent or severe headaches warrant examination to rule out conditions like high intraocular pressure or other neurological causes</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Eye strain that does not improve after two weeks of implementing the strategies above</strong> — if consistent use of the 20-20-20 rule, proper ergonomics, and eye exercises does not reduce your symptoms, a comprehensive eye exam can identify issues that self-care measures cannot address</span>
+              </li>
+            </ul>
             <p>
-              NomadBalance was designed with exactly this problem in mind. Rather than relying on willpower to remember the 20-20-20 rule or to step away from your screen, NomadBalance builds intelligent break intervals into your focus sessions. It prompts you to rest your eyes, shift your gaze, and move your body at the moments that matter most, between deep work blocks when your eyes and mind are most fatigued. By turning eye care into a system rather than a series of individual decisions, you protect your vision without sacrificing productivity. The best eye health habits are the ones you actually follow, and the ones you follow are the ones your tools enforce.
+              If you work at screens for more than six hours daily, an annual comprehensive eye examination is a worthwhile investment regardless of symptoms. Mention your screen time and work setup to your optometrist — they may prescribe computer-specific lenses with a focal length optimized for your screen distance, or identify early signs of conditions that prolonged screen use can accelerate. Many people over 40 develop presbyopia, the natural age-related loss of near-focusing ability, which makes screen work increasingly uncomfortable without appropriate correction.
             </p>
           </section>
 
           <section className="bg-gradient-to-br from-orange-500/10 to-cyan-500/10 rounded-2xl p-6 border border-white/10">
             <h2 className="text-lg font-bold text-white mb-2">Protect Your Eyes with NomadBalance</h2>
             <p className="mb-4">
-              NomadBalance builds 20-20-20 eye breaks and screen rest prompts directly into your focus sessions. Stop relying on willpower and let intelligent break scheduling protect your vision while you do your best work.
+              NomadBalance includes customizable screen break reminders based on the 20-20-20 rule, guiding you through eye exercises and distance-focus breaks at regular intervals throughout your workday. Protect your vision while maintaining your productivity rhythm.
             </p>
             <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 rounded-xl text-white font-medium text-sm transition-colors">
               Get started for free

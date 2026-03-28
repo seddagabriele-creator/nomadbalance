@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, Brain, Flame, Target, Users, Palette, Trophy, Dumbbell } from "lucide-react";
+import { ArrowLeft, Zap, Brain, Flame, Target, Users, Palette, Trophy, CheckCircle } from "lucide-react";
 
 export default function StayMotivatedWorkingFromHome() {
   return (
@@ -21,130 +21,155 @@ export default function StayMotivatedWorkingFromHome() {
       <article className="max-w-3xl mx-auto px-4 py-10 pb-20">
         <div className="flex items-center gap-2 mb-4">
           <span className="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-medium">Planning</span>
-          <span className="text-white/30 text-xs">8 min read</span>
+          <span className="text-white/30 text-xs">9 min read</span>
         </div>
-        <h1 className="text-3xl font-extrabold mb-3">How to Stay Motivated Working From Home: A Science-Based Approach</h1>
-        <p className="text-white/40 text-sm mb-10">Evidence-backed strategies for sustaining drive, building momentum, and designing a remote work life that fuels motivation naturally.</p>
+        <h1 className="text-3xl font-extrabold mb-3">How to Stay Motivated Working From Home When Nobody's Watching</h1>
+        <p className="text-white/40 text-sm mb-10">A practical guide to building sustainable motivation as a remote worker — from understanding what drives you to designing systems that keep you engaged long-term.</p>
 
         <div className="space-y-10 text-white/70 text-sm leading-relaxed">
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Brain className="w-5 h-5 text-cyan-400" />
-              Why Motivation Dips When You Work From Home
+              Intrinsic vs Extrinsic Motivation: Why Remote Work Changes Everything
             </h2>
             <p className="mb-3">
-              If you have ever sat down at your home desk with the best of intentions only to find yourself drifting aimlessly through your task list two hours later, you are not broken. The motivation challenges of remote work are deeply rooted in human psychology, and understanding them is the first step toward solving them. Three primary forces conspire against your drive when you work from home: isolation, the absence of social accountability, and a breakdown in environmental cues.
+              In a traditional office, much of your motivation is externally supplied without you realizing it. Your boss walks past your desk, creating social accountability. Colleagues are visibly working, generating social proof that you should be working too. The physical act of commuting and arriving at a dedicated workspace signals to your brain that it is time to perform. These external motivational cues are so deeply woven into the office experience that most people never notice them until they disappear — which is exactly what happens when you start working from home.
             </p>
             <p className="mb-3">
-              Isolation is the most obvious culprit. Humans are inherently social creatures, and the casual interactions that happen naturally in an office — the brief hallway conversations, the energy of a busy workspace, the shared lunch breaks — provide a steady drip of social stimulation that quietly fuels motivation throughout the day. Remove those interactions, and your brain loses a key source of the neurotransmitter dopamine, which plays a central role in motivation and reward processing. A 2023 study published in the Journal of Occupational Health Psychology found that remote workers who reported high levels of social isolation were 67 percent more likely to experience chronic motivational deficits compared to their in-office counterparts.
+              Psychologist Edward Deci's Self-Determination Theory identifies three core psychological needs that drive intrinsic motivation: autonomy (feeling in control of your choices), competence (feeling effective at what you do), and relatedness (feeling connected to others). Remote work dramatically increases autonomy — you control your schedule, environment, and work rhythm. But it can severely undermine competence and relatedness. Without regular feedback from managers and peers, you lose the signals that tell you whether your work is good. Without casual social interaction, you lose the sense of belonging to a team. This imbalance explains why many remote workers report high initial enthusiasm followed by a gradual erosion of motivation over months.
             </p>
             <p className="mb-3">
-              The absence of social accountability compounds the problem. In an office, your colleagues can see whether you are working or scrolling through your phone. That visibility creates a passive but powerful form of accountability. At home, no one is watching. The psychological distance between you and your team makes it easier to procrastinate because the social consequences feel abstract rather than immediate. Your brain, wired by evolution to prioritize immediate social signals over abstract obligations, naturally drifts toward the path of least resistance.
+              Extrinsic motivation — working because someone is watching, because a deadline looms, or because you fear consequences — is unreliable for remote workers. When nobody is watching, extrinsic motivators lose their power. The remote workers who thrive over the long term are those who cultivate intrinsic motivation: they work because the work itself is engaging, because they see their own progress, and because they have consciously built the environmental and social structures that offices provide automatically.
             </p>
             <p>
-              Finally, environmental cues play a role that most people underestimate. Your brain associates specific environments with specific behaviors. An office is saturated with work-related cues — desks, monitors, colleagues typing, the hum of productivity. Your home, by contrast, is saturated with relaxation cues — the couch, the television, the kitchen, the bed. When you try to work in an environment your brain associates with leisure, you are fighting a constant low-level neurological tug-of-war. Understanding these three forces is essential because the strategies that actually work for remote motivation are designed to counteract them directly.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Flame className="w-5 h-5 text-cyan-400" />
-              Intrinsic vs. Extrinsic Motivation: Finding What Actually Lasts
-            </h2>
-            <p className="mb-3">
-              Most advice about staying motivated at home focuses on extrinsic motivators — rewards you give yourself for completing tasks, deadlines imposed by others, or the fear of negative consequences. While these can be effective in the short term, decades of research in self-determination theory show that extrinsic motivation is fragile. It requires constant renewal, and it erodes the moment the external pressure disappears. For remote workers who lack many of the external pressures that an office environment provides, relying on extrinsic motivation is like trying to power a house with a battery instead of a generator.
-            </p>
-            <p className="mb-3">
-              Intrinsic motivation, by contrast, arises from within. It is the drive you feel when a task is inherently interesting, when you feel competent at what you are doing, or when the work aligns with your personal values and sense of purpose. According to Edward Deci and Richard Ryan's self-determination theory, intrinsic motivation is built on three psychological needs: autonomy, competence, and relatedness. Remote work naturally provides autonomy in abundance, but it often undermines competence and relatedness.
-            </p>
-            <p className="mb-3">
-              Competence suffers because remote workers receive less frequent and less immediate feedback. In an office, a colleague might notice your work and offer a quick "this looks great." At home, your work often disappears into a digital void. Without regular signals that you are performing well, your sense of competence erodes, and with it your intrinsic motivation. Relatedness suffers for obvious reasons — physical distance reduces the sense of connection to teammates and to the larger mission of the organization.
-            </p>
-            <p>
-              The practical takeaway is that sustainable work-from-home motivation requires deliberately nurturing intrinsic drivers. Seek out projects that genuinely interest you. Request regular feedback from managers and peers. Connect your daily tasks to the larger purpose they serve. These actions rebuild the psychological foundations that remote work tends to quietly dismantle.
+              The strategies in this guide are designed to help you build those structures deliberately. Motivation is not a personality trait you either have or lack. It is a system you design, and every component of that system can be optimized for the unique conditions of working from home.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Target className="w-5 h-5 text-cyan-400" />
-              The Progress Principle: Building Systems Over Willpower
+              Accountability Without a Boss Looking Over Your Shoulder
             </h2>
             <p className="mb-3">
-              Harvard professor Teresa Amabile spent years analyzing the daily diaries of knowledge workers to understand what drives engagement and motivation. Her finding, which she called the Progress Principle, was striking in its simplicity: the single most important factor in sustaining motivation at work is making meaningful progress on tasks that matter. Not big breakthroughs — small, tangible steps forward. The feeling that you moved the needle today, even slightly, is the most potent fuel for tomorrow's motivation.
+              The absence of managerial oversight is simultaneously the greatest freedom and the greatest challenge of remote work. Without external accountability, the gap between your intentions and your actions widens. You intend to start that project at 9 AM but find yourself scrolling at 10:30. You plan to finish a report by Wednesday but it slips to Friday. These slippages feel small individually but compound into a pattern that erodes both your productivity and your self-respect.
             </p>
             <p className="mb-3">
-              For remote workers, the Progress Principle has immediate practical implications. Instead of relying on willpower to grind through large, amorphous tasks, you need to build systems that generate a steady stream of small wins. Break every project into concrete milestones that can be completed in a single work session. Use a task management system that lets you physically check off completed items, triggering a small dopamine release each time. End each day by writing down three specific things you accomplished, no matter how minor they seem.
+              The most effective replacement for managerial accountability is an accountability partner — another remote worker who shares your commitment to productive work. The structure is simple: at the start of each day, you each message the other with your top three priorities. At the end of the day, you report what you accomplished. This lightweight system creates a social contract that functions like a daily performance review without the stress of an actual one. Research from the American Society of Training and Development found that people who have a specific accountability partner increase their probability of completing a goal from 65 to 95 percent.
             </p>
             <p className="mb-3">
-              The system matters more than the willpower because willpower is a depletable resource. Research from Roy Baumeister's lab at Florida State University demonstrated that willpower operates like a muscle — it fatigues with use. If your motivation strategy depends on summoning willpower each morning, you will eventually run dry. But if your system is designed to surface progress automatically, motivation becomes a natural byproduct of the way you work rather than something you have to generate from scratch every day.
+              Public commitment is another powerful accountability mechanism. Announcing your daily or weekly goals in a team Slack channel, even if nobody explicitly follows up, engages your psychological need for consistency — people who state their intentions publicly are significantly more likely to follow through than those who keep their goals private. This is not about performance theater or proving your worth to skeptical managers. It is about leveraging a fundamental aspect of human psychology to keep yourself on track.
             </p>
             <p>
-              Consider implementing a "done list" alongside your to-do list. While a to-do list shows you everything that remains undone, a done list shows you everything you have accomplished. This simple reframe shifts your attention from the anxiety of unfinished work to the satisfaction of completed work, which research consistently shows is a far more effective motivational strategy for sustained performance over weeks and months.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-cyan-400" />
-              Social Accountability Strategies for Remote Workers
-            </h2>
-            <p className="mb-3">
-              Since physical proximity to colleagues is one of the things you lose when working from home, you need to deliberately reconstruct social accountability through other means. The good news is that social accountability does not require physical presence — it requires visibility and commitment. There are several proven strategies that remote workers use to create the motivational pressure that an office provides for free.
-            </p>
-            <p className="mb-3">
-              Body doubling is one of the most effective techniques. This involves working alongside another person, either in person or via video call, so that both of you are quietly focused on your own tasks. The presence of another person working creates a subtle social pressure to stay on task. Virtual coworking communities and apps have sprung up specifically to provide this service, matching remote workers for focused work sessions. Research on ADHD populations, where motivation regulation is a core challenge, has found that body doubling significantly increases task initiation and sustained attention.
-            </p>
-            <p className="mb-3">
-              Public commitment is another powerful lever. Announce your daily intentions to a colleague, a Slack channel, or an accountability partner at the start of each day. The act of stating what you plan to accomplish creates a psychological contract. A study published in the American Society of Training and Development found that people who committed their goals to another person had a 65 percent success rate, compared to 10 percent for those who simply thought about their goals without sharing them. Adding a scheduled follow-up check-in pushed the success rate to 95 percent.
-            </p>
-            <p>
-              Finally, consider forming a small accountability group of three to five remote workers who meet briefly once a week to share progress and set intentions. This creates a recurring rhythm of social accountability that replaces the ambient accountability of an office. The group does not need to be composed of coworkers — in fact, mixing professionals from different fields often produces richer discussions and stronger accountability because members feel a sense of obligation that transcends organizational hierarchy.
+              Self-accountability through tracking is the third pillar. When you record your deep work hours, tasks completed, and energy levels daily, you create a data trail that reveals patterns your subjective memory would miss. You might discover that your motivation drops every Wednesday afternoon, or that you consistently overcommit on Mondays and underperform by Thursday. This data transforms vague feelings of "I am not motivated enough" into specific, actionable problems you can solve.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Palette className="w-5 h-5 text-cyan-400" />
-              Environment Design and Energy Management
+              Environment Design: Making Motivation Automatic
             </h2>
             <p className="mb-3">
-              One of the most overlooked remote work motivation tips is to manage your energy rather than your time. Productivity guru Tony Schwartz has long argued that human beings are not designed for sustained, linear output. We operate in cycles of high and low energy, typically following ultradian rhythms of roughly 90 to 120 minutes. Trying to maintain uniform motivation across an eight-hour day ignores this biological reality and leads to frustration when your drive inevitably wanes in the afternoon.
+              James Clear, author of Atomic Habits, argues that motivation is overrated and environment design is underrated. The idea is that your physical and digital environment either makes productive behavior easy and unproductive behavior hard, or vice versa. When you work from home, you are surrounded by the cues of leisure — the couch, the television, the refrigerator, your personal phone — and these cues constantly compete with the cues that support work. Designing your environment deliberately tilts this competition in favor of productivity.
             </p>
             <p className="mb-3">
-              Instead, map your most important and challenging tasks to your peak energy periods. For most people, this is the first two to three hours after waking, when cortisol levels are naturally elevated and the prefrontal cortex is fresh. Reserve low-energy periods for administrative tasks, email, and routine work that requires less cognitive engagement. This alignment between task difficulty and energy level means you are never fighting your biology — you are working with it.
+              Start with physical separation. If possible, dedicate a specific room or area of your home exclusively to work. When you enter that space, your brain recognizes the environmental cue and begins priming itself for work mode. When you leave that space, the transition to personal time is equally clear. If a dedicated room is not possible, even a specific desk, chair, or corner that you only use for work creates an associative cue. The more consistently you maintain this separation, the stronger the neurological association becomes.
             </p>
             <p className="mb-3">
-              Environment design amplifies this approach. Create distinct zones in your home for different types of work if possible. Your primary desk is for deep, focused work. A different chair or room is for calls and meetings. The couch is for casual reading and brainstorming. These spatial separations train your brain to shift into the appropriate mode when you move to each zone. If you lack the space for multiple zones, use sensory cues instead — a specific playlist for focused work, a particular candle scent for creative thinking, a change of lighting for administrative tasks.
+              Digital environment design is equally important. Your computer likely contains both work and leisure applications. Create separate browser profiles — one for work with only work-related bookmarks and extensions, and one for personal use. Use distraction-blocking software during work hours. Remove social media apps from your phone's home screen, requiring you to search for them deliberately rather than tapping out of habit. Each small friction point between you and a distraction reduces the probability that you will succumb to it.
             </p>
             <p>
-              Pay equal attention to transition rituals between work blocks. A brief walk around the block, five minutes of stretching, or simply stepping outside for fresh air creates a neurological reset that allows your brain to disengage from the previous task and re-engage with the next one. Without these transitions, residual attention from the last task bleeds into the new one, reducing both your effectiveness and your sense of motivation because you never feel fully present in what you are doing.
+              Sensory cues can trigger work mode without conscious effort. Playing a specific playlist only during work hours, using a particular desk lamp, or even lighting a specific candle creates Pavlovian associations that your brain learns over time. After several weeks of consistent pairing, the sensory cue alone can shift your mental state toward focused productivity. This is not pseudoscience — it is classical conditioning applied to your benefit, and it is one of the most powerful tools available to remote workers who struggle with the daily transition from home mode to work mode.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Dumbbell className="w-5 h-5 text-cyan-400" />
-              Physical Activity and Reward Systems: The Motivation Multipliers
+              <Flame className="w-5 h-5 text-cyan-400" />
+              Progress Tracking: Seeing Your Own Momentum
             </h2>
             <p className="mb-3">
-              If there is one intervention that consistently outperforms every other strategy for boosting work-from-home motivation, it is regular physical activity. Exercise is not just good for your body — it is a direct neurochemical intervention that increases dopamine, norepinephrine, and serotonin, the three neurotransmitters most closely associated with motivation, focus, and mood regulation. A 2022 meta-analysis in the British Journal of Sports Medicine found that even 20 minutes of moderate exercise improved cognitive performance and self-reported motivation for up to two hours afterward.
+              Teresa Amabile's research at Harvard Business School identified what she calls "the progress principle": of all the factors that can boost motivation and positive emotions during a workday, the single most important is making progress in meaningful work. Not big breakthroughs or finished projects — just forward movement, however small. The problem for remote workers is that progress is often invisible. Without teammates noticing your contributions, without a whiteboard tracking milestones, and without the subtle feedback of in-person collaboration, it is easy to feel like you are running in place.
             </p>
             <p className="mb-3">
-              For remote workers, the integration of movement into the workday is both easier and more important than it is for office workers. Easier because you have complete control over your schedule and do not need to worry about gym commutes or showering at the office. More important because remote work is inherently sedentary — without the incidental movement of commuting, walking to meetings, and moving between floors, your daily step count can drop to alarmingly low levels, dragging your energy and motivation down with it.
+              A daily progress journal is the simplest antidote. At the end of each workday, spend two minutes writing down three things you accomplished. These do not need to be monumental — "drafted the introduction to the quarterly report," "fixed the login bug," and "clarified the project timeline with Sarah" are perfectly valid entries. Over weeks and months, this journal becomes a concrete record of your contributions that counteracts the subjective feeling of stagnation.
             </p>
             <p className="mb-3">
-              Build movement into your work rhythm rather than treating it as a separate activity. A 10-minute walk between your morning deep work session and your first meeting. A set of bodyweight exercises during your afternoon energy dip. A brief yoga flow at the end of the workday to signal the transition from work mode to personal time. These micro-doses of activity maintain a baseline level of neurochemical support for motivation that no amount of caffeine or willpower can replicate.
+              Visual progress indicators are even more powerful for daily motivation. Jerry Seinfeld famously described his productivity method as marking a red X on a wall calendar for every day he wrote new material. The chain of X's creates visual momentum that you become reluctant to break. This "don't break the chain" approach works because it converts abstract progress into a tangible, growing streak that triggers loss aversion — you keep working not just to move forward but to avoid losing the streak you have built.
             </p>
             <p>
-              Complement physical activity with a thoughtful reward system. The key word is "thoughtful" — random rewards do not build motivation, but rewards tied to specific milestones create positive reinforcement loops. After completing a challenging project milestone, treat yourself to something meaningful. After a week of consistent deep work hours, enjoy an experience you have been looking forward to. The reward should be proportional to the effort and ideally unrelated to work, giving your brain a clean break and a clear signal that effort leads to enjoyment. Over time, this pairing of effort and reward rewires your motivation circuitry so that challenging work becomes associated with positive outcomes rather than dread.
+              For knowledge workers whose output is not easily countable, tracking lead measures provides the same motivational effect. Track the number of hours spent in deep work, the number of meaningful tasks completed, or the number of emails sent in your outreach campaign. These process metrics are within your direct control and create the sense of forward movement that outcome metrics (revenue, followers, product launches) cannot provide on a daily basis because outcomes lag behind effort by weeks or months.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-cyan-400" />
+              Social Connection: Solving the Isolation Problem
+            </h2>
+            <p className="mb-3">
+              Loneliness is the silent productivity killer of remote work. A Buffer survey consistently ranks loneliness as the top struggle for remote workers, ahead of collaboration difficulties and distractions. The impact is not just emotional — social isolation directly impairs cognitive function. Research from the University of Chicago found that loneliness disrupts executive function, reduces self-regulation, and impairs the prefrontal cortex processes that govern sustained attention and decision-making. In other words, isolation literally makes you less capable of doing good work.
+            </p>
+            <p className="mb-3">
+              Solving the isolation problem requires intentional effort because remote work eliminates the ambient social contact that offices provide. In an office, you interact with colleagues incidentally — in the kitchen, walking to meetings, during lunch. These micro-interactions are individually trivial but collectively essential for social wellbeing. Remote work replaces them with nothing unless you deliberately engineer substitutes.
+            </p>
+            <p className="mb-4">
+              Effective strategies for maintaining social connection while working remotely:
+            </p>
+            <ul className="space-y-2 pl-4 mb-4">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Virtual coworking sessions</strong> — join a video call with one or more remote workers where everyone works silently on their own tasks, with occasional chat during breaks; the mere presence of others working creates social accountability and reduces the feeling of isolation</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Weekly non-work video calls</strong> — schedule a 30-minute call with a friend, former colleague, or family member during your lunch break; protecting time for social connection during the workday mirrors the casual interactions that offices provide naturally</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Local coworking spaces</strong> — working from a coworking space even one or two days per week provides environmental variety and incidental social contact that recharges your social battery for the remaining home-based days</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Professional communities</strong> — joining online communities like Slack groups, Discord servers, or forums related to your profession provides a sense of belonging to a peer group that transcends your immediate team</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-white">Coffee shop work sessions</strong> — working from a cafe for a few hours provides ambient social presence without requiring direct interaction; the background noise and human activity create a sense of being part of the world that solitary home offices lack</span>
+              </li>
+            </ul>
+            <p>
+              The key insight is that social connection for remote workers must be scheduled, not left to chance. In an office, it happens automatically. At home, it requires the same deliberate planning that you apply to your work tasks. Put social interactions on your calendar and protect them with the same discipline you protect your deep work blocks.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-cyan-400" />
+              Reward Systems and Dealing With Low-Energy Days
+            </h2>
+            <p className="mb-3">
+              Even with optimal environment design, strong accountability, and active social connection, you will have days when motivation is simply low. This is normal and does not indicate a problem with your remote work setup. Motivation fluctuates based on sleep quality, stress levels, hormonal cycles, weather, and dozens of other variables. The question is not how to feel motivated every day — that is impossible — but how to maintain productive behavior on days when motivation is absent.
+            </p>
+            <p className="mb-3">
+              A tiered reward system provides external motivation on days when intrinsic motivation is insufficient. The system works like this: define three levels of daily achievement. Level one is your minimum viable workday — the bare essentials that keep projects moving and commitments met. Level two is a solid, productive day that moves the needle on important projects. Level three is an exceptional day of deep work and meaningful output. Assign a reward to each level: level one might earn you a guilt-free evening of television, level two might earn a nice dinner or a new book, and level three might accumulate toward a larger reward like a weekend trip or a desired purchase.
+            </p>
+            <p className="mb-3">
+              The critical design principle is that level one must be achievable even on your worst days. When you are exhausted, stressed, or unwell, knowing that you only need to hit the minimum threshold removes the all-or-nothing thinking that causes people to write off entire days. A minimal day is infinitely better than a zero day, and the psychological difference between "I got nothing done" and "I handled the essentials" is enormous for maintaining long-term motivation.
+            </p>
+            <p className="mb-3">
+              On particularly difficult days, the "two-minute rule" can break through inertia. Commit to working on your most important task for just two minutes. If after two minutes you want to stop, you can — without guilt. In practice, most people continue working past the two-minute mark because starting is the hardest part. The commitment is small enough that resistance melts away, and once you are in motion, Newton's first law applies to psychology as much as physics: a body in motion tends to stay in motion.
+            </p>
+            <p>
+              Physical exercise is the most reliable motivation reset available. A 2019 meta-analysis published in Health Psychology Review found that even a single bout of moderate exercise improves mood, reduces fatigue, and enhances cognitive function for several hours afterward. On days when motivation is at its lowest, a 20-minute walk or a brief bodyweight workout can shift your neurochemistry enough to transform an unproductive morning into a functional afternoon. Do not think of exercise as competing with work time — on low-motivation days, it is the most productive thing you can do.
             </p>
           </section>
 
           <section className="bg-gradient-to-br from-cyan-500/10 to-violet-500/10 rounded-2xl p-6 border border-white/10">
-            <h2 className="text-lg font-bold text-white mb-2">Stay Motivated Every Day with NomadBalance</h2>
+            <h2 className="text-lg font-bold text-white mb-2">Build Sustainable Motivation with NomadBalance</h2>
             <p className="mb-4">
-              NomadBalance helps you build the systems that sustain motivation — structured work sessions, active break reminders, progress tracking, and energy management tools designed specifically for remote workers who want to perform at their best without burning out.
+              NomadBalance combines focus timers, progress tracking, movement break reminders, and session analytics to help you build the daily systems that sustain motivation over months and years. Track your deep work streaks, celebrate your progress, and maintain the healthy habits that keep remote work sustainable.
             </p>
             <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-white font-medium text-sm transition-colors">
               Get started for free
