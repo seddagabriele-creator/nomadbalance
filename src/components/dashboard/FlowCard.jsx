@@ -19,7 +19,7 @@ export default function FlowCard({ session, onSessionComplete, onSoundChange }) 
   const {
     timeLeft, isRunning, isBreak, toggleTimer, resetTimer, initializeTimer,
     setFocusSoundId, setRelaxSoundId, focusSoundId, relaxSoundId,
-    mode, relaxTime, switchToRelax, switchToFocus,
+    mode, relaxTime, relaxPaused, switchToRelax, switchToFocus, toggleRelaxPause,
   } = useTimer();
 
   const userDuration = (() => {
@@ -152,17 +152,26 @@ export default function FlowCard({ session, onSessionComplete, onSoundChange }) 
       {/* Controls + Sound */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          {!isRelaxMode && (
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleTimer(); }}
-              onMouseDown={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
-              className={`w-7 h-7 rounded-full ${isRelaxMode ? "bg-cyan-600 hover:bg-cyan-500" : "bg-violet-600 hover:bg-violet-500"} flex items-center justify-center transition-colors`}
-              aria-label={isRunning ? "Pause timer" : "Start timer"}
-            >
-              {isRunning ? <Pause className="w-3 h-3 text-white" /> : <Play className="w-3 h-3 text-white ml-0.5" />}
-            </button>
-          )}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (isRelaxMode) {
+                toggleRelaxPause();
+              } else {
+                toggleTimer();
+              }
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className={`w-7 h-7 rounded-full ${isRelaxMode ? "bg-cyan-600 hover:bg-cyan-500" : "bg-violet-600 hover:bg-violet-500"} flex items-center justify-center transition-colors`}
+            aria-label={isRelaxMode ? (relaxPaused ? "Resume relax" : "Pause relax") : (isRunning ? "Pause timer" : "Start timer")}
+          >
+            {(isRelaxMode ? !relaxPaused : isRunning)
+              ? <Pause className="w-3 h-3 text-white" />
+              : <Play className="w-3 h-3 text-white ml-0.5" />
+            }
+          </button>
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetTimer(); }}
             onMouseDown={(e) => e.stopPropagation()}
