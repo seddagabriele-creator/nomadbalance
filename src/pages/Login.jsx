@@ -12,8 +12,9 @@ const sanitizeAuthError = (message) => {
   if (lower.includes("email not confirmed")) return "Please confirm your email before logging in.";
   if (lower.includes("user already registered")) return "An account with this email already exists.";
   if (lower.includes("rate limit") || lower.includes("too many requests")) return "Too many attempts. Please wait a moment and try again.";
-  if (lower.includes("password")) return "Password must be at least 6 characters.";
-  if (lower.includes("email")) return "Please enter a valid email address.";
+  if (lower.includes("password") && lower.includes("least")) return "Password must be at least 6 characters.";
+  if (lower.includes("invalid") && lower.includes("email")) return "Please enter a valid email address.";
+  if (lower.includes("signup is disabled")) return "Signups are currently disabled. Please try again later.";
   return "Something went wrong. Please try again.";
 };
 
@@ -54,6 +55,7 @@ export default function Login() {
       }
       failCountRef.current = 0;
     } catch (err) {
+      console.error("[Auth Error]", err.message, err);
       failCountRef.current += 1;
       if (failCountRef.current >= 5) {
         lockoutUntilRef.current = Date.now() + 30_000;
