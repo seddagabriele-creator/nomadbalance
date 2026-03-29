@@ -9,7 +9,7 @@ export default function BodyCard({ session, onSwapExercise }) {
   const schedule = session?.body_break_schedule || [];
   const nextBreakIndex = schedule.findIndex(b => !b.completed);
   const nextBreak = nextBreakIndex >= 0 ? schedule[nextBreakIndex] : null;
-  const nextExercise = nextBreak?.exercise_name || "No exercise";
+  const nextExercise = nextBreak?.exercise_name || (session ? "All done" : "Start your day");
   const progressPercent = breaksTarget > 0 ? (breaksDone / breaksTarget) * 100 : 0;
 
   return (

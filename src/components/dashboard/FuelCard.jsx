@@ -5,7 +5,7 @@ import { ONE_MINUTE_MS } from "../../constants";
 
 function getSmartFuelStatus(session) {
   if (!session) {
-    return { label: "No data", detail: "Start your day", icon: "clock", extra: null, canLogMeal: false };
+    return { label: "Fasting", detail: "Start your day to begin", icon: "droplets", extra: null, canLogMeal: false };
   }
 
   if (!session.eating_window_start || !session.eating_window_end) {
