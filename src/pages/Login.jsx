@@ -55,6 +55,7 @@ export default function Login() {
       }
       failCountRef.current = 0;
     } catch (err) {
+      console.error("[Auth Error]", err.message, err);
       failCountRef.current += 1;
       if (failCountRef.current >= 5) {
         lockoutUntilRef.current = Date.now() + 30_000;
