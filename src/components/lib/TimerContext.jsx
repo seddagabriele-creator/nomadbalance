@@ -17,6 +17,7 @@ export function TimerProvider({ children }) {
   // Relax mode: user manually switches to relax mid-focus
   const [mode, setMode] = useState("focus"); // "focus" | "relax"
   const [relaxTime, setRelaxTime] = useState(0); // counts up in relax mode
+  const [relaxPaused, setRelaxPaused] = useState(false);
   const savedFocusTimeRef = useRef(0);
   const savedFocusRunningRef = useRef(false);
   const savedFocusBreakRef = useRef(false);
@@ -64,25 +65,27 @@ export function TimerProvider({ children }) {
 
   // Relax timer interval (counts up)
   useEffect(() => {
-    if (mode !== "relax") return;
+    if (mode !== "relax" || relaxPaused) return;
     relaxIntervalRef.current = setInterval(() => {
       setRelaxTime((prev) => prev + 1);
     }, ONE_SECOND_MS);
     return () => clearInterval(relaxIntervalRef.current);
-  }, [mode]);
+  }, [mode, relaxPaused]);
 
   // Audio control
   useEffect(() => {
-    if (mode === "relax") {
+    if (mode === "relax" && !relaxPaused) {
       const url = getAudioUrl(relaxSoundId);
       if (url) audioManager.play(url);
+    } else if (mode === "relax" && relaxPaused) {
+      audioManager.pause();
     } else if (isRunning && !isBreak) {
       const url = getAudioUrl(focusSoundId);
       if (url) audioManager.play(url);
     } else {
       audioManager.pause();
     }
-  }, [isRunning, isBreak, focusSoundId, relaxSoundId, mode]);
+  }, [isRunning, isBreak, focusSoundId, relaxSoundId, mode, relaxPaused]);
 
   const toggleTimer = () => {
     if (mode === "relax") return; // In relax mode, use switchToFocus instead
@@ -129,6 +132,10 @@ export function TimerProvider({ children }) {
     }
   };
 
+  const toggleRelaxPause = useCallback(() => {
+    setRelaxPaused((prev) => !prev);
+  }, []);
+
   // Switch to relax mode: freeze focus timer, start relax
   const switchToRelax = useCallback(() => {
     // Save focus state
@@ -142,6 +149,7 @@ export function TimerProvider({ children }) {
 
     // Start relax mode
     setRelaxTime(0);
+    setRelaxPaused(false);
     setMode("relax");
   }, []);
 
@@ -151,6 +159,7 @@ export function TimerProvider({ children }) {
     clearInterval(relaxIntervalRef.current);
     setMode("focus");
     setRelaxTime(0);
+    setRelaxPaused(false);
 
     // Restore focus state
     const savedTime = savedFocusTimeRef.current;
@@ -186,8 +195,10 @@ export function TimerProvider({ children }) {
         setRelaxSoundId,
         mode,
         relaxTime,
+        relaxPaused,
         switchToRelax,
         switchToFocus,
+        toggleRelaxPause,
       }}
     >
       {children}
