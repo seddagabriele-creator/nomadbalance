@@ -10,7 +10,6 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      const code = searchParams.get("code");
       const errorParam = searchParams.get("error");
       const errorDescription = searchParams.get("error_description");
 
@@ -19,17 +18,31 @@ export default function AuthCallback() {
         return;
       }
 
-      if (code) {
-        // Exchange PKCE code for session
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) {
-          setError(exchangeError.message);
-          return;
-        }
+      // With implicit flow, tokens arrive as hash fragments (#access_token=...)
+      // Supabase detects these automatically via detectSessionInUrl
+      // Just wait for the session to be established, then redirect
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        setError(sessionError.message);
+        return;
       }
 
-      // Small delay to let onAuthStateChange propagate
-      setTimeout(() => navigate("/", { replace: true }), 300);
+      if (session) {
+        navigate("/", { replace: true });
+      } else {
+        // Give Supabase a moment to process the hash tokens
+        setTimeout(async () => {
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (retrySession) {
+            navigate("/", { replace: true });
+          } else {
+            // If still no session, the confirmation likely succeeded
+            // Redirect to login so user can log in
+            navigate("/login", { replace: true });
+          }
+        }, 1000);
+      }
     };
 
     handleCallback();
