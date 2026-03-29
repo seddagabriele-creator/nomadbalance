@@ -135,7 +135,7 @@ export default function LandingPage() {
             <Link to="/login" className="text-sm text-white/60 hover:text-white transition-colors px-3 py-2">
               Log in
             </Link>
-            <Link to="/login" className="text-sm font-semibold bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg px-4 py-2 transition-colors">
+            <Link to="/login?signup=true" className="text-sm font-semibold bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg px-4 py-2 transition-colors">
               Sign up free
             </Link>
           </div>
