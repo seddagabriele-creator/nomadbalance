@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/lib/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 
@@ -20,9 +20,10 @@ const sanitizeAuthError = (message) => {
 
 export default function Login() {
   const { login, signup, resetPassword } = useAuth();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignup, setIsSignup] = useState(false);
+  const [isSignup, setIsSignup] = useState(searchParams.get("signup") === "true");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
