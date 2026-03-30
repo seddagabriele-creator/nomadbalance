@@ -13,12 +13,16 @@ class AudioManager {
   }
 
   async play(url) {
-    if (this.currentUrl !== url || !this.audioBuffer) {
-      await this.loadAudio(url);
-    }
+    try {
+      if (this.currentUrl !== url || !this.audioBuffer) {
+        await this.loadAudio(url);
+      }
 
-    if (!this.isPlaying && this.audioBuffer) {
-      this.startPlayback();
+      if (!this.isPlaying && this.audioBuffer) {
+        await this.startPlayback();
+      }
+    } catch (err) {
+      console.error("[AudioManager] play error:", err);
     }
   }
 
@@ -26,11 +30,15 @@ class AudioManager {
     try {
       this.stop();
 
-      if (!this.audioContext) {
+      if (!this.audioContext || this.audioContext.state === "closed") {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.gainNode = this.audioContext.createGain();
         this.gainNode.gain.value = 0.7;
         this.gainNode.connect(this.audioContext.destination);
+      }
+
+      if (this.audioContext.state === "suspended") {
+        await this.audioContext.resume();
       }
 
       const response = await fetch(url);
@@ -96,17 +104,19 @@ class AudioManager {
     return newBuffer;
   }
 
-  startPlayback() {
+  async startPlayback() {
     if (!this.audioBuffer || !this.audioContext) return;
 
     // Resume context if suspended (browser autoplay policy)
     if (this.audioContext.state === "suspended") {
-      this.audioContext.resume();
+      await this.audioContext.resume();
     }
 
-    // Fade in: start silent, ramp to target volume over 1.5s
-    this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-    this.gainNode.gain.linearRampToValueAtTime(0.7, this.audioContext.currentTime + 1.5);
+    // Cancel any lingering gain automation (e.g. fade-out from pause)
+    const now = this.audioContext.currentTime;
+    this.gainNode.gain.cancelScheduledValues(now);
+    this.gainNode.gain.setValueAtTime(0, now);
+    this.gainNode.gain.linearRampToValueAtTime(0.7, now + 1.5);
 
     this.source = this.audioContext.createBufferSource();
     this.source.buffer = this.audioBuffer;
