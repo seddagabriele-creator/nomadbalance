@@ -62,21 +62,24 @@ export default function JournalCard({ session, topTask, onToggleTask }) {
             )}
           </div>
         ) : (
-          <p className="text-white/20 text-sm">No tasks set</p>
+          <div className="flex items-start gap-2">
+            <Circle className="w-4 h-4 text-white/15 shrink-0 mt-0.5" />
+            <p className="text-white/20 text-sm font-medium leading-snug">No tasks set</p>
+          </div>
         )}
       </div>
 
       {/* Sessions counter */}
-      {sessionsCount > 0 && (
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5">
+        {sessionsCount > 0 && (
           <div className="flex -space-x-0.5">
             {Array.from({ length: Math.min(sessionsCount, 8) }).map((_, i) => (
               <div key={i} className="w-2 h-2 rounded-full bg-cyan-400/60" />
             ))}
           </div>
-          <span className="text-[10px] text-white/25 tabular-nums">{sessionsCount} done</span>
-        </div>
-      )}
+        )}
+        <span className="text-[10px] text-white/25 tabular-nums">{sessionsCount} done</span>
+      </div>
     </motion.div>
   );
 }
