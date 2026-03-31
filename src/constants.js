@@ -31,8 +31,15 @@ const AUDIO_FILES = {
   "10hz-binaural-wind":  "10hz-binaural+wind.mp3",
 };
 
+// Legacy sound IDs from older sessions → map to current IDs
+const LEGACY_SOUND_MAP = {
+  "wind": "40hz-wind",
+  "ocean": "40hz-ocean",
+};
+
 export const getAudioUrl = (soundId) => {
-  const filename = AUDIO_FILES[soundId];
+  const resolvedId = LEGACY_SOUND_MAP[soundId] || soundId;
+  const filename = AUDIO_FILES[resolvedId];
   if (!filename) return null;
   return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/audio/${filename}`;
 };
