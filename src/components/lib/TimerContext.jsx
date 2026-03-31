@@ -72,15 +72,15 @@ export function TimerProvider({ children }) {
     return () => clearInterval(relaxIntervalRef.current);
   }, [mode, relaxPaused]);
 
-  // Audio control
+  // Audio control — always fall back to a valid sound ID
   useEffect(() => {
     if (mode === "relax" && !relaxPaused) {
-      const url = getAudioUrl(relaxSoundId);
+      const url = getAudioUrl(relaxSoundId) || getAudioUrl("10hz-binaural-ocean");
       if (url) audioManager.play(url);
     } else if (mode === "relax" && relaxPaused) {
       audioManager.pause();
     } else if (isRunning && !isBreak) {
-      const url = getAudioUrl(focusSoundId);
+      const url = getAudioUrl(focusSoundId) || getAudioUrl("40hz-wind");
       if (url) audioManager.play(url);
     } else {
       audioManager.pause();
