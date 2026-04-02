@@ -9,7 +9,7 @@ export default function ExerciseDetail({ exercise, onClose }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      animate={{ opacity: 1 }
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-md"
       onClick={onClose}
@@ -40,6 +40,10 @@ export default function ExerciseDetail({ exercise, onClose }) {
                 src={exercise.image_url}
                 alt={exercise.name}
                 className="w-full h-auto"
+                                style={{
+                                                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 92%)',
+                                                    maskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 92%)',
+                                }}
               />
             </div>
           )}
