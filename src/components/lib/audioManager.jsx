@@ -9,7 +9,6 @@ class AudioManager {
     this.currentUrl = null;
     this.loadRetries = 0;
     this.maxRetries = 2;
-    this.crossfadeDuration = 4; // seconds of crossfade at loop boundary
   }
 
   async play(url) {
@@ -67,16 +66,23 @@ class AudioManager {
    * Creates a new AudioBuffer where the tail of the track is crossfaded into
    * the head, eliminating any audible seam when Web Audio loops the buffer.
    *
-   * The last `fadeSamples` of the original are blended (fade-out) with the
-   * first `fadeSamples` (fade-in), then the tail is trimmed so the buffer
-   * is shorter by exactly `fadeSamples`. When `loop = true` replays from
-   * sample 0, the transition is perfectly smooth.
+   * Uses 20% of the buffer length as crossfade region (capped at 20s) to
+   * ensure the blend reaches past any silent/sparse sections at the edges
+   * of the track (e.g. ocean waves that only play in the middle).
+   *
+   * Equal-power (sine/cosine) curves keep perceived volume constant.
    */
   createCrossfadeBuffer(buffer) {
     const sampleRate = buffer.sampleRate;
     const channels = buffer.numberOfChannels;
-    const fadeSamples = Math.floor(sampleRate * this.crossfadeDuration);
     const originalLength = buffer.length;
+
+    // 20% of buffer, capped at 20 seconds — reaches into the "good" middle
+    const maxFadeSamples = Math.floor(sampleRate * 20);
+    const fadeSamples = Math.min(
+      Math.floor(originalLength * 0.20),
+      maxFadeSamples
+    );
 
     // Need at least twice the fade region to make a meaningful crossfade
     if (originalLength < fadeSamples * 3) return buffer;
@@ -88,7 +94,7 @@ class AudioManager {
       const oldData = buffer.getChannelData(ch);
       const newData = newBuffer.getChannelData(ch);
 
-      // Crossfade region: equal-power blend (sine/cosine curves) for smooth transition
+      // Crossfade region: equal-power blend (sine/cosine curves)
       for (let i = 0; i < fadeSamples; i++) {
         const t = i / fadeSamples;
         const fadeIn = Math.sin(t * Math.PI / 2);
