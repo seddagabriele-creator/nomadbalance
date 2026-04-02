@@ -9,7 +9,7 @@ class AudioManager {
     this.currentUrl = null;
     this.loadRetries = 0;
     this.maxRetries = 2;
-    this.crossfadeDuration = 2; // seconds of crossfade at loop boundary
+    this.crossfadeDuration = 4; // seconds of crossfade at loop boundary
   }
 
   async play(url) {
@@ -88,10 +88,11 @@ class AudioManager {
       const oldData = buffer.getChannelData(ch);
       const newData = newBuffer.getChannelData(ch);
 
-      // Crossfade region: blend original start (fade-in) with original tail (fade-out)
+      // Crossfade region: equal-power blend (sine/cosine curves) for smooth transition
       for (let i = 0; i < fadeSamples; i++) {
-        const fadeIn = i / fadeSamples;
-        const fadeOut = 1 - fadeIn;
+        const t = i / fadeSamples;
+        const fadeIn = Math.sin(t * Math.PI / 2);
+        const fadeOut = Math.cos(t * Math.PI / 2);
         newData[i] = oldData[i] * fadeIn + oldData[newLength + i] * fadeOut;
       }
 
