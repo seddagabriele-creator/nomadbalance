@@ -195,6 +195,8 @@ export const userSettingsService = {
         .from("user_settings")
         .select("*")
         .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
     );
   },
 
