@@ -125,12 +125,13 @@ export default function BreakNotification({
               >
                 <div className="flex items-center gap-3">
                   {exercise?.image_url && (
-                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-white/10 shrink-0">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-white/10 shrink-0 relative">
                       <img
                         src={exercise.image_url}
                         alt={exercise.name}
                         className="w-full h-full object-cover"
                       />
+                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -156,8 +157,9 @@ export default function BreakNotification({
                   >
                     <div className="mt-2 space-y-3 bg-white/5 border border-white/10 rounded-2xl p-4 max-h-52 overflow-y-auto">
                       {exercise.image_url && (
-                        <div className="rounded-xl overflow-hidden border border-white/10">
+                        <div className="rounded-xl overflow-hidden border border-white/10 relative">
                           <img src={exercise.image_url} alt={exercise.name} className="w-full h-auto" />
+                          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
                         </div>
                       )}
                       {exercise.execution && (
@@ -286,12 +288,13 @@ export default function BreakNotification({
             <div className="p-6 space-y-5">
               {/* Image */}
               {exercise?.image_url && (
-                <div className="rounded-2xl overflow-hidden border border-white/10">
+                <div className="rounded-2xl overflow-hidden border border-white/10 relative">
                   <img
                     src={exercise.image_url}
                     alt={exercise.name}
                     className="w-full h-auto"
                   />
+                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
                 </div>
               )}
 

@@ -35,12 +35,13 @@ export default function ExerciseDetail({ exercise, onClose }) {
 
         <div className="p-6 space-y-6">
           {exercise.image_url && (
-            <div className="rounded-2xl overflow-hidden border border-white/10">
+            <div className="rounded-2xl overflow-hidden border border-white/10 relative">
               <img
                 src={exercise.image_url}
                 alt={exercise.name}
                 className="w-full h-auto"
               />
+              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
             </div>
           )}
 
