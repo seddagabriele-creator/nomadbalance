@@ -58,14 +58,21 @@ export default function Settings() {
   });
 
   const handleSave = () => {
+    if (!userSettings.id) {
+      toast.error("Settings still loading, please wait...");
+      return;
+    }
     saveMutation.mutate(formData);
     saveDailyDefaults(localDefaults);
     toast.success("Settings saved successfully");
     navigate("/");
   };
 
+  // Sync form when settings load — keyed on userSettings.id to avoid
+  // re-firing on every React Query refetch (object reference changes)
+  const settingsId = userSettings.id;
   React.useEffect(() => {
-    if (userSettings.id) {
+    if (settingsId) {
       setFormData({
         display_name: userSettings.display_name || "",
         morning_work_start: userSettings.morning_work_start || DEFAULT_WORK_HOURS.morning_start,
@@ -78,7 +85,7 @@ export default function Settings() {
         notification_end_time: userSettings.notification_end_time || DEFAULT_WORK_HOURS.afternoon_end,
       });
     }
-  }, [userSettings]);
+  }, [settingsId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white">
