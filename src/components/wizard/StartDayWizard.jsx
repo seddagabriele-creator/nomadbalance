@@ -567,13 +567,29 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
                   {/* Old tasks section */}
                   {previousUncompletedTasks.length > 0 && (
                     <div className="pt-2">
-                      <button
-                        onClick={() => { setShowOldTasks(!showOldTasks); setSelectedOldTasks(new Set()); }}
-                        className="flex items-center gap-2 text-white/40 hover:text-white/70 text-xs transition-colors"
-                      >
-                        <History className="w-3.5 h-3.5" />
-                        {showOldTasks ? "Hide" : "View"} old tasks ({previousUncompletedTasks.length})
-                      </button>
+                      <div className="flex items-center justify-between">
+                        <button
+                          onClick={() => { setShowOldTasks(!showOldTasks); setSelectedOldTasks(new Set()); }}
+                          className="flex items-center gap-2 text-white/40 hover:text-white/70 text-xs transition-colors"
+                        >
+                          <History className="w-3.5 h-3.5" />
+                          {showOldTasks ? "Hide" : "View"} old tasks ({previousUncompletedTasks.length})
+                        </button>
+                        <Button
+                          onClick={() => {
+                            const newTasks = previousUncompletedTasks
+                              .filter((t) => !tasks.some((existing) => existing.title === t.title))
+                              .map((t, i) => ({ title: t.title, order: tasks.length + i + 1 }));
+                            setTasks([...tasks, ...newTasks]);
+                            setShowOldTasks(false);
+                            setSelectedOldTasks(new Set());
+                          }}
+                          variant="ghost"
+                          className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 text-xs h-7 px-2"
+                        >
+                          Move all to today
+                        </Button>
+                      </div>
 
                       <AnimatePresence>
                         {showOldTasks && (
