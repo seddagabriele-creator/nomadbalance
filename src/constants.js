@@ -17,6 +17,8 @@ export const DEFAULT_BREAK_INTERVAL_MINUTES = 30; // how often to take a stretch
 export const AWAY_WARNING_DELAY_MS = 30 * ONE_MINUTE_MS; // 30 min hidden → send warning
 export const AWAY_GRACE_AFTER_WARNING_MS = 5 * ONE_MINUTE_MS; // 5 min to respond before auto-away
 export const BREAK_NO_RESPONSE_AWAY_MS = 10 * ONE_MINUTE_MS; // 10 min ignoring a break → auto-away
+export const IDLE_AUTO_AWAY_MS = 15 * ONE_MINUTE_MS; // 15 min no mouse/keyboard → auto-away
+export const MAX_OVERDUE_BREAKS = 2; // cap overdue breaks shown; older ones get auto-skipped
 
 // Fasting / Eating window defaults
 export const DEFAULT_FASTING_PRESET = "16/8";
