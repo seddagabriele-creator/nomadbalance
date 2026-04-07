@@ -6,7 +6,7 @@ import { ArrowLeft, Zap, Heart, Code, Globe, Target, Layers, BookOpen, Cpu } fro
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="About NomadBalance" description="NomadBalance helps remote workers stay focused, healthy, and productive. Built by Gabriele Sedda for digital nomads and remote professionals worldwide." />
+      <SEO title="About NomadBalance" description="NomadBalance helps remote workers stay focused, healthy, and productive. Built for digital nomads and remote professionals worldwide." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -86,7 +86,7 @@ export default function AboutPage() {
               <h2 className="text-xl font-bold text-white">Who's Behind It</h2>
             </div>
             <p className="mb-3">
-              I'm Gabriele Sedda, a software developer based in Sardinia, Italy. I've been working remotely for several years, bouncing between coworking spaces, cafes, and home offices across Europe. Through that experience, I've learned firsthand what helps remote workers thrive — and what traps them.
+              Hi, I'm Gab — a remote worker based in Sardinia, Italy. I've been working remotely for several years, bouncing between coworking spaces, cafes, and home offices across Europe. Through that experience, I've learned firsthand what helps remote workers thrive — and what traps them.
             </p>
             <p>
               NomadBalance is an independent project, built with care and constantly improved based on real usage patterns and user feedback. It's not backed by venture capital or designed to maximize engagement. It's designed to help you have a better workday and then close the laptop.

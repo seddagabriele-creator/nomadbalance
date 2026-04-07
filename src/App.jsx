@@ -14,7 +14,7 @@ import CookiePolicy from '@/pages/CookiePolicy';
 import TermsOfService from '@/pages/TermsOfService';
 import AuthCallback from '@/pages/AuthCallback';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import CookieConsent from '@/components/CookieConsent';
+
 import BlogIndex from '@/pages/blog/BlogIndex';
 import AboutPage from '@/pages/AboutPage';
 import ContactPage from '@/pages/ContactPage';
@@ -230,7 +230,6 @@ function App() {
           />
         </QueryClientProvider>
       </AuthProvider>
-      <CookieConsent />
     </ErrorBoundary>
   )
 }

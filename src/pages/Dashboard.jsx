@@ -163,6 +163,19 @@ export default function Dashboard() {
   });
 
   const topTask = [...tasks].sort((a, b) => a.order - b.order).find((t) => !t.completed) || null;
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((t) => t.completed).length;
+
+  // Old uncompleted tasks from previous sessions
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ["allTasks"],
+    queryFn: () => taskService.listAll("-order"),
+  });
+
+  const oldUncompletedTasks = React.useMemo(() => {
+    if (!session?.id) return [];
+    return allTasks.filter((t) => !t.completed && t.session_id && t.session_id !== session.id);
+  }, [allTasks, session?.id]);
 
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises"],
@@ -475,6 +488,35 @@ export default function Dashboard() {
         },
       });
     }
+  };
+
+  // Quick action: move all old tasks to today
+  const handleMoveAllToToday = async () => {
+    if (!session?.id || oldUncompletedTasks.length === 0) return;
+    const maxOrder = tasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
+    let offset = 0;
+    for (const task of oldUncompletedTasks) {
+      offset++;
+      await taskService.update(task.id, { session_id: session.id, order: maxOrder + offset });
+    }
+    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+    toast.success(`Moved ${oldUncompletedTasks.length} task${oldUncompletedTasks.length > 1 ? "s" : ""} to today`);
+  };
+
+  // Quick action: add a task from the dashboard
+  const handleQuickAddTask = async (title) => {
+    if (!session?.id || !title.trim()) return;
+    const maxOrder = tasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
+    await taskService.create({
+      session_id: session.id,
+      title: title.trim(),
+      order: maxOrder + 1,
+      completed: false,
+    });
+    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+    toast.success("Task added");
   };
 
   // Quick action: change sound from FlowCard
@@ -915,7 +957,16 @@ export default function Dashboard() {
                 <BodyCard session={session} onSwapExercise={handleQuickSwapExercise} />
               </Link>
               <Link to={createPageUrl("Journal")} className="min-h-[170px]">
-                <JournalCard session={session} topTask={topTask} onToggleTask={handleToggleTask} />
+                <JournalCard
+                  session={session}
+                  topTask={topTask}
+                  onToggleTask={handleToggleTask}
+                  oldTaskCount={oldUncompletedTasks.length}
+                  onMoveAllToToday={handleMoveAllToToday}
+                  onAddTask={handleQuickAddTask}
+                  totalTasks={totalTasks}
+                  completedTasks={completedTasks}
+                />
               </Link>
             </>
           )}
