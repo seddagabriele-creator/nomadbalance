@@ -1,13 +1,26 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import RelatedArticles from "@/components/RelatedArticles";
+import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Headphones, Brain, Activity, Volume2, Settings, CheckCircle, Lightbulb } from "lucide-react";
+import { articleJsonLd } from "@/lib/jsonLd";
 
 export default function BinauralBeatsProductivity() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="Binaural Beats and Productivity: What the Science Says" description="How specific audio frequencies can enhance concentration and help you enter flow state faster." />
+      <SEO
+        title="Binaural Beats and Productivity: What the Science Says"
+        description="How specific audio frequencies can enhance concentration and help you enter flow state faster."
+        jsonLd={articleJsonLd({
+          title: "Binaural Beats and Productivity: What the Science Says",
+          description: "How specific audio frequencies can enhance concentration and help you enter flow state faster.",
+          slug: "binaural-beats-productivity",
+          datePublished: "2026-03-10",
+          readTime: "7 min",
+          category: "Focus",
+        })}
+      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -184,6 +197,7 @@ export default function BinauralBeatsProductivity() {
           </section>
         
 
+          <AuthorBio date="2026-03-10" />
           <RelatedArticles currentSlug="binaural-beats-productivity" />
         </div>
       </article>

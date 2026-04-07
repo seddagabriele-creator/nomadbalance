@@ -1,13 +1,26 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import RelatedArticles from "@/components/RelatedArticles";
+import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, Brain, Activity, TrendingUp, Battery, CheckCircle, Search } from "lucide-react";
+import { articleJsonLd } from "@/lib/jsonLd";
 
 export default function UltradianRhythms() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="Ultradian Rhythms: Why Your Body Works in 90-Minute Cycles" description="Understanding your body's natural energy cycles and how to align your work schedule with them." />
+      <SEO
+        title="Ultradian Rhythms: Why Your Body Works in 90-Minute Cycles"
+        description="Understanding your body's natural energy cycles and how to align your work schedule with them."
+        jsonLd={articleJsonLd({
+          title: "Ultradian Rhythms: Why Your Body Works in 90-Minute Cycles",
+          description: "Understanding your body's natural energy cycles and how to align your work schedule with them.",
+          slug: "ultradian-rhythms-productivity",
+          datePublished: "2026-02-20",
+          readTime: "8 min",
+          category: "Focus",
+        })}
+      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -174,6 +187,7 @@ export default function UltradianRhythms() {
           </section>
         
 
+          <AuthorBio date="2026-02-20" />
           <RelatedArticles currentSlug="ultradian-rhythms-productivity" />
         </div>
       </article>

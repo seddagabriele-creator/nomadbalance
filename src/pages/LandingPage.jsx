@@ -168,7 +168,7 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link to="/login" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-bold text-base shadow-lg shadow-violet-500/20 transition-all">
-                Start for free
+                Get started
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <a href="#features" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 font-medium text-base transition-all">
@@ -281,18 +281,37 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ====== CTA ====== */}
-      <section className="max-w-3xl mx-auto px-4 py-20 text-center">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-gradient-to-br from-violet-500/10 to-cyan-500/10 border border-white/10 rounded-3xl p-10 md:p-14">
-          <h2 className="text-3xl font-extrabold mb-3">Ready to take care of your workday?</h2>
-          <p className="text-white/50 mb-8 max-w-lg mx-auto">
-            NomadBalance is free. No credit card, no install. Create an account and start your first day in under a minute.
+      {/* ====== RESOURCES ====== */}
+      <section className="max-w-5xl mx-auto px-4 py-20">
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">Learn more about remote work wellness</h2>
+          <p className="text-white/40 text-base max-w-xl mx-auto">
+            Explore our in-depth guides and research-backed articles on focus, nutrition, movement, and productivity for desk workers.
           </p>
-          <Link to="/login" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-bold text-base shadow-lg shadow-violet-500/20 transition-all">
-            Create free account
-            <ArrowRight className="w-4 h-4" />
-          </Link>
         </motion.div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Link to="/guide/pomodoro-focus-timer" className="group p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] transition-colors">
+            <Timer className="w-5 h-5 text-violet-400 mb-3" />
+            <h3 className="text-sm font-semibold text-white mb-1">The Pomodoro Technique</h3>
+            <p className="text-white/40 text-xs leading-relaxed mb-3">How structured focus intervals improve deep work and prevent mental fatigue.</p>
+            <span className="text-xs text-cyan-400 group-hover:text-cyan-300 transition-colors">Read guide &rarr;</span>
+          </Link>
+          <Link to="/guide/intermittent-fasting-for-professionals" className="group p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] transition-colors">
+            <Droplets className="w-5 h-5 text-emerald-400 mb-3" />
+            <h3 className="text-sm font-semibold text-white mb-1">Intermittent Fasting for Professionals</h3>
+            <p className="text-white/40 text-xs leading-relaxed mb-3">Evidence-based eating schedules that boost cognitive performance during work hours.</p>
+            <span className="text-xs text-cyan-400 group-hover:text-cyan-300 transition-colors">Read guide &rarr;</span>
+          </Link>
+          <Link to="/guide/desk-exercises-remote-workers" className="group p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] transition-colors">
+            <Activity className="w-5 h-5 text-orange-400 mb-3" />
+            <h3 className="text-sm font-semibold text-white mb-1">Desk Exercises for Remote Workers</h3>
+            <p className="text-white/40 text-xs leading-relaxed mb-3">Targeted movements to prevent pain and restore mobility without leaving your desk.</p>
+            <span className="text-xs text-cyan-400 group-hover:text-cyan-300 transition-colors">Read guide &rarr;</span>
+          </Link>
+        </div>
+        <div className="text-center mt-8">
+          <Link to="/blog" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Browse all 27 articles &rarr;</Link>
+        </div>
       </section>
 
       {/* ====== FOOTER ====== */}

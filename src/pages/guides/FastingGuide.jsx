@@ -148,14 +148,14 @@ export default function FastingGuide() {
             </div>
           </section>
 
-          <section className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-2xl p-6 border border-white/10">
-            <h2 className="text-lg font-bold text-white mb-2">Track Your Fasting with NomadBalance</h2>
-            <p className="mb-4">
-              NomadBalance's Fuel module helps you set your fasting protocol, track your eating window, and log meals — all integrated with your work schedule so you never miss a meal or break your fast unintentionally.
-            </p>
-            <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white font-medium text-sm transition-colors">
-              Get started for free
-            </Link>
+          <section className="bg-white/[0.03] rounded-2xl p-6 border border-white/[0.06]">
+            <h2 className="text-lg font-bold text-white mb-3">Continue reading</h2>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/blog/blood-sugar-focus-connection" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Blood Sugar and Focus</Link> — how what you eat affects how you think</li>
+              <li><Link to="/blog/meal-timing-remote-workers" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Meal Timing for Remote Workers</Link> — strategic eating for peak performance</li>
+              <li><Link to="/blog/caffeine-strategy-productivity" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">The Caffeine Strategy</Link> — when and how much coffee actually helps</li>
+              <li><Link to="/blog/hydration-cognitive-performance" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Hydration and Cognitive Performance</Link> — the overlooked productivity tool</li>
+            </ul>
           </section>
         </div>
       </article>

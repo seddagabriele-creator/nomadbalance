@@ -1,6 +1,7 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import RelatedArticles from "@/components/RelatedArticles";
+import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Bone, Activity, StretchHorizontal, ShieldCheck, Monitor, Timer, Stethoscope } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
@@ -183,6 +184,7 @@ export default function BackPainSittingAllDay() {
           </section>
         
 
+          <AuthorBio date="2026-02-26" />
           <RelatedArticles currentSlug="back-pain-sitting-all-day" />
         </div>
       </article>

@@ -142,14 +142,14 @@ export default function PomodoroGuide() {
             </ol>
           </section>
 
-          <section className="bg-gradient-to-br from-violet-500/10 to-cyan-500/10 rounded-2xl p-6 border border-white/10">
-            <h2 className="text-lg font-bold text-white mb-2">Try it with NomadBalance</h2>
-            <p className="mb-4">
-              NomadBalance combines a customizable Pomodoro timer with binaural beats, active break scheduling, and daily goal tracking — everything a remote worker needs to stay productive without burning out.
-            </p>
-            <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-xl text-white font-medium text-sm transition-colors">
-              Get started for free
-            </Link>
+          <section className="bg-white/[0.03] rounded-2xl p-6 border border-white/[0.06]">
+            <h2 className="text-lg font-bold text-white mb-3">Continue reading</h2>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/blog/deep-work-remote-environment" className="text-violet-400 hover:text-violet-300 underline underline-offset-2">Deep Work in a Remote Environment</Link> — strategies for distraction-free focus blocks</li>
+              <li><Link to="/blog/context-switching-hidden-cost" className="text-violet-400 hover:text-violet-300 underline underline-offset-2">The Hidden Cost of Context Switching</Link> — why multitasking destroys productivity</li>
+              <li><Link to="/blog/binaural-beats-productivity" className="text-violet-400 hover:text-violet-300 underline underline-offset-2">Binaural Beats and Productivity</Link> — the science behind focus-enhancing audio</li>
+              <li><Link to="/guide/desk-exercises-remote-workers" className="text-violet-400 hover:text-violet-300 underline underline-offset-2">Desk Exercises for Remote Workers</Link> — what to do during your break intervals</li>
+            </ul>
           </section>
         </div>
       </article>

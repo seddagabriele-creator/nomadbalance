@@ -144,14 +144,14 @@ export default function DeskExercisesGuide() {
             </p>
           </section>
 
-          <section className="bg-gradient-to-br from-orange-500/10 to-amber-500/10 rounded-2xl p-6 border border-white/10">
-            <h2 className="text-lg font-bold text-white mb-2">Let NomadBalance Remind You</h2>
-            <p className="mb-4">
-              NomadBalance schedules exercise breaks around your work sessions, selects exercises from its library of 27+ desk-friendly movements, and tracks your progress. You choose the muscle groups, the app handles the timing.
-            </p>
-            <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 rounded-xl text-white font-medium text-sm transition-colors">
-              Get started for free
-            </Link>
+          <section className="bg-white/[0.03] rounded-2xl p-6 border border-white/[0.06]">
+            <h2 className="text-lg font-bold text-white mb-3">Continue reading</h2>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/blog/back-pain-sitting-all-day" className="text-orange-400 hover:text-orange-300 underline underline-offset-2">Back Pain From Sitting All Day?</Link> — a recovery guide for remote workers</li>
+              <li><Link to="/blog/posture-correction-guide" className="text-orange-400 hover:text-orange-300 underline underline-offset-2">Posture Correction for Laptop Users</Link> — identify and fix common problems</li>
+              <li><Link to="/blog/sitting-disease-remote-work" className="text-orange-400 hover:text-orange-300 underline underline-offset-2">Sitting Disease: The Silent Health Crisis</Link> — why prolonged sitting is the new smoking</li>
+              <li><Link to="/blog/ergonomic-home-office-setup" className="text-orange-400 hover:text-orange-300 underline underline-offset-2">Ergonomic Home Office Setup</Link> — protect your body on any budget</li>
+            </ul>
           </section>
         </div>
       </article>
