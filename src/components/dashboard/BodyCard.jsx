@@ -1,15 +1,16 @@
 import React from "react";
-import { Activity, ChevronRight, RefreshCw } from "lucide-react";
+import { Activity, ChevronRight, RefreshCw, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { DEFAULT_BODY_BREAKS_TARGET } from "../../constants";
 
-export default function BodyCard({ session, onSwapExercise }) {
+export default function BodyCard({ session, onSwapExercise, isAfterHours, onExtendSupport }) {
   const breaksDone = session?.body_breaks_done || 0;
   const breaksTarget = session?.body_breaks_target || DEFAULT_BODY_BREAKS_TARGET;
   const schedule = session?.body_break_schedule || [];
   const nextBreakIndex = schedule.findIndex(b => !b.completed);
   const nextBreak = nextBreakIndex >= 0 ? schedule[nextBreakIndex] : null;
-  const nextExercise = nextBreak?.exercise_name || (session ? "All done" : "Start your day");
+  const allDone = session && !nextBreak;
+  const nextExercise = nextBreak?.exercise_name || (session ? "All done" : "Loading...");
   const progressPercent = breaksTarget > 0 ? (breaksDone / breaksTarget) * 100 : 0;
 
   return (
@@ -46,6 +47,19 @@ export default function BodyCard({ session, onSwapExercise }) {
           )}
         </div>
       </div>
+
+      {/* After-hours support button */}
+      {isAfterHours && allDone && onExtendSupport && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onExtendSupport(); }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="flex items-center justify-center gap-1.5 py-1.5 mb-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 transition-colors"
+        >
+          <Clock className="w-3 h-3 text-orange-400" />
+          <span className="text-[10px] font-medium text-orange-400">Continue stretching support?</span>
+        </button>
+      )}
 
       {/* Progress */}
       <div>
