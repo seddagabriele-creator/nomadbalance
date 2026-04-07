@@ -7,7 +7,7 @@ import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
 import { useAuth } from "../lib/AuthContext";
-import { ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_BREAK_INTERVAL_MINUTES, DEFAULT_WORK_HOURS, AWAY_WARNING_DELAY_MS, AWAY_GRACE_AFTER_WARNING_MS, BREAK_NO_RESPONSE_AWAY_MS, getEatingHours, calculateEatingWindowEnd } from "../constants";
+import { ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_BREAK_INTERVAL_MINUTES, DEFAULT_WORK_HOURS, AWAY_WARNING_DELAY_MS, AWAY_GRACE_AFTER_WARNING_MS, BREAK_NO_RESPONSE_AWAY_MS, IDLE_AUTO_AWAY_MS, MAX_OVERDUE_BREAKS, getEatingHours, calculateEatingWindowEnd } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
@@ -260,8 +260,22 @@ export default function Dashboard() {
 
       const schedule = session.body_break_schedule || [];
       const dueBreaks = schedule.filter(
-        (b) => !b.completed && toMinutes(b.time) <= nowMinutes
+        (b) => !b.completed && !b.skipped && toMinutes(b.time) <= nowMinutes
       );
+
+      // Auto-skip excess overdue breaks — keep only the most recent MAX_OVERDUE_BREAKS
+      if (dueBreaks.length > MAX_OVERDUE_BREAKS) {
+        const toAutoSkip = dueBreaks.slice(0, dueBreaks.length - MAX_OVERDUE_BREAKS);
+        const updatedSchedule = schedule.map((b) => {
+          if (toAutoSkip.some((s) => s.time === b.time && s.exercise_id === b.exercise_id)) {
+            return { ...b, skipped: true };
+          }
+          return b;
+        });
+        updateSession.mutate({ body_break_schedule: updatedSchedule });
+        // Continue with only the kept breaks
+        dueBreaks.splice(0, dueBreaks.length - MAX_OVERDUE_BREAKS);
+      }
 
       if (dueBreaks.length > 1) {
         // Multiple overdue: show batch dialog instead of one-by-one
@@ -717,6 +731,36 @@ export default function Dashboard() {
       clearAwayTimers();
     };
   }, [session, isAway, markAsAway]);
+
+  // Idle detection: track mouse/keyboard/scroll/touch activity on visible tab
+  const idleTimer = React.useRef(null);
+  const lastActivityRef = React.useRef(Date.now());
+
+  useEffect(() => {
+    if (!session || session.status !== "active" || isAway) return;
+
+    const resetIdleTimer = () => {
+      lastActivityRef.current = Date.now();
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      idleTimer.current = setTimeout(() => {
+        if (!document.hidden && !isAway) {
+          markAsAway();
+          toast("No activity detected — you've been set to Away.", { icon: "☕" });
+        }
+      }, IDLE_AUTO_AWAY_MS);
+    };
+
+    // Start the idle timer immediately
+    resetIdleTimer();
+
+    const events = ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "pointerdown"];
+    events.forEach((e) => document.addEventListener(e, resetIdleTimer, { passive: true }));
+
+    return () => {
+      events.forEach((e) => document.removeEventListener(e, resetIdleTimer));
+      if (idleTimer.current) { clearTimeout(idleTimer.current); idleTimer.current = null; }
+    };
+  }, [session?.id, session?.status, isAway, markAsAway]);
 
   const handleResetDay = () => {
     if (session && window.confirm("Do you really want to reset the day?")) {
