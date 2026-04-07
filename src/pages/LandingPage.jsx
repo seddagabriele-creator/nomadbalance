@@ -120,6 +120,7 @@ export default function LandingPage() {
       <SEO
         title="Remote Work Productivity App — Focus, Nutrition, Movement & Planning"
         description="NomadBalance is a free productivity app for remote workers. Focus timer with binaural audio, intermittent fasting tracker, guided desk exercises, and daily task planner — all in one PWA."
+        image="https://nomadbalance.app/icons/icon-512.png"
         jsonLd={[organizationJsonLd(), websiteJsonLd()]}
       />
       {/* ====== HERO ====== */}
