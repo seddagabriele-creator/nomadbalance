@@ -1032,10 +1032,10 @@ export default function Dashboard() {
               </div>
               <div className="w-px h-6 bg-white/10" />
               <div className="text-center group relative cursor-default">
-                <p className="text-base font-bold text-white">{session?.body_breaks_done || 0}/{session?.body_breaks_target || 0}</p>
+                <p className="text-base font-bold text-white">{session?.body_breaks_done || 0}</p>
                 <p className="text-[9px] text-white/40 uppercase tracking-wider">Breaks</p>
                 <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/90 px-2.5 py-1 text-[10px] text-white/80 opacity-0 transition-opacity group-hover:opacity-100 shadow-lg">
-                  Exercise breaks done / planned
+                  Exercise breaks done today
                 </span>
               </div>
               <div className="w-px h-6 bg-white/10" />
