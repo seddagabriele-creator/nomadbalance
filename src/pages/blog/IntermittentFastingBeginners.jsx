@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, BookOpen, ClipboardList, TrendingUp, CalendarDays, AlertTriangle, HelpCircle, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function IntermittentFastingBeginners() {
   return (
@@ -12,6 +13,7 @@ export default function IntermittentFastingBeginners() {
       <SEO
         title="Intermittent Fasting for Beginners: A Complete 2026 Guide"
         description="Everything you need to know to start intermittent fasting safely and sustainably."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Intermittent Fasting for Beginners: A Complete 2026 Guide",
           description: "Everything you need to know to start intermittent fasting safely and sustainably.",
@@ -247,6 +249,7 @@ export default function IntermittentFastingBeginners() {
           <RelatedArticles currentSlug="intermittent-fasting-beginners" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

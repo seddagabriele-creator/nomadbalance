@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Droplets, Brain, AlertTriangle, Target, Bell, Beaker, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function HydrationPerformance() {
   return (
@@ -12,6 +13,7 @@ export default function HydrationPerformance() {
       <SEO
         title="Hydration and Cognitive Performance: The Overlooked Productivity Tool"
         description="Even mild dehydration reduces focus by 25%. Here's how to stay properly hydrated while working."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Hydration and Cognitive Performance: The Overlooked Productivity Tool",
           description: "Even mild dehydration reduces focus by 25%. Here's how to stay properly hydrated while working.",
@@ -214,6 +216,7 @@ export default function HydrationPerformance() {
           <RelatedArticles currentSlug="hydration-cognitive-performance" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

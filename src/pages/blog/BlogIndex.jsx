@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import SEO from "@/components/SEO";
+import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Timer, Droplets, Activity, Target } from "lucide-react";
 import { BLOG_POSTS } from "./blogData";
@@ -113,6 +114,7 @@ export default function BlogIndex() {
           })}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

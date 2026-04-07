@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, Sun, Utensils, Calendar, Brain, CheckCircle, AlertTriangle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function MealTimingRemote() {
   return (
@@ -12,6 +13,7 @@ export default function MealTimingRemote() {
       <SEO
         title="Meal Timing for Remote Workers: When to Eat for Peak Performance"
         description="Strategic meal timing aligned with your work schedule for sustained energy and better focus."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Meal Timing for Remote Workers: When to Eat for Peak Performance",
           description: "Strategic meal timing aligned with your work schedule for sustained energy and better focus.",
@@ -204,6 +206,7 @@ export default function MealTimingRemote() {
           <RelatedArticles currentSlug="meal-timing-remote-workers" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, AlertTriangle, Activity, Heart, Flame, Monitor, Footprints, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function SittingDisease() {
   return (
@@ -12,6 +13,7 @@ export default function SittingDisease() {
       <SEO
         title="Sitting Disease: The Remote Worker's Silent Health Crisis"
         description="Why prolonged sitting is being called the new smoking, and what you can do about it every hour."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Sitting Disease: The Remote Worker's Silent Health Crisis",
           description: "Why prolonged sitting is being called the new smoking, and what you can do about it every hour.",
@@ -195,6 +197,7 @@ export default function SittingDisease() {
           <RelatedArticles currentSlug="sitting-disease-remote-work" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

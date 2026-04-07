@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, LayoutGrid, MessageCircleOff, Battery, Brain, Music, Coffee, CalendarCheck, RefreshCw, Smartphone, Users, Trophy } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function RemoteWorkProductivityTips() {
   return (
@@ -12,6 +13,7 @@ export default function RemoteWorkProductivityTips() {
       <SEO
         title="15 Proven Remote Work Productivity Tips for 2026"
         description="Battle-tested strategies from experienced remote workers to maximize your output from anywhere."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "15 Proven Remote Work Productivity Tips for 2026",
           description: "Battle-tested strategies from experienced remote workers to maximize your output from anywhere.",
@@ -222,6 +224,7 @@ export default function RemoteWorkProductivityTips() {
           <RelatedArticles currentSlug="remote-work-productivity-tips" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

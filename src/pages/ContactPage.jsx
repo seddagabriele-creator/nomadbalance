@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import SEO from "@/components/SEO";
+import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Send, MessageSquare, Bug, Lightbulb, Clock, HelpCircle, CheckCircle } from "lucide-react";
 
@@ -205,6 +206,7 @@ export default function ContactPage() {
           </p>
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

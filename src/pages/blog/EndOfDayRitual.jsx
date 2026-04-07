@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Sunset, AlertOctagon, ClipboardList, Footprints, Laptop, Moon, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function EndOfDayRitual() {
   return (
@@ -12,6 +13,7 @@ export default function EndOfDayRitual() {
       <SEO
         title="The End-of-Day Ritual: How to Actually Stop Working When You Work From Home"
         description="Creating a clear boundary between work and personal time when your office never closes."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "The End-of-Day Ritual: How to Actually Stop Working When You Work From Home",
           description: "Creating a clear boundary between work and personal time when your office never closes.",
@@ -197,6 +199,7 @@ export default function EndOfDayRitual() {
           <RelatedArticles currentSlug="end-of-day-ritual-remote-work" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

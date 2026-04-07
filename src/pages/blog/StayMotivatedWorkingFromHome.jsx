@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Brain, Flame, Target, Users, Palette, Trophy, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function StayMotivatedWorkingFromHome() {
   return (
@@ -12,6 +13,7 @@ export default function StayMotivatedWorkingFromHome() {
       <SEO
         title="How to Stay Motivated Working From Home: A Science-Based Approach"
         description="Why willpower fails and what actually works to maintain drive and energy as a remote worker."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "How to Stay Motivated Working From Home: A Science-Based Approach",
           description: "Why willpower fails and what actually works to maintain drive and energy as a remote worker.",
@@ -197,6 +199,7 @@ export default function StayMotivatedWorkingFromHome() {
           <RelatedArticles currentSlug="stay-motivated-working-from-home" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

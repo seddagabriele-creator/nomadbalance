@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Grid3X3, Layers, SortDesc, PieChart, ShieldAlert, XCircle, CheckCircle, Brain } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function TaskPrioritization() {
   return (
@@ -12,6 +13,7 @@ export default function TaskPrioritization() {
       <SEO
         title="Task Prioritization for Remote Workers: Beyond the To-Do List"
         description="Methods for deciding what to work on when everything feels urgent and nobody is telling you what to do."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Task Prioritization for Remote Workers: Beyond the To-Do List",
           description: "Methods for deciding what to work on when everything feels urgent and nobody is telling you what to do.",
@@ -221,6 +223,7 @@ export default function TaskPrioritization() {
           <RelatedArticles currentSlug="task-prioritization-methods" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

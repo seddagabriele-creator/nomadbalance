@@ -7,6 +7,7 @@ import {
   ArrowRight, Zap, BarChart3, Users, Coffee
 } from "lucide-react";
 import SEO from "@/components/SEO";
+import Footer from "@/components/Footer";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/jsonLd";
 
 const FEATURES = [
@@ -351,6 +352,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      <Footer />
     </div>
   );
 }

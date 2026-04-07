@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Headphones, Brain, Activity, Volume2, Settings, CheckCircle, Lightbulb } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function BinauralBeatsProductivity() {
   return (
@@ -12,6 +13,7 @@ export default function BinauralBeatsProductivity() {
       <SEO
         title="Binaural Beats and Productivity: What the Science Says"
         description="How specific audio frequencies can enhance concentration and help you enter flow state faster."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Binaural Beats and Productivity: What the Science Says",
           description: "How specific audio frequencies can enhance concentration and help you enter flow state faster.",
@@ -201,6 +203,7 @@ export default function BinauralBeatsProductivity() {
           <RelatedArticles currentSlug="binaural-beats-productivity" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

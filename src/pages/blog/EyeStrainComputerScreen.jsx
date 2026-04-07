@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Eye, MonitorSmartphone, Sun, Lightbulb, Timer, Stethoscope, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function EyeStrainComputerScreen() {
   return (
@@ -12,6 +13,7 @@ export default function EyeStrainComputerScreen() {
       <SEO
         title="Eye Strain From Computer Screens: Prevention and Relief for Remote Workers"
         description="Protect your vision with proven techniques to reduce digital eye strain during long work sessions."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Eye Strain From Computer Screens: Prevention and Relief for Remote Workers",
           description: "Protect your vision with proven techniques to reduce digital eye strain during long work sessions.",
@@ -213,6 +215,7 @@ export default function EyeStrainComputerScreen() {
           <RelatedArticles currentSlug="eye-strain-computer-screen" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

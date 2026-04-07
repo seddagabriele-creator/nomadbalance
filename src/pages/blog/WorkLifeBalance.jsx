@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Globe, Clock, Shield, Users, Heart, Sunset } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function WorkLifeBalance() {
   return (
@@ -12,6 +13,7 @@ export default function WorkLifeBalance() {
       <SEO
         title="Work-Life Balance for Digital Nomads: Structure Without Rigidity"
         description="How to create healthy routines that travel with you, no matter which time zone you wake up in."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Work-Life Balance for Digital Nomads: Structure Without Rigidity",
           description: "How to create healthy routines that travel with you, no matter which time zone you wake up in.",
@@ -153,6 +155,7 @@ export default function WorkLifeBalance() {
           <RelatedArticles currentSlug="work-life-balance-digital-nomads" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

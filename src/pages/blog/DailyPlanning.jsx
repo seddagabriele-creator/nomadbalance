@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Sunrise, ListChecks, Clock, BarChart3, Battery, CheckCircle, FileText } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function DailyPlanning() {
   return (
@@ -12,6 +13,7 @@ export default function DailyPlanning() {
       <SEO
         title="The 5-Minute Daily Plan That Doubles Remote Worker Productivity"
         description="A simple morning planning ritual that gives structure to your day without rigid scheduling."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "The 5-Minute Daily Plan That Doubles Remote Worker Productivity",
           description: "A simple morning planning ritual that gives structure to your day without rigid scheduling.",
@@ -191,6 +193,7 @@ export default function DailyPlanning() {
           <RelatedArticles currentSlug="daily-planning-remote-productivity" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

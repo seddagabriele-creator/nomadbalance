@@ -1,5 +1,6 @@
 import React from "react";
 import SEO from "@/components/SEO";
+import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Heart, Code, Globe, Target, Layers, BookOpen, Cpu } from "lucide-react";
 
@@ -164,6 +165,7 @@ export default function AboutPage() {
           </section>
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

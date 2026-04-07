@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, Timer, LayoutGrid, Scale, Lightbulb, FlaskConical, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function PomodoroVsTimeBlocking() {
   return (
@@ -12,6 +13,7 @@ export default function PomodoroVsTimeBlocking() {
       <SEO
         title="Pomodoro vs Time Blocking: Which Productivity Method Works Better?"
         description="A detailed comparison of two popular focus techniques and how to choose the right one for your work style."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Pomodoro vs Time Blocking: Which Productivity Method Works Better?",
           description: "A detailed comparison of two popular focus techniques and how to choose the right one for your work style.",
@@ -209,6 +211,7 @@ export default function PomodoroVsTimeBlocking() {
           <RelatedArticles currentSlug="pomodoro-vs-time-blocking" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

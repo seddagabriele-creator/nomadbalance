@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Activity, RotateCcw, Timer, BarChart3, CalendarClock, Heart } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function MicroExercises() {
   return (
@@ -12,6 +13,7 @@ export default function MicroExercises() {
       <SEO
         title="Micro-Exercises: 2-Minute Movements That Prevent Desk Pain"
         description="Quick targeted exercises you can do between meetings without changing clothes or breaking a sweat."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Micro-Exercises: 2-Minute Movements That Prevent Desk Pain",
           description: "Quick targeted exercises you can do between meetings without changing clothes or breaking a sweat.",
@@ -169,6 +171,7 @@ export default function MicroExercises() {
           <RelatedArticles currentSlug="micro-exercises-desk-workers" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }
