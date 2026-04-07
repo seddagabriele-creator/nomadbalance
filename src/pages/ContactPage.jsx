@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import SEO from "@/components/SEO";
+import useSEO from "@/hooks/useSEO";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Send, MessageSquare, Bug, Lightbulb, Clock, HelpCircle, CheckCircle } from "lucide-react";
@@ -35,9 +35,10 @@ export default function ContactPage() {
     }
   };
 
+  useSEO({ title: "Contact Us", description: "Get in touch with the NomadBalance team. We'd love to hear your feedback, suggestions, or questions about the app." });
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="Contact Us" description="Get in touch with the NomadBalance team. We'd love to hear your feedback, suggestions, or questions about the app." />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">

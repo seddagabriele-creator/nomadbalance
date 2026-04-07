@@ -1,13 +1,14 @@
 import React from "react";
-import SEO from "@/components/SEO";
+import useSEO from "@/hooks/useSEO";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Droplets, Clock, TrendingUp, Utensils, AlertCircle, CheckCircle } from "lucide-react";
 
 export default function FastingGuide() {
+  useSEO({ title: "Intermittent Fasting Guide for Professionals", description: "A practical guide to intermittent fasting for busy professionals. Learn how strategic meal timing can boost your energy and focus throughout the workday.", ogType: "article" });
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="Intermittent Fasting Guide for Professionals" description="A practical guide to intermittent fasting for busy professionals. Learn how strategic meal timing can boost your energy and focus throughout the workday." ogType="article" />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">

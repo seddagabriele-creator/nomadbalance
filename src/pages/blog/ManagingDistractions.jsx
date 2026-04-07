@@ -1,5 +1,5 @@
 import React from "react";
-import SEO from "@/components/SEO";
+import useSEO from "@/hooks/useSEO";
 import RelatedArticles from "@/components/RelatedArticles";
 import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
@@ -8,21 +8,22 @@ import { articleJsonLd } from "@/lib/jsonLd";
 import Footer from "@/components/Footer";
 
 export default function ManagingDistractions() {
+  useSEO({
+    title: "Managing Distractions When Working From Home",
+    description: "Practical techniques to handle interruptions from family, notifications, and your own wandering mind.",
+    ogType: "article",
+    jsonLd: articleJsonLd({
+      title: "Managing Distractions When Working From Home",
+      description: "Practical techniques to handle interruptions from family, notifications, and your own wandering mind.",
+      slug: "managing-distractions-work-from-home",
+      datePublished: "2026-02-28",
+      readTime: "9 min",
+      category: "Focus",
+    }),
+  });
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO
-        title="Managing Distractions When Working From Home"
-        description="Practical techniques to handle interruptions from family, notifications, and your own wandering mind."
-        ogType="article"
-        jsonLd={articleJsonLd({
-          title: "Managing Distractions When Working From Home",
-          description: "Practical techniques to handle interruptions from family, notifications, and your own wandering mind.",
-          slug: "managing-distractions-work-from-home",
-          datePublished: "2026-02-28",
-          readTime: "9 min",
-          category: "Focus",
-        })}
-      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
