@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Coffee, Clock, Brain, AlertTriangle, TrendingUp, RefreshCw, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function CaffeineStrategy() {
   return (
@@ -12,6 +13,7 @@ export default function CaffeineStrategy() {
       <SEO
         title="The Caffeine Strategy: When and How Much Coffee Actually Helps"
         description="Using caffeine intentionally instead of habitually for genuine cognitive enhancement."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "The Caffeine Strategy: When and How Much Coffee Actually Helps",
           description: "Using caffeine intentionally instead of habitually for genuine cognitive enhancement.",
@@ -205,6 +207,7 @@ export default function CaffeineStrategy() {
           <RelatedArticles currentSlug="caffeine-strategy-productivity" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

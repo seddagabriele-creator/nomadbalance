@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Brain, Shield, Clock, Layers, Target, CheckCircle, Lightbulb } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function DeepWorkRemote() {
   return (
@@ -12,6 +13,7 @@ export default function DeepWorkRemote() {
       <SEO
         title="Deep Work in a Remote Environment: How to Achieve Real Focus"
         description="Strategies for creating distraction-free focus blocks when your office is your living room."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Deep Work in a Remote Environment: How to Achieve Real Focus",
           description: "Strategies for creating distraction-free focus blocks when your office is your living room.",
@@ -188,6 +190,7 @@ export default function DeepWorkRemote() {
           <RelatedArticles currentSlug="deep-work-remote-environment" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, Brain, Activity, TrendingUp, Battery, CheckCircle, Search } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function UltradianRhythms() {
   return (
@@ -12,6 +13,7 @@ export default function UltradianRhythms() {
       <SEO
         title="Ultradian Rhythms: Why Your Body Works in 90-Minute Cycles"
         description="Understanding your body's natural energy cycles and how to align your work schedule with them."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Ultradian Rhythms: Why Your Body Works in 90-Minute Cycles",
           description: "Understanding your body's natural energy cycles and how to align your work schedule with them.",
@@ -191,6 +193,7 @@ export default function UltradianRhythms() {
           <RelatedArticles currentSlug="ultradian-rhythms-productivity" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

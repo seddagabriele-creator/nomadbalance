@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Bone, Activity, StretchHorizontal, ShieldCheck, Monitor, Timer, Stethoscope } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function BackPainSittingAllDay() {
   return (
@@ -12,6 +13,7 @@ export default function BackPainSittingAllDay() {
       <SEO
         title="Back Pain From Sitting All Day? A Remote Worker's Recovery Guide"
         description="Understanding why desk work destroys your back and a complete plan to fix and prevent the damage."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Back Pain From Sitting All Day? A Remote Worker's Recovery Guide",
           description: "Understanding why desk work destroys your back and a complete plan to fix and prevent the damage.",
@@ -188,6 +190,7 @@ export default function BackPainSittingAllDay() {
           <RelatedArticles currentSlug="back-pain-sitting-all-day" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

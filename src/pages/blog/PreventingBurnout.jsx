@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Flame, ThermometerSun, Search, Wifi, HeartPulse, Shield, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function PreventingBurnout() {
   return (
@@ -12,6 +13,7 @@ export default function PreventingBurnout() {
       <SEO
         title="Preventing Burnout as a Remote Worker: Early Signs and Practical Solutions"
         description="How to recognize burnout before it hits and build sustainable work habits that protect your mental health."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Preventing Burnout as a Remote Worker: Early Signs and Practical Solutions",
           description: "How to recognize burnout before it hits and build sustainable work habits that protect your mental health.",
@@ -205,6 +207,7 @@ export default function PreventingBurnout() {
           <RelatedArticles currentSlug="preventing-burnout-remote-workers" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, BellOff, Users, Smartphone, Eye, Home, CheckCircle, Shield } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function ManagingDistractions() {
   return (
@@ -12,6 +13,7 @@ export default function ManagingDistractions() {
       <SEO
         title="Managing Distractions When Working From Home"
         description="Practical techniques to handle interruptions from family, notifications, and your own wandering mind."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Managing Distractions When Working From Home",
           description: "Practical techniques to handle interruptions from family, notifications, and your own wandering mind.",
@@ -183,6 +185,7 @@ export default function ManagingDistractions() {
           <RelatedArticles currentSlug="managing-distractions-work-from-home" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

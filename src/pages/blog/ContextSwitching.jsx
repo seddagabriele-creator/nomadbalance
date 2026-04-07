@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Shuffle, Brain, Clock, Layers, MessageSquare, CheckCircle, Target } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function ContextSwitching() {
   return (
@@ -12,6 +13,7 @@ export default function ContextSwitching() {
       <SEO
         title="The Hidden Cost of Context Switching for Remote Workers"
         description="Research shows it takes 23 minutes to refocus after an interruption. Here's how to minimize switching."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "The Hidden Cost of Context Switching for Remote Workers",
           description: "Research shows it takes 23 minutes to refocus after an interruption. Here's how to minimize switching.",
@@ -193,6 +195,7 @@ export default function ContextSwitching() {
           <RelatedArticles currentSlug="context-switching-hidden-cost" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

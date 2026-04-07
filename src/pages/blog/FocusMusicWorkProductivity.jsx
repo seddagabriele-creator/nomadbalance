@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Headphones, Brain, Music, VolumeX, ListMusic, MessageSquareOff, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function FocusMusicWorkProductivity() {
   return (
@@ -12,6 +13,7 @@ export default function FocusMusicWorkProductivity() {
       <SEO
         title="Focus Music for Work: The Science Behind Productivity Soundscapes"
         description="How binaural beats, lo-fi, and ambient sounds affect your brain and which ones actually boost focus."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Focus Music for Work: The Science Behind Productivity Soundscapes",
           description: "How binaural beats, lo-fi, and ambient sounds affect your brain and which ones actually boost focus.",
@@ -172,6 +174,7 @@ export default function FocusMusicWorkProductivity() {
           <RelatedArticles currentSlug="focus-music-work-productivity" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

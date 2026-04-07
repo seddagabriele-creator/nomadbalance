@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Monitor, AlertTriangle, Search, Dumbbell, SlidersHorizontal, Eye, CheckCircle, RefreshCw } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function PostureCorrection() {
   return (
@@ -12,6 +13,7 @@ export default function PostureCorrection() {
       <SEO
         title="Posture Correction for Laptop Users: A Step-by-Step Guide"
         description="How to identify and fix the most common posture problems caused by working on a laptop all day."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Posture Correction for Laptop Users: A Step-by-Step Guide",
           description: "How to identify and fix the most common posture problems caused by working on a laptop all day.",
@@ -195,6 +197,7 @@ export default function PostureCorrection() {
           <RelatedArticles currentSlug="posture-correction-guide" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

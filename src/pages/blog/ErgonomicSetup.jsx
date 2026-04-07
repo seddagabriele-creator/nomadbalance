@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Monitor, Armchair, Mouse, Laptop, Sun, DollarSign, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function ErgonomicSetup() {
   return (
@@ -12,6 +13,7 @@ export default function ErgonomicSetup() {
       <SEO
         title="Setting Up an Ergonomic Home Office on Any Budget"
         description="From expensive standing desks to free posture hacks — how to protect your body at any price point."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Setting Up an Ergonomic Home Office on Any Budget",
           description: "From expensive standing desks to free posture hacks — how to protect your body at any price point.",
@@ -208,6 +210,7 @@ export default function ErgonomicSetup() {
           <RelatedArticles currentSlug="ergonomic-home-office-setup" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

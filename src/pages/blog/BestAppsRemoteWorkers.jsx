@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, MessageSquare, Target, Clock, Heart, FolderKanban, Wrench, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function BestAppsRemoteWorkers() {
   return (
@@ -12,6 +13,7 @@ export default function BestAppsRemoteWorkers() {
       <SEO
         title="Best Apps for Remote Workers in 2026: The Essential Toolkit"
         description="The must-have tools for communication, focus, health, and productivity when working remotely."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Best Apps for Remote Workers in 2026: The Essential Toolkit",
           description: "The must-have tools for communication, focus, health, and productivity when working remotely.",
@@ -218,6 +220,7 @@ export default function BestAppsRemoteWorkers() {
           <RelatedArticles currentSlug="best-apps-remote-workers" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

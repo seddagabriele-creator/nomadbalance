@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Sun, AlarmClock, Footprints, Utensils, ClipboardList, AlertTriangle, Plane } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function MorningRoutineRemoteWorkers() {
   return (
@@ -12,6 +13,7 @@ export default function MorningRoutineRemoteWorkers() {
       <SEO
         title="The Perfect Morning Routine for Remote Workers in 2026"
         description="Build a morning routine that replaces the commute as your transition into productive work mode."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "The Perfect Morning Routine for Remote Workers in 2026",
           description: "Build a morning routine that replaces the commute as your transition into productive work mode.",
@@ -169,6 +171,7 @@ export default function MorningRoutineRemoteWorkers() {
           <RelatedArticles currentSlug="morning-routine-remote-workers" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }

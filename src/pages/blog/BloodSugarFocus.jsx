@@ -5,6 +5,7 @@ import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Brain, Apple, TrendingDown, Utensils, Leaf, Clock, CheckCircle } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
+import Footer from "@/components/Footer";
 
 export default function BloodSugarFocus() {
   return (
@@ -12,6 +13,7 @@ export default function BloodSugarFocus() {
       <SEO
         title="Blood Sugar and Focus: How What You Eat Affects How You Think"
         description="The direct link between your meals, glucose levels, and cognitive performance throughout the workday."
+        ogType="article"
         jsonLd={articleJsonLd({
           title: "Blood Sugar and Focus: How What You Eat Affects How You Think",
           description: "The direct link between your meals, glucose levels, and cognitive performance throughout the workday.",
@@ -201,6 +203,7 @@ export default function BloodSugarFocus() {
           <RelatedArticles currentSlug="blood-sugar-focus-connection" />
         </div>
       </article>
+      <Footer />
     </div>
   );
 }
