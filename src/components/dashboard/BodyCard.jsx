@@ -1,23 +1,15 @@
 import React from "react";
-import { Activity, ChevronRight, RefreshCw, Clock } from "lucide-react";
+import { Activity, ChevronRight, RefreshCw, Clock, Check } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function BodyCard({ session, onSwapExercise, isAfterHours, onExtendSupport }) {
   const breaksDone = session?.body_breaks_done || 0;
   const schedule = session?.body_break_schedule || [];
 
-  // Dynamic denominator: only count breaks that have come due so far (completed + skipped + currently overdue)
-  const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const toMinutes = (t) => { const [h, m] = (t || "00:00").split(":").map(Number); return h * 60 + m; };
-  const breaksDueSoFar = schedule.filter(b => toMinutes(b.time) <= nowMinutes).length;
-  const breaksTarget = Math.max(breaksDueSoFar, breaksDone); // at least show done count
-
   const nextBreakIndex = schedule.findIndex(b => !b.completed && !b.skipped);
   const nextBreak = nextBreakIndex >= 0 ? schedule[nextBreakIndex] : null;
   const allDone = session && !nextBreak;
-  const nextExercise = nextBreak?.exercise_name || (session ? "All done" : "Loading...");
-  const progressPercent = breaksTarget > 0 ? (breaksDone / breaksTarget) * 100 : 0;
+  const nextExercise = nextBreak?.exercise_name || (session ? "All caught up" : "Loading...");
 
   return (
     <motion.div
@@ -34,24 +26,38 @@ export default function BodyCard({ session, onSwapExercise, isAfterHours, onExte
         <span className="text-[10px] font-semibold uppercase tracking-widest text-orange-400">Body</span>
       </div>
 
-      {/* Next exercise */}
+      {/* Next exercise or positive count */}
       <div className="py-3">
-        <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1.5">Next break</p>
-        <div className="flex items-center gap-2">
-          <ChevronRight className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
-          <p className="text-white font-semibold text-sm flex-1 leading-snug">{nextExercise}</p>
-          {nextBreak && session && onSwapExercise && (
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSwapExercise(nextBreakIndex); }}
-              onMouseDown={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
-              className="w-6 h-6 flex-shrink-0 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
-              aria-label="Swap exercise"
-            >
-              <RefreshCw className="w-3 h-3 text-white/25 hover:text-orange-400 transition-colors" />
-            </button>
-          )}
-        </div>
+        {nextBreak ? (
+          <>
+            <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1.5">
+              Next at {nextBreak.time}
+            </p>
+            <div className="flex items-center gap-2">
+              <ChevronRight className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
+              <p className="text-white font-semibold text-sm flex-1 leading-snug">{nextExercise}</p>
+              {session && onSwapExercise && (
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSwapExercise(nextBreakIndex); }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  className="w-6 h-6 flex-shrink-0 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                  aria-label="Swap exercise"
+                >
+                  <RefreshCw className="w-3 h-3 text-white/25 hover:text-orange-400 transition-colors" />
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1.5">Status</p>
+            <div className="flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+              <p className="text-white font-semibold text-sm leading-snug">All caught up</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* After-hours support button */}
@@ -67,20 +73,10 @@ export default function BodyCard({ session, onSwapExercise, isAfterHours, onExte
         </button>
       )}
 
-      {/* Progress */}
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-white/25 uppercase tracking-wider">Progress</span>
-          <span className="text-[10px] text-white/40 font-medium tabular-nums">{breaksDone}/{breaksTarget}</span>
-        </div>
-        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${Math.min(progressPercent, 100)}%` }}
-            transition={{ duration: 0.8 }}
-          />
-        </div>
+      {/* Breaks done today — positive metric only */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-white/25 uppercase tracking-wider">{breaksDone === 1 ? "Break" : "Breaks"} today</span>
+        <span className="text-sm text-white font-bold tabular-nums">{breaksDone}</span>
       </div>
     </motion.div>
   );
