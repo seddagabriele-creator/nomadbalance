@@ -19,8 +19,7 @@ export default function AuthorBio({ date }) {
         <div>
           <p className="text-sm font-semibold text-white">NomadBalance Team</p>
           <p className="text-xs text-white/40 mt-1 leading-relaxed">
-            Written by Gabriele Sedda, software developer and remote work practitioner based in Sardinia, Italy.
-            Content is reviewed for accuracy and grounded in peer-reviewed research in neuroscience, exercise science, and nutrition.
+            Written by the NomadBalance team. Content is reviewed for accuracy and grounded in peer-reviewed research in neuroscience, exercise science, and nutrition.
           </p>
           {formattedDate && (
             <p className="text-xs text-white/25 mt-2">Last updated: {formattedDate}</p>
