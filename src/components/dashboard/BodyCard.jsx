@@ -1,13 +1,19 @@
 import React from "react";
 import { Activity, ChevronRight, RefreshCw, Clock } from "lucide-react";
 import { motion } from "framer-motion";
-import { DEFAULT_BODY_BREAKS_TARGET } from "../../constants";
 
 export default function BodyCard({ session, onSwapExercise, isAfterHours, onExtendSupport }) {
   const breaksDone = session?.body_breaks_done || 0;
-  const breaksTarget = session?.body_breaks_target || DEFAULT_BODY_BREAKS_TARGET;
   const schedule = session?.body_break_schedule || [];
-  const nextBreakIndex = schedule.findIndex(b => !b.completed);
+
+  // Dynamic denominator: only count breaks that have come due so far (completed + skipped + currently overdue)
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const toMinutes = (t) => { const [h, m] = (t || "00:00").split(":").map(Number); return h * 60 + m; };
+  const breaksDueSoFar = schedule.filter(b => toMinutes(b.time) <= nowMinutes).length;
+  const breaksTarget = Math.max(breaksDueSoFar, breaksDone); // at least show done count
+
+  const nextBreakIndex = schedule.findIndex(b => !b.completed && !b.skipped);
   const nextBreak = nextBreakIndex >= 0 ? schedule[nextBreakIndex] : null;
   const allDone = session && !nextBreak;
   const nextExercise = nextBreak?.exercise_name || (session ? "All done" : "Loading...");
