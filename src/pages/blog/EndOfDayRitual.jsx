@@ -1,13 +1,26 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import RelatedArticles from "@/components/RelatedArticles";
+import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Sunset, AlertOctagon, ClipboardList, Footprints, Laptop, Moon, CheckCircle } from "lucide-react";
+import { articleJsonLd } from "@/lib/jsonLd";
 
 export default function EndOfDayRitual() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="The End-of-Day Ritual: How to Actually Stop Working When You Work From Home" description="Creating a clear boundary between work and personal time when your office never closes." />
+      <SEO
+        title="The End-of-Day Ritual: How to Actually Stop Working When You Work From Home"
+        description="Creating a clear boundary between work and personal time when your office never closes."
+        jsonLd={articleJsonLd({
+          title: "The End-of-Day Ritual: How to Actually Stop Working When You Work From Home",
+          description: "Creating a clear boundary between work and personal time when your office never closes.",
+          slug: "end-of-day-ritual-remote-work",
+          datePublished: "2026-02-05",
+          readTime: "7 min",
+          category: "Planning",
+        })}
+      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -180,6 +193,7 @@ export default function EndOfDayRitual() {
           </section>
         
 
+          <AuthorBio date="2026-02-05" />
           <RelatedArticles currentSlug="end-of-day-ritual-remote-work" />
         </div>
       </article>

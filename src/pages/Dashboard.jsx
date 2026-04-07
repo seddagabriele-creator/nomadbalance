@@ -1,25 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sun, Moon, Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Play, Pencil, Coffee, Activity, BarChart3, LogOut } from "lucide-react";
-import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
+import { Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Wind, Coffee, Activity, BarChart3, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
 import { daySessionService, taskService, exerciseService, userSettingsService } from "../api/services";
 import { useAuth } from "../lib/AuthContext";
-import { hasDailyDefaults, getDailyDefaults } from "../hooks/useDailyDefaults";
-import { ONE_HOUR_MS, ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_WORK_HOURS, AWAY_WARNING_DELAY_MS, AWAY_GRACE_AFTER_WARNING_MS, BREAK_NO_RESPONSE_AWAY_MS, getEatingHours, calculateEatingWindowEnd } from "../constants";
+import { ONE_MINUTE_MS, DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, DEFAULT_BREAK_INTERVAL_MINUTES, DEFAULT_WORK_HOURS, AWAY_WARNING_DELAY_MS, AWAY_GRACE_AFTER_WARNING_MS, BREAK_NO_RESPONSE_AWAY_MS, getEatingHours, calculateEatingWindowEnd } from "../constants";
 
 import FuelCard from "../components/dashboard/FuelCard";
 import FlowCard from "../components/dashboard/FlowCard";
 import BodyCard from "../components/dashboard/BodyCard";
 import JournalCard from "../components/dashboard/JournalCard";
-import StartDayWizard from "../components/wizard/StartDayWizard";
 import BreathingCircle from "../components/decompression/BreathingCircle";
-import MotivationalQuote from "../components/MotivationalQuote";
 import MeetingModeDialog from "../components/MeetingModeDialog";
-import UseDefaultsDialog from "../components/wizard/UseDefaultsDialog";
 import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
 import BreakNotification from "../components/body/BreakNotification";
 import DeskStatusToggle from "../components/dashboard/DeskStatusToggle";
@@ -84,16 +79,9 @@ function playNotificationChime() {
 }
 
 export default function Dashboard() {
-  const [showWizard, setShowWizard] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
   const [breathingDuration, setBreathingDuration] = useState(5);
-  const [showQuote, setShowQuote] = useState(false);
-  const [showFirstQuote, setShowFirstQuote] = useState(true);
   const [showMeetingDialog, setShowMeetingDialog] = useState(false);
-  const [showDefaultsDialog, setShowDefaultsDialog] = useState(false);
-  const [useDefaults, setUseDefaults] = useState(false);
-  const [showResumeDialog, setShowResumeDialog] = useState(false);
-  const [resumeWithWizard, setResumeWithWizard] = useState(false);
   const [userName, setUserName] = useState("");
   const [greeting, setGreeting] = useState("");
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -185,16 +173,6 @@ export default function Dashboard() {
     queryKey: ["allSessions"],
     queryFn: () => daySessionService.listRecent(),
   });
-
-  // Show motivational quote every hour
-  useEffect(() => {
-    if (!session || session.status !== "active") return;
-    const interval = setInterval(() => {
-      setShowQuote(true);
-      setTimeout(() => setShowQuote(false), 10000);
-    }, ONE_HOUR_MS);
-    return () => clearInterval(interval);
-  }, [session]);
 
   // Request notification permission early if enabled in settings
   useEffect(() => {
@@ -449,283 +427,8 @@ export default function Dashboard() {
      .catch(() => {}); // localStorage already set as fallback
   };
 
-  const handleStartDay = async (wizardData, tasks, selectedGroups, mealsAlreadyHad = 0) => {
-    try {
-      // Get exercises done in the last 7 days
-      const last7Days = allPreviousSessions.slice(0, 7);
-      const recentExercises = last7Days.flatMap(s => s.exercises_done_today || []);
-
-      // Select exercises based on user choice
-      let availableExercises = exercises;
-      if (selectedGroups && selectedGroups.length > 0) {
-        const filtered = exercises.filter(ex => selectedGroups.includes(ex.group));
-        if (filtered.length > 0) availableExercises = filtered;
-      }
-
-      // Smart: check feasibility with remaining time and auto-adjust
-      const feasibility = analyzeBreakFeasibility({
-        breaksTarget: wizardData.body_breaks_target,
-        workStart: wizardData.work_start_today,
-        workEnd: wizardData.work_end_today,
-        focusWorkMinutes: wizardData.focus_work_minutes,
-        focusBreakMinutes: wizardData.focus_break_minutes,
-        useRemainingTime: true,
-      });
-
-      // If user's target is unrealistic for remaining time, auto-cap it
-      const breaksCount = feasibility.level === "unrealistic"
-        ? feasibility.suggestedTarget
-        : wizardData.body_breaks_target;
-
-      // Use actual start time (now or scheduled start, whichever is later)
-      const now = new Date();
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const parseTime = (t, fallback) => {
-        const parts = (t || fallback).split(":");
-        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-      };
-      const workStartMinutes = parseTime(wizardData.work_start_today, DEFAULT_WORK_HOURS.morning_start);
-      const workEndMinutes = parseTime(wizardData.work_end_today, DEFAULT_WORK_HOURS.afternoon_end);
-      const effectiveStart = Math.max(nowMinutes, workStartMinutes);
-      const effectiveDuration = workEndMinutes - effectiveStart;
-
-      // Try to align breaks with focus break windows
-      const cycleLength = (wizardData.focus_work_minutes || DEFAULT_WORK_MINUTES) + (wizardData.focus_break_minutes || DEFAULT_BREAK_MINUTES);
-
-      // Generate schedule aligned with focus timer break windows
-      const schedule = [];
-
-      // Calculate all available focus break windows (when work phase ends → break starts)
-      const focusWork = wizardData.focus_work_minutes || DEFAULT_WORK_MINUTES;
-      const focusBreak = wizardData.focus_break_minutes || DEFAULT_BREAK_MINUTES;
-      const breakWindows = [];
-      for (let t = effectiveStart + focusWork; t < workEndMinutes; t += cycleLength) {
-        breakWindows.push(t);
-      }
-
-      // Distribute body breaks across focus break windows when possible
-      const usedWindowIndices = new Set();
-
-      for (let i = 0; i < breaksCount; i++) {
-        // Prioritize exercises not done recently
-        const notRecentExercises = availableExercises.filter(ex => !recentExercises.includes(ex.id));
-        const exercisePool = notRecentExercises.length > 0 ? notRecentExercises : availableExercises;
-
-        // Pick from different groups for variety
-        const usedGroups = schedule.map(s => exercises.find(e => e.id === s.exercise_id)?.group);
-        const preferredExercises = exercisePool.filter(ex => !usedGroups.includes(ex.group));
-        const finalPool = preferredExercises.length > 0 ? preferredExercises : exercisePool;
-
-        if (finalPool.length === 0) continue;
-        const exercise = finalPool[Math.floor(Math.random() * finalPool.length)];
-
-        let breakTime;
-        if (breakWindows.length > 0 && breaksCount <= breakWindows.length) {
-          // Evenly pick from available break windows
-          const windowIndex = Math.round((i + 0.5) * breakWindows.length / breaksCount - 0.5);
-          const clampedIdx = Math.max(0, Math.min(windowIndex, breakWindows.length - 1));
-          breakTime = breakWindows[clampedIdx];
-          usedWindowIndices.add(clampedIdx);
-        } else if (breakWindows.length > 0) {
-          // More breaks than windows: place at windows first, then evenly space remaining
-          if (i < breakWindows.length) {
-            breakTime = breakWindows[i];
-            usedWindowIndices.add(i);
-          } else {
-            const interval = effectiveDuration / (breaksCount + 1);
-            breakTime = effectiveStart + interval * (i + 1);
-            // Snap to nearest unused window if close
-            let bestWindow = -1, bestDist = Infinity;
-            breakWindows.forEach((w, idx) => {
-              if (!usedWindowIndices.has(idx)) {
-                const dist = Math.abs(breakTime - w);
-                if (dist < bestDist) { bestDist = dist; bestWindow = idx; }
-              }
-            });
-            if (bestWindow >= 0 && bestDist < cycleLength / 2) {
-              breakTime = breakWindows[bestWindow];
-              usedWindowIndices.add(bestWindow);
-            }
-          }
-        } else {
-          // No windows (very short workday): evenly space
-          const interval = effectiveDuration / (breaksCount + 1);
-          breakTime = effectiveStart + interval * (i + 1);
-        }
-
-        // Clamp within work hours
-        const clampedBreakTime = Math.max(effectiveStart + 5, Math.min(breakTime, workEndMinutes - 5));
-
-        schedule.push({
-          time: `${String(Math.floor(clampedBreakTime / 60)).padStart(2, "0")}:${String(Math.floor(clampedBreakTime % 60)).padStart(2, "0")}`,
-          exercise_id: exercise.id,
-          exercise_name: exercise.name,
-          completed: false,
-        });
-      }
-
-      // Auto-calculate eating window from default start time
-      const eatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
-      const windowStartTime = wizardData.eating_window_start_time || "12:00";
-      const windowEndTime = calculateEatingWindowEnd(windowStartTime, eatingHours);
-
-      // Strip client-only fields before sending to Supabase
-      const { eating_window_start_time: _ewst, ...sessionData } = wizardData;
-
-      // Pre-populate meals_logged if user already had meals
-      const initialMeals = Array.from({ length: mealsAlreadyHad }, (_, i) => ({
-        logged_at: new Date().toISOString(),
-        index: i,
-      }));
-
-      // Reuse existing session (e.g. after Reset Day) instead of creating a duplicate
-      let newSession;
-      if (session) {
-        newSession = await daySessionService.update(session.id, {
-          ...sessionData,
-          eating_window_start: windowStartTime,
-          eating_window_end: windowEndTime,
-          meals_logged: initialMeals,
-          body_breaks_target: breaksCount,
-          status: "active",
-          started_at: new Date().toTimeString().slice(0, 5),
-          body_break_schedule: schedule,
-          selected_exercise_groups: selectedGroups,
-          exercises_done_today: [],
-        });
-      } else {
-        newSession = await daySessionService.create({
-          ...sessionData,
-          eating_window_start: windowStartTime,
-          eating_window_end: windowEndTime,
-          meals_logged: initialMeals,
-          body_breaks_target: breaksCount,
-          date: today,
-          status: "active",
-          started_at: new Date().toTimeString().slice(0, 5),
-          body_break_schedule: schedule,
-          selected_exercise_groups: selectedGroups,
-          exercises_done_today: [],
-        });
-      }
-
-      // Append new tasks from wizard to existing ones (never delete old tasks)
-      if (tasks.length > 0) {
-        // Check tasks already in today's session
-        const existingTasks = session ? await taskService.getBySession(newSession.id) : [];
-        const existingTitles = new Set(existingTasks.map(t => t.title));
-        // Also check ALL uncompleted tasks to avoid duplicates across sessions
-        const allTasks = await taskService.listAll("-order");
-        const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
-        let orderOffset = 0;
-        for (const task of tasks) {
-          if (existingTitles.has(task.title)) continue;
-          // If an uncompleted task with same title exists in another session, move it to today
-          const duplicateFromPrev = allTasks.find(
-            t => t.title === task.title && !t.completed && t.session_id && t.session_id !== newSession.id
-          );
-          if (duplicateFromPrev) {
-            orderOffset++;
-            await taskService.update(duplicateFromPrev.id, {
-              session_id: newSession.id,
-              order: maxOrder + orderOffset,
-              ...(task.alarm_time ? { alarm_time: task.alarm_time } : {}),
-            });
-          } else {
-            orderOffset++;
-            await taskService.create({
-              session_id: newSession.id,
-              title: task.title,
-              order: maxOrder + orderOffset,
-              completed: false,
-              ...(task.alarm_time ? { alarm_time: task.alarm_time } : {}),
-            });
-          }
-        }
-      }
-
-      // Auto-save daily defaults so next time user gets "Use defaults?" prompt
-      if (!hasDailyDefaults()) {
-        const defaultsToSave = {
-          fasting_preset: wizardData.fasting_preset,
-          eating_window_start_time: wizardData.eating_window_start_time,
-          custom_fasting_hours: wizardData.custom_fasting_hours,
-          max_meals: wizardData.max_meals,
-          focus_work_minutes: wizardData.focus_work_minutes,
-          focus_break_minutes: wizardData.focus_break_minutes,
-          focus_sound: wizardData.focus_sound,
-          relax_sound: wizardData.relax_sound,
-          body_breaks_target: wizardData.body_breaks_target,
-          work_start_today: wizardData.work_start_today,
-          work_end_today: wizardData.work_end_today,
-          exercise_selection: selectedGroups ? "manual" : "auto",
-          selected_groups: selectedGroups || [],
-        };
-        localStorage.setItem("dailyDefaults", JSON.stringify(defaultsToSave));
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["daySession"] });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
-      setShowWizard(false);
-      setShowFirstQuote(false);
-    } catch (error) {
-      console.error("Error starting day:", error);
-      toast.error("Failed to start the day. Please try again.");
-    }
-  };
-
-  const handleShowWizard = () => {
-    if (hasDailyDefaults() && !showFirstQuote) {
-      setShowDefaultsDialog(true);
-    } else if (showFirstQuote) {
-      setShowQuote(true);
-    } else {
-      setShowWizard(true);
-    }
-  };
-
-  const handleQuoteClose = () => {
-    setShowQuote(false);
-    if (hasDailyDefaults()) {
-      setShowDefaultsDialog(true);
-    } else {
-      setShowWizard(true);
-    }
-  };
-
-  const handleUseDefaults = () => {
-    setShowDefaultsDialog(false);
-    setUseDefaults(true);
-    setShowWizard(true);
-  };
-
-  const handleManualSetup = () => {
-    setShowDefaultsDialog(false);
-    setUseDefaults(false);
-    setShowWizard(true);
-  };
-
-  const handleEndDay = () => {
-    setShowBreathing(true);
-  };
-
-  const handleDecompressionComplete = () => {
+  const handleBreathingClose = () => {
     setShowBreathing(false);
-    if (session) {
-      if (showMeetingDialog || breathingDuration < 5) {
-        updateSession.mutate({ meeting_mode: true });
-      } else {
-        updateSession.mutate({ status: "completed" });
-      }
-    }
-  };
-
-  const handleBreathingCancel = () => {
-    setShowBreathing(false);
-    if (session) {
-      updateSession.mutate({ status: "completed" });
-    }
   };
 
   const handleSessionComplete = () => {
@@ -993,25 +696,83 @@ export default function Dashboard() {
     }
   };
 
-  const handleResumeDay = () => {
-    // Just reactivate the same session with same settings
-    if (session) {
-      updateSession.mutate({ status: "active" });
-      toast.success("Day resumed!");
-    }
-  };
-
-  const handleResumeWithChanges = () => {
-    // Reset the session to standby, then open wizard with current settings pre-filled
-    if (session) {
-      setShowResumeDialog(false);
-      setResumeWithWizard(true);
-      setShowWizard(true);
-    }
-  };
-
   const isActive = session?.status === "active";
-  const isCompleted = session?.status === "completed";
+
+  // Auto-create session when none exists for today
+  const autoCreateAttempted = React.useRef(false);
+
+  useEffect(() => {
+    if (isLoading || session || createSession.isPending || autoCreateAttempted.current) return;
+    if (!userSettings || Object.keys(userSettings).length === 0) return;
+    autoCreateAttempted.current = true;
+
+    // Build session from user settings
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const workStart = userSettings.work_start_time || DEFAULT_WORK_HOURS.morning_start;
+    const workEnd = userSettings.work_end_time || DEFAULT_WORK_HOURS.afternoon_end;
+    const workStartMinutes = toMinutes(workStart);
+    const workEndMinutes = toMinutes(workEnd);
+    const effectiveStart = Math.max(nowMinutes, workStartMinutes);
+
+    // Generate interval-based break schedule
+    const breakInterval = userSettings.break_interval_minutes || DEFAULT_BREAK_INTERVAL_MINUTES;
+    const focusWork = userSettings.focus_work_minutes || DEFAULT_WORK_MINUTES;
+    const focusBreak = userSettings.focus_break_minutes || DEFAULT_BREAK_MINUTES;
+
+    // Get exercises
+    const selectedGroups = userSettings.selected_exercise_groups || [];
+    let availableExercises = exercises;
+    if (selectedGroups.length > 0) {
+      const filtered = exercises.filter(ex => selectedGroups.includes(ex.group));
+      if (filtered.length > 0) availableExercises = filtered;
+    }
+
+    // Get recently done exercises to avoid repetition
+    const recentExercises = allPreviousSessions.slice(0, 7).flatMap(s => s.exercises_done_today || []);
+
+    const schedule = [];
+    for (let t = effectiveStart + breakInterval; t < workEndMinutes; t += breakInterval) {
+      // Pick exercise with variety
+      const notRecent = availableExercises.filter(ex => !recentExercises.includes(ex.id));
+      const pool = notRecent.length > 0 ? notRecent : availableExercises;
+      const usedGroups = schedule.map(s => exercises.find(e => e.id === s.exercise_id)?.group);
+      const preferred = pool.filter(ex => !usedGroups.includes(ex.group));
+      const finalPool = preferred.length > 0 ? preferred : pool;
+      if (finalPool.length === 0) continue;
+      const exercise = finalPool[Math.floor(Math.random() * finalPool.length)];
+
+      schedule.push({
+        time: `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(Math.floor(t % 60)).padStart(2, "0")}`,
+        exercise_id: exercise.id,
+        exercise_name: exercise.name,
+        completed: false,
+      });
+    }
+
+    // Calculate eating window
+    const eatingHours = getEatingHours(userSettings.fasting_preset || "16:8", userSettings.custom_fasting_hours);
+    const windowStart = userSettings.eating_window_start_time || "12:00";
+    const windowEnd = calculateEatingWindowEnd(windowStart, eatingHours);
+
+    createSession.mutate({
+      focus_work_minutes: focusWork,
+      focus_break_minutes: focusBreak,
+      focus_sound: userSettings.focus_sound || "40hz-wind",
+      relax_sound: userSettings.relax_sound || "10hz-binaural-ocean",
+      fasting_preset: userSettings.fasting_preset || "16:8",
+      max_meals: userSettings.max_meals || 3,
+      eating_window_start: windowStart,
+      eating_window_end: windowEnd,
+      meals_logged: [],
+      body_breaks_target: schedule.length,
+      body_break_schedule: schedule,
+      selected_exercise_groups: selectedGroups,
+      exercises_done_today: [],
+      work_start_today: workStart,
+      work_end_today: workEnd,
+    });
+  }, [isLoading, session, userSettings, exercises, createSession.isPending]);
 
   // Show error state if session query fails
   if (sessionError) {
@@ -1075,14 +836,23 @@ export default function Dashboard() {
                       Settings
                     </DropdownMenuItem>
                   </Link>
-                  {(isActive || isCompleted) && (
-                    <DropdownMenuItem
-                      onClick={handleResetDay}
-                      className="text-amber-400 hover:bg-white/10 cursor-pointer"
-                    >
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      Reset Day
-                    </DropdownMenuItem>
+                  {isActive && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => { setBreathingDuration(5); setShowBreathing(true); }}
+                        className="text-white hover:bg-white/10 cursor-pointer"
+                      >
+                        <Wind className="w-4 h-4 mr-2" />
+                        Breathing Session
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={handleResetDay}
+                        className="text-amber-400 hover:bg-white/10 cursor-pointer"
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Reset Day
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuSeparator className="bg-white/10" />
                   <DropdownMenuItem
@@ -1119,22 +889,7 @@ export default function Dashboard() {
               )}
             </div>
           )}
-          {isCompleted && (
-            <div className="flex items-center gap-2 mt-3">
-              <Moon className="w-4 h-4 text-indigo-400" />
-              <span className="text-indigo-400/70 text-xs font-medium">
-                Day completed. Rest well!
-              </span>
-            </div>
-          )}
         </motion.div>
-
-        {/* Motivational Quote */}
-        {showQuote && !showWizard && !showBreathing && (
-          <div className="mb-6">
-            <MotivationalQuote onClose={() => setShowQuote(false)} fullScreen={false} />
-          </div>
-        )}
 
         {/* Grid */}
         <div className="grid grid-cols-2 gap-4">
@@ -1165,20 +920,6 @@ export default function Dashboard() {
             </>
           )}
         </div>
-
-        {/* Action Buttons */}
-        {!isActive && !isCompleted && (
-          <motion.button
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={handleShowWizard}
-            className="mt-4 w-full h-14 rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
-          >
-            <Sun className="w-5 h-5" />
-            START DAY
-          </motion.button>
-        )}
 
         {isActive && (
           <>
@@ -1243,220 +984,19 @@ export default function Dashboard() {
                     : "Meeting mode — all notifications and reminders are paused"}
                 </div>
               </div>
-              <div className="relative group/end">
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleEndDay}
-                  className="h-12 px-4 rounded-2xl bg-white/10 border border-white/10 text-white/50 hover:text-white hover:bg-white/15 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
-                >
-                  <Moon className="w-4 h-4" />
-                  End
-                </motion.button>
-                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded-xl bg-gray-900/95 border border-white/10 px-3 py-2 text-xs text-white/80 text-center opacity-0 group-hover/end:opacity-100 transition-opacity duration-200 backdrop-blur-sm z-50">
-                  End your workday — starts a decompression breathing session
-                </div>
-              </div>
             </motion.div>
           </>
         )}
 
-        {isCompleted && (
-          <>
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="mt-4 w-full h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium flex items-center justify-center gap-2"
-            >
-              <Moon className="w-5 h-5" />
-              Day Completed
-            </motion.div>
-            <motion.button
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setShowResumeDialog(true)}
-              className="mt-3 w-full h-14 rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
-            >
-              <Play className="w-5 h-5" />
-              Resume Day
-            </motion.button>
-          </>
-        )}
       </div>
-
-
-
-      {/* Motivational Quote Fullscreen */}
-      <AnimatePresence>
-        {showQuote && showFirstQuote && (
-          <MotivationalQuote onClose={handleQuoteClose} fullScreen={true} autoClose={false} />
-        )}
-      </AnimatePresence>
-
-      {/* Use Defaults Dialog */}
-      <AnimatePresence>
-        {showDefaultsDialog && (
-          <UseDefaultsDialog
-            onUseDefaults={handleUseDefaults}
-            onManualSetup={handleManualSetup}
-            onCancel={() => setShowDefaultsDialog(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Resume Day Dialog */}
-      <AnimatePresence>
-        {showResumeDialog && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-sm bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-white/10 p-6"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <Play className="w-5 h-5 text-emerald-400" />
-                </div>
-                <h3 className="text-white font-bold text-lg">Resume Day</h3>
-              </div>
-              <p className="text-white/60 text-sm mb-6">
-                Your day was ended earlier. Want to pick up where you left off?
-              </p>
-
-              <div className="space-y-3 mb-6">
-                {/* Quick summary of current settings */}
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-white/40">Focus rhythm</span>
-                    <span className="text-white">{session?.focus_work_minutes || getDailyDefaults().focus_work_minutes || DEFAULT_WORK_MINUTES}/{session?.focus_break_minutes || getDailyDefaults().focus_break_minutes || DEFAULT_BREAK_MINUTES} min</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/40">Active breaks</span>
-                    <span className="text-white">{session?.body_breaks_done || 0}/{session?.body_breaks_target || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/40">Work hours</span>
-                    <span className="text-white">{session?.work_start_today} — {session?.work_end_today}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Button
-                  onClick={() => {
-                    setShowResumeDialog(false);
-                    handleResumeDay();
-                  }}
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 font-semibold"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Resume with same settings
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={handleResumeWithChanges}
-                  className="w-full h-12 rounded-xl text-white/70 hover:text-white hover:bg-white/10"
-                >
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Modify settings first
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowResumeDialog(false)}
-                  className="w-full h-10 rounded-xl text-white/30 hover:text-white/50 hover:bg-white/5 text-sm"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Wizard Overlay */}
-      <AnimatePresence>
-        {showWizard && (
-          <StartDayWizard
-            onComplete={resumeWithWizard ? async (wizardData, wizardTasks, selectedGroups) => {
-              // When resuming with changes, update the existing session instead of creating a new one
-              if (session) {
-                // Recalculate eating window from new settings
-                const { eating_window_start_time: _ewst2, ...resumeData } = wizardData;
-                const resumeEatingHours = getEatingHours(wizardData.fasting_preset, wizardData.custom_fasting_hours);
-                const resumeWindowStart = wizardData.eating_window_start_time || session.eating_window_start || "12:00";
-                resumeData.eating_window_start = resumeWindowStart;
-                resumeData.eating_window_end = calculateEatingWindowEnd(resumeWindowStart, resumeEatingHours);
-                await daySessionService.update(session.id, {
-                  ...resumeData,
-                  status: "active",
-                  started_at: new Date().toTimeString().slice(0, 5),
-                  selected_exercise_groups: selectedGroups,
-                });
-                // Append new tasks from wizard (never delete existing ones)
-                if (wizardTasks.length > 0) {
-                  const existingTasks = await taskService.getBySession(session.id);
-                  const existingTitles = new Set(existingTasks.map(t => t.title));
-                  const allTasks = await taskService.listAll("-order");
-                  const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
-                  let orderOffset = 0;
-                  for (const task of wizardTasks) {
-                    if (existingTitles.has(task.title)) continue;
-                    const duplicateFromPrev = allTasks.find(
-                      t => t.title === task.title && !t.completed && t.session_id && t.session_id !== session.id
-                    );
-                    if (duplicateFromPrev) {
-                      orderOffset++;
-                      await taskService.update(duplicateFromPrev.id, {
-                        session_id: session.id,
-                        order: maxOrder + orderOffset,
-                        ...(task.alarm_time ? { alarm_time: task.alarm_time } : {}),
-                      });
-                    } else {
-                      orderOffset++;
-                      await taskService.create({
-                        session_id: session.id,
-                        title: task.title,
-                        order: maxOrder + orderOffset,
-                        completed: false,
-                        ...(task.alarm_time ? { alarm_time: task.alarm_time } : {}),
-                      });
-                    }
-                  }
-                }
-                queryClient.invalidateQueries({ queryKey: ["daySession"] });
-                queryClient.invalidateQueries({ queryKey: ["tasks"] });
-                queryClient.invalidateQueries({ queryKey: ["allTasks"] });
-              }
-              setShowWizard(false);
-              setResumeWithWizard(false);
-              toast.success("Day resumed with new settings!");
-            } : handleStartDay}
-            onCancel={() => {
-              setShowWizard(false);
-              setUseDefaults(false);
-              setResumeWithWizard(false);
-            }}
-            userSettings={userSettings}
-            useDefaults={useDefaults}
-            resumeSession={resumeWithWizard ? session : null}
-            currentSessionId={session?.id}
-          />
-        )}
-      </AnimatePresence>
 
       {/* Breathing Overlay */}
       <AnimatePresence>
         {showBreathing && (
           <BreathingCircle 
-            onComplete={handleDecompressionComplete} 
+            onComplete={handleBreathingClose}
             durationMinutes={breathingDuration}
-            onCancel={handleBreathingCancel}
+            onCancel={handleBreathingClose}
           />
         )}
       </AnimatePresence>

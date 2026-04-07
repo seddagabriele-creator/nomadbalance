@@ -25,15 +25,27 @@
     <meta property="og:type" content="website" />
     <meta property="og:title" content="NomadBalance — Focus, Fuel, Move, Plan" />
     <meta property="og:description" content="Stay focused, build healthy habits, and take care of yourself while getting things done. Focus timer, fasting tracker, active breaks & goals." />
-    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta property="og:image" content="https://nomadbalance.app/icons/icon-512.png" />
     <meta property="og:url" content="https://nomadbalance.app" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="NomadBalance — Focus, Fuel, Move, Plan" />
     <meta name="twitter:description" content="Your daily companion for a better workday. Focus timer, fasting tracker, active breaks & goal planning." />
     <link rel="manifest" href="/manifest.json" />
     <title>NomadBalance</title>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5955082604612785"
-     crossorigin="anonymous"></script>
+    <script>
+      (function() {
+        try {
+          var consent = JSON.parse(localStorage.getItem('nb-cookie-consent'));
+          if (consent && consent.accepted === true) {
+            var s = document.createElement('script');
+            s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5955082604612785';
+            s.async = true;
+            s.crossOrigin = 'anonymous';
+            document.head.appendChild(s);
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,13 +1,26 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import RelatedArticles from "@/components/RelatedArticles";
+import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Shuffle, Brain, Clock, Layers, MessageSquare, CheckCircle, Target } from "lucide-react";
+import { articleJsonLd } from "@/lib/jsonLd";
 
 export default function ContextSwitching() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="The Hidden Cost of Context Switching for Remote Workers" description="Research shows it takes 23 minutes to refocus after an interruption. Here's how to minimize switching." />
+      <SEO
+        title="The Hidden Cost of Context Switching for Remote Workers"
+        description="Research shows it takes 23 minutes to refocus after an interruption. Here's how to minimize switching."
+        jsonLd={articleJsonLd({
+          title: "The Hidden Cost of Context Switching for Remote Workers",
+          description: "Research shows it takes 23 minutes to refocus after an interruption. Here's how to minimize switching.",
+          slug: "context-switching-hidden-cost",
+          datePublished: "2026-02-10",
+          readTime: "7 min",
+          category: "Focus",
+        })}
+      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -176,6 +189,7 @@ export default function ContextSwitching() {
           </section>
         
 
+          <AuthorBio date="2026-02-10" />
           <RelatedArticles currentSlug="context-switching-hidden-cost" />
         </div>
       </article>

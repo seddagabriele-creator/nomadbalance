@@ -1,7 +1,7 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, Mail, MessageSquare, Bug, Lightbulb } from "lucide-react";
+import { ArrowLeft, Zap, Mail, MessageSquare, Bug, Lightbulb, Clock, HelpCircle } from "lucide-react";
 
 export default function ContactPage() {
   return (
@@ -84,6 +84,49 @@ export default function ContactPage() {
               For press inquiries, partnership proposals, or collaboration opportunities, reach out to <a href="mailto:gabriele@gabrielesedda.com" className="text-cyan-400 hover:text-cyan-300 underline">gabriele@gabrielesedda.com</a>
             </p>
           </div>
+        </div>
+
+        <div className="mt-10 space-y-6">
+          <section className="bg-white/5 rounded-2xl p-6 border border-white/10">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-violet-400" />
+              </div>
+              <h2 className="text-lg font-bold text-white">What Happens When You Write</h2>
+            </div>
+            <p className="text-white/70 text-sm leading-relaxed">
+              Every message is read personally by the founder. We typically respond within 24-48 hours. Your feedback directly shapes the product roadmap — many of NomadBalance's features started as user suggestions. Whether it's a small usability improvement or an entirely new module, real user input drives what gets built next.
+            </p>
+          </section>
+
+          <section className="bg-white/5 rounded-2xl p-6 border border-white/10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <HelpCircle className="w-5 h-5 text-emerald-400" />
+              </div>
+              <h2 className="text-lg font-bold text-white">Common Questions</h2>
+            </div>
+            <div className="space-y-5 text-sm">
+              <div>
+                <p className="text-white font-medium mb-1">"Can I request a new exercise?"</p>
+                <p className="text-white/70 leading-relaxed">
+                  Yes. Our exercise library is curated from physiotherapy research targeting desk-related musculoskeletal issues, but we're always looking to expand it. Describe the movement and the problem it addresses, and we'll evaluate it for inclusion. If it meets our evidence-based criteria, it gets added to the Body module.
+                </p>
+              </div>
+              <div>
+                <p className="text-white font-medium mb-1">"I found a bug on mobile"</p>
+                <p className="text-white/70 leading-relaxed">
+                  Please include your device model, browser name and version, and the steps to reproduce the issue. Screenshots help enormously — even a quick screen recording can save hours of debugging. The more detail you provide, the faster we can fix it.
+                </p>
+              </div>
+              <div>
+                <p className="text-white font-medium mb-1">"Can I write for the blog?"</p>
+                <p className="text-white/70 leading-relaxed">
+                  We welcome guest contributions from remote work professionals, physiotherapists, nutritionists, and productivity researchers. If you have expertise in any area related to remote work health, focus, or daily structure, pitch your topic via email. We're particularly interested in evidence-based content that helps remote workers improve their workdays.
+                </p>
+              </div>
+            </div>
+          </section>
         </div>
 
         <div className="mt-10 bg-white/5 rounded-2xl p-6 border border-white/10">

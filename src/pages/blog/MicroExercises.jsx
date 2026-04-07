@@ -1,13 +1,26 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import RelatedArticles from "@/components/RelatedArticles";
+import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Activity, RotateCcw, Timer, BarChart3, CalendarClock, Heart } from "lucide-react";
+import { articleJsonLd } from "@/lib/jsonLd";
 
 export default function MicroExercises() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="Micro-Exercises: 2-Minute Movements That Prevent Desk Pain" description="Quick targeted exercises you can do between meetings without changing clothes or breaking a sweat." />
+      <SEO
+        title="Micro-Exercises: 2-Minute Movements That Prevent Desk Pain"
+        description="Quick targeted exercises you can do between meetings without changing clothes or breaking a sweat."
+        jsonLd={articleJsonLd({
+          title: "Micro-Exercises: 2-Minute Movements That Prevent Desk Pain",
+          description: "Quick targeted exercises you can do between meetings without changing clothes or breaking a sweat.",
+          slug: "micro-exercises-desk-workers",
+          datePublished: "2026-02-12",
+          readTime: "7 min",
+          category: "Movement",
+        })}
+      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -152,6 +165,7 @@ export default function MicroExercises() {
           </section>
         
 
+          <AuthorBio date="2026-02-12" />
           <RelatedArticles currentSlug="micro-exercises-desk-workers" />
         </div>
       </article>

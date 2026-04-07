@@ -11,6 +11,7 @@ export const ACTIVE_BREAK_DURATION_MINUTES = 5;
 export const DEFAULT_WORK_MINUTES = 45;
 export const DEFAULT_BREAK_MINUTES = 5;
 export const DEFAULT_BODY_BREAKS_TARGET = 6;
+export const DEFAULT_BREAK_INTERVAL_MINUTES = 30; // how often to take a stretch break
 
 // Smart away detection
 export const AWAY_WARNING_DELAY_MS = 30 * ONE_MINUTE_MS; // 30 min hidden → send warning
@@ -99,6 +100,7 @@ export const INITIAL_DAILY_DEFAULTS = {
   focus_sound: "40hz-wind",
   relax_sound: "10hz-binaural-ocean",
   body_breaks_target: DEFAULT_BODY_BREAKS_TARGET,
+  break_interval_minutes: DEFAULT_BREAK_INTERVAL_MINUTES,
   exercise_selection: "auto",
   selected_groups: [],
 };

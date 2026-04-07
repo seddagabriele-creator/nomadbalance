@@ -1,13 +1,26 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import RelatedArticles from "@/components/RelatedArticles";
+import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Monitor, AlertTriangle, Search, Dumbbell, SlidersHorizontal, Eye, CheckCircle, RefreshCw } from "lucide-react";
+import { articleJsonLd } from "@/lib/jsonLd";
 
 export default function PostureCorrection() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="Posture Correction for Laptop Users: A Step-by-Step Guide" description="How to identify and fix the most common posture problems caused by working on a laptop all day." />
+      <SEO
+        title="Posture Correction for Laptop Users: A Step-by-Step Guide"
+        description="How to identify and fix the most common posture problems caused by working on a laptop all day."
+        jsonLd={articleJsonLd({
+          title: "Posture Correction for Laptop Users: A Step-by-Step Guide",
+          description: "How to identify and fix the most common posture problems caused by working on a laptop all day.",
+          slug: "posture-correction-guide",
+          datePublished: "2026-01-28",
+          readTime: "8 min",
+          category: "Movement",
+        })}
+      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -178,6 +191,7 @@ export default function PostureCorrection() {
           </section>
         
 
+          <AuthorBio date="2026-01-28" />
           <RelatedArticles currentSlug="posture-correction-guide" />
         </div>
       </article>

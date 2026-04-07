@@ -1,13 +1,26 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import RelatedArticles from "@/components/RelatedArticles";
+import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Clock, Sun, Utensils, Calendar, Brain, CheckCircle, AlertTriangle } from "lucide-react";
+import { articleJsonLd } from "@/lib/jsonLd";
 
 export default function MealTimingRemote() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="Meal Timing for Remote Workers: When to Eat for Peak Performance" description="Strategic meal timing aligned with your work schedule for sustained energy and better focus." />
+      <SEO
+        title="Meal Timing for Remote Workers: When to Eat for Peak Performance"
+        description="Strategic meal timing aligned with your work schedule for sustained energy and better focus."
+        jsonLd={articleJsonLd({
+          title: "Meal Timing for Remote Workers: When to Eat for Peak Performance",
+          description: "Strategic meal timing aligned with your work schedule for sustained energy and better focus.",
+          slug: "meal-timing-remote-workers",
+          datePublished: "2026-02-25",
+          readTime: "7 min",
+          category: "Nutrition",
+        })}
+      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -187,6 +200,7 @@ export default function MealTimingRemote() {
           </section>
         
 
+          <AuthorBio date="2026-02-25" />
           <RelatedArticles currentSlug="meal-timing-remote-workers" />
         </div>
       </article>

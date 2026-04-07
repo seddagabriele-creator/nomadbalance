@@ -1,13 +1,26 @@
 import React from "react";
 import SEO from "@/components/SEO";
 import RelatedArticles from "@/components/RelatedArticles";
+import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Eye, MonitorSmartphone, Sun, Lightbulb, Timer, Stethoscope, CheckCircle } from "lucide-react";
+import { articleJsonLd } from "@/lib/jsonLd";
 
 export default function EyeStrainComputerScreen() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="Eye Strain From Computer Screens: Prevention and Relief for Remote Workers" description="Protect your vision with proven techniques to reduce digital eye strain during long work sessions." />
+      <SEO
+        title="Eye Strain From Computer Screens: Prevention and Relief for Remote Workers"
+        description="Protect your vision with proven techniques to reduce digital eye strain during long work sessions."
+        jsonLd={articleJsonLd({
+          title: "Eye Strain From Computer Screens: Prevention and Relief for Remote Workers",
+          description: "Protect your vision with proven techniques to reduce digital eye strain during long work sessions.",
+          slug: "eye-strain-computer-screen",
+          datePublished: "2026-02-08",
+          readTime: "7 min",
+          category: "Movement",
+        })}
+      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
@@ -196,6 +209,7 @@ export default function EyeStrainComputerScreen() {
           </section>
         
 
+          <AuthorBio date="2026-02-08" />
           <RelatedArticles currentSlug="eye-strain-computer-screen" />
         </div>
       </article>

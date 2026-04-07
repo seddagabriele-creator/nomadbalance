@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen, Bell, BellOff, Trash2 } from "lucide-react";
-import { analyzeBreakFeasibility } from "../utils/breakFeasibility";
+// breakFeasibility no longer needed — interval-based scheduling
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { toast } from "sonner";
@@ -417,97 +417,35 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Body Breaks */}
-              {(() => {
-                const feasibility = analyzeBreakFeasibility({
-                  breaksTarget: localDefaults.body_breaks_target,
-                  morningStart: formData.morning_work_start,
-                  morningEnd: formData.morning_work_end,
-                  afternoonStart: formData.afternoon_work_start,
-                  afternoonEnd: formData.afternoon_work_end,
-                  focusWorkMinutes: localDefaults.focus_work_minutes,
-                  focusBreakMinutes: localDefaults.focus_break_minutes,
-                });
-                return (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-orange-400" />
-                      <Label className="text-white/90 font-medium">Active Breaks Target</Label>
-                    </div>
-                    <div className="flex gap-2" role="radiogroup" aria-label="Active breaks target">
-                      {[2, 4, 6, 8].map(n => {
-                        const nFeasibility = analyzeBreakFeasibility({
-                          breaksTarget: n,
-                          morningStart: formData.morning_work_start,
-                          morningEnd: formData.morning_work_end,
-                          afternoonStart: formData.afternoon_work_start,
-                          afternoonEnd: formData.afternoon_work_end,
-                          focusWorkMinutes: localDefaults.focus_work_minutes,
-                          focusBreakMinutes: localDefaults.focus_break_minutes,
-                        });
-                        const isUnrealistic = nFeasibility.level === "unrealistic";
-                        const isTight = nFeasibility.level === "tight";
-                        return (
-                          <button
-                            key={n}
-                            onClick={() => setLocalDefaults({ ...localDefaults, body_breaks_target: n })}
-                            role="radio"
-                            aria-checked={localDefaults.body_breaks_target === n}
-                            aria-label={`${n} breaks${isUnrealistic ? " (unrealistic)" : isTight ? " (tight)" : ""}`}
-                            className={`relative flex-1 w-12 h-12 rounded-xl border text-base font-bold transition-all ${
-                              localDefaults.body_breaks_target === n
-                                ? isUnrealistic
-                                  ? "bg-red-500/20 border-red-500/50 text-red-300"
-                                  : isTight
-                                    ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
-                                    : "bg-orange-500/20 border-orange-500/50 text-orange-300"
-                                : isUnrealistic
-                                  ? "bg-white/5 border-white/10 text-white/20 hover:bg-white/10"
-                                  : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
-                            }`}
-                          >
-                            {n}
-                            {isUnrealistic && (
-                              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500/80" />
-                            )}
-                            {isTight && (
-                              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500/80" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Feasibility feedback */}
-                    <div className={`flex items-start gap-2 p-3 rounded-xl border text-xs ${
-                      feasibility.level === "good"
-                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-                        : feasibility.level === "tight"
-                          ? "bg-amber-500/10 border-amber-500/20 text-amber-300"
-                          : "bg-red-500/10 border-red-500/20 text-red-300"
-                    }`} role="status">
-                      {feasibility.level === "good" ? (
-                        <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                      )}
-                      <div>
-                        <p>{feasibility.message}</p>
-                        <p className="text-white/30 mt-1">
-                          {Math.round(feasibility.totalWorkMinutes / 60)}h work day &middot; {feasibility.totalCycles} focus cycles ({localDefaults.focus_work_minutes}+{localDefaults.focus_break_minutes} min)
-                        </p>
-                        {feasibility.level === "unrealistic" && (
-                          <button
-                            onClick={() => setLocalDefaults({ ...localDefaults, body_breaks_target: feasibility.suggestedTarget })}
-                            className="mt-2 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-xs transition-all"
-                          >
-                            Use suggested: {feasibility.suggestedTarget} breaks
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* Stretch Break Interval */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-orange-400" />
+                  <Label className="text-white/90 font-medium">Stretch Break Interval</Label>
+                </div>
+                <p className="text-white/40 text-xs">How often can you take a few minutes for stretching? Health guidelines recommend every 30 minutes.</p>
+                <div className="flex gap-2" role="radiogroup" aria-label="Stretch break interval">
+                  {[30, 45, 60, 90].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setLocalDefaults({ ...localDefaults, break_interval_minutes: n })}
+                      role="radio"
+                      aria-checked={(localDefaults.break_interval_minutes || 30) === n}
+                      className={`flex-1 py-2 rounded-xl border text-sm font-bold transition-all ${
+                        (localDefaults.break_interval_minutes || 30) === n
+                          ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
+                          : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                      }`}
+                    >
+                      {n}m
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-start gap-2 p-3 rounded-xl border text-xs bg-orange-500/10 border-orange-500/20 text-orange-300">
+                  <Activity className="w-4 h-4 mt-0.5 shrink-0" />
+                  <p>The app will remind you to stretch every {localDefaults.break_interval_minutes || 30} minutes during your work hours.</p>
+                </div>
+              </div>
 
               {/* Exercise Selection */}
               <div className="space-y-3">
