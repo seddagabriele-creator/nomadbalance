@@ -1,5 +1,5 @@
 import React from "react";
-import SEO from "@/components/SEO";
+import useSEO from "@/hooks/useSEO";
 import RelatedArticles from "@/components/RelatedArticles";
 import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
@@ -8,21 +8,22 @@ import { articleJsonLd } from "@/lib/jsonLd";
 import Footer from "@/components/Footer";
 
 export default function BloodSugarFocus() {
+  useSEO({
+    title: "Blood Sugar and Focus: How What You Eat Affects How You Think",
+    description: "The direct link between your meals, glucose levels, and cognitive performance throughout the workday.",
+    ogType: "article",
+    jsonLd: articleJsonLd({
+      title: "Blood Sugar and Focus: How What You Eat Affects How You Think",
+      description: "The direct link between your meals, glucose levels, and cognitive performance throughout the workday.",
+      slug: "blood-sugar-focus-connection",
+      datePublished: "2026-03-12",
+      readTime: "8 min",
+      category: "Nutrition",
+    }),
+  });
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO
-        title="Blood Sugar and Focus: How What You Eat Affects How You Think"
-        description="The direct link between your meals, glucose levels, and cognitive performance throughout the workday."
-        ogType="article"
-        jsonLd={articleJsonLd({
-          title: "Blood Sugar and Focus: How What You Eat Affects How You Think",
-          description: "The direct link between your meals, glucose levels, and cognitive performance throughout the workday.",
-          slug: "blood-sugar-focus-connection",
-          datePublished: "2026-03-12",
-          readTime: "8 min",
-          category: "Nutrition",
-        })}
-      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">

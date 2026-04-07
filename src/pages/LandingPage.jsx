@@ -6,7 +6,7 @@ import {
   ChevronRight, CheckCircle, Sparkles, Smartphone, Shield,
   ArrowRight, Zap, BarChart3, Users, Coffee
 } from "lucide-react";
-import SEO from "@/components/SEO";
+import useSEO from "@/hooks/useSEO";
 import Footer from "@/components/Footer";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/jsonLd";
 
@@ -115,14 +115,15 @@ function FeatureCard({ icon: Icon, color, title, desc, index }) {
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(null);
 
+  useSEO({
+    title: "Remote Work Productivity App — Focus, Nutrition, Movement & Planning",
+    description: "NomadBalance is a free productivity app for remote workers. Focus timer with binaural audio, intermittent fasting tracker, guided desk exercises, and daily task planner — all in one PWA.",
+    image: "https://nomadbalance.app/icons/icon-512.png",
+    jsonLd: [organizationJsonLd(), websiteJsonLd()],
+  });
+
   return (
     <div className="min-h-screen bg-slate-950 text-white overflow-hidden">
-      <SEO
-        title="Remote Work Productivity App — Focus, Nutrition, Movement & Planning"
-        description="NomadBalance is a free productivity app for remote workers. Focus timer with binaural audio, intermittent fasting tracker, guided desk exercises, and daily task planner — all in one PWA."
-        image="https://nomadbalance.app/icons/icon-512.png"
-        jsonLd={[organizationJsonLd(), websiteJsonLd()]}
-      />
       {/* ====== HERO ====== */}
       <header className="relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">

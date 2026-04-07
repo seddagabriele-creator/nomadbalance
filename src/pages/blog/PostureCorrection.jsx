@@ -1,5 +1,5 @@
 import React from "react";
-import SEO from "@/components/SEO";
+import useSEO from "@/hooks/useSEO";
 import RelatedArticles from "@/components/RelatedArticles";
 import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
@@ -8,21 +8,22 @@ import { articleJsonLd } from "@/lib/jsonLd";
 import Footer from "@/components/Footer";
 
 export default function PostureCorrection() {
+  useSEO({
+    title: "Posture Correction for Laptop Users: A Step-by-Step Guide",
+    description: "How to identify and fix the most common posture problems caused by working on a laptop all day.",
+    ogType: "article",
+    jsonLd: articleJsonLd({
+      title: "Posture Correction for Laptop Users: A Step-by-Step Guide",
+      description: "How to identify and fix the most common posture problems caused by working on a laptop all day.",
+      slug: "posture-correction-guide",
+      datePublished: "2026-01-28",
+      readTime: "8 min",
+      category: "Movement",
+    }),
+  });
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO
-        title="Posture Correction for Laptop Users: A Step-by-Step Guide"
-        description="How to identify and fix the most common posture problems caused by working on a laptop all day."
-        ogType="article"
-        jsonLd={articleJsonLd({
-          title: "Posture Correction for Laptop Users: A Step-by-Step Guide",
-          description: "How to identify and fix the most common posture problems caused by working on a laptop all day.",
-          slug: "posture-correction-guide",
-          datePublished: "2026-01-28",
-          readTime: "8 min",
-          category: "Movement",
-        })}
-      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">

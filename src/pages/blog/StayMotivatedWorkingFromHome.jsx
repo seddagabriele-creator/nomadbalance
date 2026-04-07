@@ -1,5 +1,5 @@
 import React from "react";
-import SEO from "@/components/SEO";
+import useSEO from "@/hooks/useSEO";
 import RelatedArticles from "@/components/RelatedArticles";
 import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
@@ -8,21 +8,22 @@ import { articleJsonLd } from "@/lib/jsonLd";
 import Footer from "@/components/Footer";
 
 export default function StayMotivatedWorkingFromHome() {
+  useSEO({
+    title: "How to Stay Motivated Working From Home: A Science-Based Approach",
+    description: "Why willpower fails and what actually works to maintain drive and energy as a remote worker.",
+    ogType: "article",
+    jsonLd: articleJsonLd({
+      title: "How to Stay Motivated Working From Home: A Science-Based Approach",
+      description: "Why willpower fails and what actually works to maintain drive and energy as a remote worker.",
+      slug: "stay-motivated-working-from-home",
+      datePublished: "2026-01-20",
+      readTime: "8 min",
+      category: "Planning",
+    }),
+  });
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO
-        title="How to Stay Motivated Working From Home: A Science-Based Approach"
-        description="Why willpower fails and what actually works to maintain drive and energy as a remote worker."
-        ogType="article"
-        jsonLd={articleJsonLd({
-          title: "How to Stay Motivated Working From Home: A Science-Based Approach",
-          description: "Why willpower fails and what actually works to maintain drive and energy as a remote worker.",
-          slug: "stay-motivated-working-from-home",
-          datePublished: "2026-01-20",
-          readTime: "8 min",
-          category: "Planning",
-        })}
-      />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">

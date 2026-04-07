@@ -1,13 +1,14 @@
 import React from "react";
-import SEO from "@/components/SEO";
+import useSEO from "@/hooks/useSEO";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Timer, Brain, TrendingUp, Coffee, Headphones, CheckCircle } from "lucide-react";
 
 export default function PomodoroGuide() {
+  useSEO({ title: "Pomodoro Technique Guide: Focus Timer for Productivity", description: "Master the Pomodoro focus timer technique to boost your productivity. Learn how timed work sessions with breaks can transform your remote work routine.", ogType: "article" });
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <SEO title="Pomodoro Technique Guide: Focus Timer for Productivity" description="Master the Pomodoro focus timer technique to boost your productivity. Learn how timed work sessions with breaks can transform your remote work routine." ogType="article" />
       <nav className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
