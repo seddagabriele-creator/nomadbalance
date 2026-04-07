@@ -41,7 +41,7 @@ export default function ExerciseDetail({ exercise, onClose }) {
                 alt={exercise.name}
                 className="w-full h-auto"
               />
-              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/70 to-transparent" />
             </div>
           )}
 
