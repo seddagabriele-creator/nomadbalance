@@ -57,6 +57,12 @@ import RemoteWorkLoneliness from '@/pages/blog/RemoteWorkLoneliness';
 import MindfulnessFocus from '@/pages/blog/MindfulnessFocus';
 import PowerNaps from '@/pages/blog/PowerNaps';
 import BrainFog from '@/pages/blog/BrainFog';
+// Batch 3 articles
+import WeekendRecovery from '@/pages/blog/WeekendRecovery';
+import WristPainTyping from '@/pages/blog/WristPainTyping';
+import RemoteWorkAnxiety from '@/pages/blog/RemoteWorkAnxiety';
+import ColdExposureProductivity from '@/pages/blog/ColdExposureProductivity';
+import DeskYoga from '@/pages/blog/DeskYoga';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -139,6 +145,11 @@ const AppRoutes = () => {
         <Route path="/blog/mindfulness-focus-remote-work" element={<MindfulnessFocus />} />
         <Route path="/blog/power-naps-productivity-science" element={<PowerNaps />} />
         <Route path="/blog/brain-fog-causes-solutions" element={<BrainFog />} />
+        <Route path="/blog/weekend-recovery-routines" element={<WeekendRecovery />} />
+        <Route path="/blog/wrist-pain-typing-prevention" element={<WristPainTyping />} />
+        <Route path="/blog/remote-work-anxiety-coping" element={<RemoteWorkAnxiety />} />
+        <Route path="/blog/cold-exposure-productivity" element={<ColdExposureProductivity />} />
+        <Route path="/blog/desk-yoga-office-routines" element={<DeskYoga />} />
         {/* Redirect any authenticated route to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -200,6 +211,11 @@ const AppRoutes = () => {
       <Route path="/blog/mindfulness-focus-remote-work" element={<MindfulnessFocus />} />
       <Route path="/blog/power-naps-productivity-science" element={<PowerNaps />} />
       <Route path="/blog/brain-fog-causes-solutions" element={<BrainFog />} />
+      <Route path="/blog/weekend-recovery-routines" element={<WeekendRecovery />} />
+      <Route path="/blog/wrist-pain-typing-prevention" element={<WristPainTyping />} />
+      <Route path="/blog/remote-work-anxiety-coping" element={<RemoteWorkAnxiety />} />
+      <Route path="/blog/cold-exposure-productivity" element={<ColdExposureProductivity />} />
+      <Route path="/blog/desk-yoga-office-routines" element={<DeskYoga />} />
       {Object.entries(Pages).map(([path, Page]) => (
         <Route
           key={path}
