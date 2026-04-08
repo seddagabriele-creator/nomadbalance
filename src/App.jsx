@@ -51,6 +51,12 @@ import BackPainSittingAllDay from '@/pages/blog/BackPainSittingAllDay';
 import IntermittentFastingBeginners from '@/pages/blog/IntermittentFastingBeginners';
 import EyeStrainComputerScreen from '@/pages/blog/EyeStrainComputerScreen';
 import StayMotivatedWorkingFromHome from '@/pages/blog/StayMotivatedWorkingFromHome';
+// Batch 2 articles
+import WalkingMeetings from '@/pages/blog/WalkingMeetings';
+import RemoteWorkLoneliness from '@/pages/blog/RemoteWorkLoneliness';
+import MindfulnessFocus from '@/pages/blog/MindfulnessFocus';
+import PowerNaps from '@/pages/blog/PowerNaps';
+import BrainFog from '@/pages/blog/BrainFog';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -128,6 +134,11 @@ const AppRoutes = () => {
         <Route path="/blog/intermittent-fasting-beginners" element={<IntermittentFastingBeginners />} />
         <Route path="/blog/eye-strain-computer-screen" element={<EyeStrainComputerScreen />} />
         <Route path="/blog/stay-motivated-working-from-home" element={<StayMotivatedWorkingFromHome />} />
+        <Route path="/blog/walking-meetings-creativity-boost" element={<WalkingMeetings />} />
+        <Route path="/blog/remote-work-loneliness-solutions" element={<RemoteWorkLoneliness />} />
+        <Route path="/blog/mindfulness-focus-remote-work" element={<MindfulnessFocus />} />
+        <Route path="/blog/power-naps-productivity-science" element={<PowerNaps />} />
+        <Route path="/blog/brain-fog-causes-solutions" element={<BrainFog />} />
         {/* Redirect any authenticated route to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -184,6 +195,11 @@ const AppRoutes = () => {
       <Route path="/blog/intermittent-fasting-beginners" element={<IntermittentFastingBeginners />} />
       <Route path="/blog/eye-strain-computer-screen" element={<EyeStrainComputerScreen />} />
       <Route path="/blog/stay-motivated-working-from-home" element={<StayMotivatedWorkingFromHome />} />
+      <Route path="/blog/walking-meetings-creativity-boost" element={<WalkingMeetings />} />
+      <Route path="/blog/remote-work-loneliness-solutions" element={<RemoteWorkLoneliness />} />
+      <Route path="/blog/mindfulness-focus-remote-work" element={<MindfulnessFocus />} />
+      <Route path="/blog/power-naps-productivity-science" element={<PowerNaps />} />
+      <Route path="/blog/brain-fog-causes-solutions" element={<BrainFog />} />
       {Object.entries(Pages).map(([path, Page]) => (
         <Route
           key={path}

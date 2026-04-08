@@ -29,6 +29,11 @@ const RELATED_MAP = {
   "morning-routine-remote-workers": ["daily-planning-remote-productivity", "caffeine-strategy-productivity", "end-of-day-ritual-remote-work"],
   "best-apps-remote-workers": ["remote-work-productivity-tips", "daily-planning-remote-productivity", "focus-music-work-productivity"],
   "stay-motivated-working-from-home": ["preventing-burnout-remote-workers", "managing-distractions-work-from-home", "work-life-balance-digital-nomads"],
+  "walking-meetings-creativity-boost": ["sitting-disease-remote-work", "micro-exercises-desk-workers", "deep-work-remote-environment"],
+  "remote-work-loneliness-solutions": ["preventing-burnout-remote-workers", "work-life-balance-digital-nomads", "stay-motivated-working-from-home"],
+  "mindfulness-focus-remote-work": ["deep-work-remote-environment", "binaural-beats-productivity", "managing-distractions-work-from-home"],
+  "power-naps-productivity-science": ["ultradian-rhythms-productivity", "caffeine-strategy-productivity", "brain-fog-causes-solutions"],
+  "brain-fog-causes-solutions": ["blood-sugar-focus-connection", "hydration-cognitive-performance", "power-naps-productivity-science"],
 };
 
 const colorMap = {
