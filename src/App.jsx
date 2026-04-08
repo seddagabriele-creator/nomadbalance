@@ -51,6 +51,17 @@ import BackPainSittingAllDay from '@/pages/blog/BackPainSittingAllDay';
 import IntermittentFastingBeginners from '@/pages/blog/IntermittentFastingBeginners';
 import EyeStrainComputerScreen from '@/pages/blog/EyeStrainComputerScreen';
 import StayMotivatedWorkingFromHome from '@/pages/blog/StayMotivatedWorkingFromHome';
+// Batch 1 new articles
+import SleepOptimization from '@/pages/blog/SleepOptimization';
+import StandingDeskGuide from '@/pages/blog/StandingDeskGuide';
+import DigitalDetox from '@/pages/blog/DigitalDetox';
+import HomeOfficeLighting from '@/pages/blog/HomeOfficeLighting';
+import MealPrepRemoteWorkers from '@/pages/blog/MealPrepRemoteWorkers';
+import VitaminDRemoteWork from '@/pages/blog/VitaminDRemoteWork';
+import TimeBlockingGuide from '@/pages/blog/TimeBlockingGuide';
+import WorkFromHomeBoundaries from '@/pages/blog/WorkFromHomeBoundaries';
+import GutHealthFocus from '@/pages/blog/GutHealthFocus';
+import HomeOfficeNoise from '@/pages/blog/HomeOfficeNoise';
 // Batch 2 articles
 import WalkingMeetings from '@/pages/blog/WalkingMeetings';
 import RemoteWorkLoneliness from '@/pages/blog/RemoteWorkLoneliness';
@@ -140,6 +151,16 @@ const AppRoutes = () => {
         <Route path="/blog/intermittent-fasting-beginners" element={<IntermittentFastingBeginners />} />
         <Route path="/blog/eye-strain-computer-screen" element={<EyeStrainComputerScreen />} />
         <Route path="/blog/stay-motivated-working-from-home" element={<StayMotivatedWorkingFromHome />} />
+        <Route path="/blog/sleep-optimization-remote-workers" element={<SleepOptimization />} />
+        <Route path="/blog/standing-desk-benefits-guide" element={<StandingDeskGuide />} />
+        <Route path="/blog/digital-detox-after-work" element={<DigitalDetox />} />
+        <Route path="/blog/home-office-lighting-productivity" element={<HomeOfficeLighting />} />
+        <Route path="/blog/meal-prep-remote-workers" element={<MealPrepRemoteWorkers />} />
+        <Route path="/blog/vitamin-d-remote-workers" element={<VitaminDRemoteWork />} />
+        <Route path="/blog/time-blocking-method-guide" element={<TimeBlockingGuide />} />
+        <Route path="/blog/work-from-home-boundaries" element={<WorkFromHomeBoundaries />} />
+        <Route path="/blog/gut-health-brain-focus" element={<GutHealthFocus />} />
+        <Route path="/blog/home-office-noise-management" element={<HomeOfficeNoise />} />
         <Route path="/blog/walking-meetings-creativity-boost" element={<WalkingMeetings />} />
         <Route path="/blog/remote-work-loneliness-solutions" element={<RemoteWorkLoneliness />} />
         <Route path="/blog/mindfulness-focus-remote-work" element={<MindfulnessFocus />} />
@@ -206,6 +227,16 @@ const AppRoutes = () => {
       <Route path="/blog/intermittent-fasting-beginners" element={<IntermittentFastingBeginners />} />
       <Route path="/blog/eye-strain-computer-screen" element={<EyeStrainComputerScreen />} />
       <Route path="/blog/stay-motivated-working-from-home" element={<StayMotivatedWorkingFromHome />} />
+      <Route path="/blog/sleep-optimization-remote-workers" element={<SleepOptimization />} />
+      <Route path="/blog/standing-desk-benefits-guide" element={<StandingDeskGuide />} />
+      <Route path="/blog/digital-detox-after-work" element={<DigitalDetox />} />
+      <Route path="/blog/home-office-lighting-productivity" element={<HomeOfficeLighting />} />
+      <Route path="/blog/meal-prep-remote-workers" element={<MealPrepRemoteWorkers />} />
+      <Route path="/blog/vitamin-d-remote-workers" element={<VitaminDRemoteWork />} />
+      <Route path="/blog/time-blocking-method-guide" element={<TimeBlockingGuide />} />
+      <Route path="/blog/work-from-home-boundaries" element={<WorkFromHomeBoundaries />} />
+      <Route path="/blog/gut-health-brain-focus" element={<GutHealthFocus />} />
+      <Route path="/blog/home-office-noise-management" element={<HomeOfficeNoise />} />
       <Route path="/blog/walking-meetings-creativity-boost" element={<WalkingMeetings />} />
       <Route path="/blog/remote-work-loneliness-solutions" element={<RemoteWorkLoneliness />} />
       <Route path="/blog/mindfulness-focus-remote-work" element={<MindfulnessFocus />} />

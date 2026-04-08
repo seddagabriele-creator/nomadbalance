@@ -39,6 +39,16 @@ const RELATED_MAP = {
   "remote-work-anxiety-coping": ["preventing-burnout-remote-workers", "work-life-balance-digital-nomads", "stay-motivated-working-from-home"],
   "cold-exposure-productivity": ["morning-routine-remote-workers", "caffeine-strategy-productivity", "deep-work-remote-environment"],
   "desk-yoga-office-routines": ["micro-exercises-desk-workers", "posture-correction-guide", "back-pain-sitting-all-day"],
+  "sleep-optimization-remote-workers": ["home-office-lighting-productivity", "caffeine-strategy-productivity", "digital-detox-after-work"],
+  "standing-desk-benefits-guide": ["sitting-disease-remote-work", "ergonomic-home-office-setup", "back-pain-sitting-all-day"],
+  "digital-detox-after-work": ["end-of-day-ritual-remote-work", "preventing-burnout-remote-workers", "sleep-optimization-remote-workers"],
+  "home-office-lighting-productivity": ["eye-strain-computer-screen", "ergonomic-home-office-setup", "sleep-optimization-remote-workers"],
+  "meal-prep-remote-workers": ["blood-sugar-focus-connection", "meal-timing-remote-workers", "intermittent-fasting-beginners"],
+  "vitamin-d-remote-workers": ["morning-routine-remote-workers", "home-office-lighting-productivity", "meal-timing-remote-workers"],
+  "time-blocking-method-guide": ["deep-work-remote-environment", "pomodoro-vs-time-blocking", "daily-planning-remote-productivity"],
+  "work-from-home-boundaries": ["end-of-day-ritual-remote-work", "preventing-burnout-remote-workers", "digital-detox-after-work"],
+  "gut-health-brain-focus": ["blood-sugar-focus-connection", "meal-timing-remote-workers", "brain-fog-causes-solutions"],
+  "home-office-noise-management": ["deep-work-remote-environment", "focus-music-work-productivity", "binaural-beats-productivity"],
 };
 
 const colorMap = {
