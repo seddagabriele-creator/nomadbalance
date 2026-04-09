@@ -175,6 +175,110 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+  <!-- New articles - Batch 1 -->
+  <url>
+    <loc>https://nomadbalance.app/blog/sleep-optimization-remote-workers</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/standing-desk-benefits-guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/digital-detox-after-work</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/home-office-lighting-productivity</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/meal-prep-remote-workers</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!-- New articles - Batch 2 -->
+  <url>
+    <loc>https://nomadbalance.app/blog/walking-meetings-creativity-boost</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/remote-work-loneliness-solutions</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/mindfulness-focus-remote-work</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/power-naps-productivity-science</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/brain-fog-causes-solutions</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- New articles - Remaining -->
+  <url>
+    <loc>https://nomadbalance.app/blog/vitamin-d-remote-workers</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/time-blocking-method-guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/work-from-home-boundaries</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/gut-health-brain-focus</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/home-office-noise-management</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- New articles - Batch 3 -->
+  <url>
+    <loc>https://nomadbalance.app/blog/weekend-recovery-routines</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/wrist-pain-typing-prevention</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/remote-work-anxiety-coping</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/cold-exposure-productivity</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nomadbalance.app/blog/desk-yoga-office-routines</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
   <!-- Legal -->
   <url>
     <loc>https://nomadbalance.app/privacy</loc>
