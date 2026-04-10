@@ -17,9 +17,9 @@ export default function Footer() {
           <div>
             <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Guides</h4>
             <ul className="space-y-2">
-              <li><Link to="/guides/pomodoro-technique" className="text-white/40 hover:text-white text-sm transition-colors">Pomodoro Technique</Link></li>
-              <li><Link to="/guides/intermittent-fasting" className="text-white/40 hover:text-white text-sm transition-colors">Intermittent Fasting</Link></li>
-              <li><Link to="/guides/desk-exercises" className="text-white/40 hover:text-white text-sm transition-colors">Desk Exercises</Link></li>
+              <li><Link to="/guide/pomodoro-focus-timer" className="text-white/40 hover:text-white text-sm transition-colors">Pomodoro Technique</Link></li>
+              <li><Link to="/guide/intermittent-fasting-for-professionals" className="text-white/40 hover:text-white text-sm transition-colors">Intermittent Fasting</Link></li>
+              <li><Link to="/guide/desk-exercises-remote-workers" className="text-white/40 hover:text-white text-sm transition-colors">Desk Exercises</Link></li>
             </ul>
           </div>
           <div>

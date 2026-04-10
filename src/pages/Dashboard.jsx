@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Users, MoreVertical, Settings as SettingsIcon, RotateCcw, Wind, Coffee, Activity, BarChart3, LogOut } from "lucide-react";
+import { Users, MoreVertical, Settings as SettingsIcon, Wind, Coffee, Activity, BarChart3, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
@@ -762,25 +762,6 @@ export default function Dashboard() {
     };
   }, [session?.id, session?.status, isAway, markAsAway]);
 
-  const handleResetDay = () => {
-    if (session && window.confirm("Do you really want to reset the day?")) {
-      const resetData = {
-        status: "standby",
-        body_breaks_done: 0,
-        focus_sessions_completed: 0,
-        meeting_mode: false,
-        body_break_schedule: session.body_break_schedule?.map(b => ({ ...b, completed: false, skipped: false })),
-        exercises_done_today: [],
-      };
-      // Only include desk tracking fields if the session already has them (columns exist)
-      if ("desk_status" in session) {
-        resetData.desk_status = "at_desk";
-        resetData.away_since = null;
-        resetData.away_log = [];
-      }
-      updateSession.mutate(resetData);
-    }
-  };
 
   const isActive = session?.status === "active";
 
@@ -930,13 +911,6 @@ export default function Dashboard() {
                       >
                         <Wind className="w-4 h-4 mr-2" />
                         Breathing Session
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={handleResetDay}
-                        className="text-amber-400 hover:bg-white/10 cursor-pointer"
-                      >
-                        <RotateCcw className="w-4 h-4 mr-2" />
-                        Reset Day
                       </DropdownMenuItem>
                     </>
                   )}
