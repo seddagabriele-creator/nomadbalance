@@ -4,10 +4,72 @@ import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, ONE_SECOND_MS, getAudioUrl
 
 const TimerContext = createContext();
 
+// localStorage key for persisting timer state across remounts / tab backgrounding
+const TIMER_STORAGE_KEY = "nomadbalance:timer-state:v1";
+
+// Load persisted timer state and compute elapsed time since it was saved.
+// Returns null if no valid state exists. The timer interval is throttled
+// when the tab is backgrounded, so we rely on wall-clock time to stay accurate.
+function loadPersistedState() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(TIMER_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+
+    const savedAt = typeof parsed.savedAt === "number" ? parsed.savedAt : Date.now();
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - savedAt) / 1000));
+
+    let timeLeft = typeof parsed.timeLeft === "number" ? parsed.timeLeft : 0;
+    let relaxTime = typeof parsed.relaxTime === "number" ? parsed.relaxTime : 0;
+    let isRunning = !!parsed.isRunning;
+    const isBreak = !!parsed.isBreak;
+    const mode = parsed.mode === "relax" ? "relax" : "focus";
+    const relaxPaused = !!parsed.relaxPaused;
+
+    // Advance countdown by elapsed time if the timer was running in focus mode
+    if (mode === "focus" && isRunning) {
+      timeLeft = timeLeft - elapsedSec;
+      if (timeLeft <= 0) {
+        // Session already completed while the tab was in the background.
+        // Reset to a clean idle state — the user will see the timer ready
+        // instead of a silent rollover we can't audibly signal now.
+        timeLeft = 0;
+        isRunning = false;
+      }
+    }
+
+    // Advance count-up relax timer if it was running
+    if (mode === "relax" && !relaxPaused) {
+      relaxTime = relaxTime + elapsedSec;
+    }
+
+    return {
+      timeLeft,
+      isRunning,
+      isBreak,
+      mode,
+      relaxTime,
+      relaxPaused,
+      savedFocusTime: typeof parsed.savedFocusTime === "number" ? parsed.savedFocusTime : 0,
+      savedFocusRunning: !!parsed.savedFocusRunning,
+      savedFocusBreak: !!parsed.savedFocusBreak,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function TimerProvider({ children }) {
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isBreak, setIsBreak] = useState(false);
+  // Lazy-init from localStorage so a remount (e.g. caused by an auth state
+  // change or route switch) restores the active focus session instead of
+  // silently losing it.
+  const initial = typeof window !== "undefined" ? loadPersistedState() : null;
+
+  const [timeLeft, setTimeLeft] = useState(initial?.timeLeft ?? 0);
+  const [isRunning, setIsRunning] = useState(initial?.isRunning ?? false);
+  const [isBreak, setIsBreak] = useState(initial?.isBreak ?? false);
   const [workMinutes, setWorkMinutes] = useState(DEFAULT_WORK_MINUTES);
   const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_MINUTES);
   const [onSessionComplete, setOnSessionComplete] = useState(null);
@@ -15,12 +77,12 @@ export function TimerProvider({ children }) {
   const [relaxSoundId, setRelaxSoundId] = useState("10hz-binaural-ocean");
 
   // Relax mode: user manually switches to relax mid-focus
-  const [mode, setMode] = useState("focus"); // "focus" | "relax"
-  const [relaxTime, setRelaxTime] = useState(0); // counts up in relax mode
-  const [relaxPaused, setRelaxPaused] = useState(false);
-  const savedFocusTimeRef = useRef(0);
-  const savedFocusRunningRef = useRef(false);
-  const savedFocusBreakRef = useRef(false);
+  const [mode, setMode] = useState(initial?.mode ?? "focus"); // "focus" | "relax"
+  const [relaxTime, setRelaxTime] = useState(initial?.relaxTime ?? 0); // counts up in relax mode
+  const [relaxPaused, setRelaxPaused] = useState(initial?.relaxPaused ?? false);
+  const savedFocusTimeRef = useRef(initial?.savedFocusTime ?? 0);
+  const savedFocusRunningRef = useRef(initial?.savedFocusRunning ?? false);
+  const savedFocusBreakRef = useRef(initial?.savedFocusBreak ?? false);
 
   const intervalRef = useRef(null);
   const relaxIntervalRef = useRef(null);
@@ -37,6 +99,55 @@ export function TimerProvider({ children }) {
   useEffect(() => { breakMinutesRef.current = breakMinutes; }, [breakMinutes]);
   useEffect(() => { isBreakRef.current = isBreak; }, [isBreak]);
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
+
+  // Persist timer state whenever it changes, so a remount can recover it.
+  // We store a wall-clock timestamp (savedAt) to compensate for the fact that
+  // setInterval is throttled/paused in background tabs.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const payload = {
+        timeLeft,
+        isRunning,
+        isBreak,
+        mode,
+        relaxTime,
+        relaxPaused,
+        savedFocusTime: savedFocusTimeRef.current,
+        savedFocusRunning: savedFocusRunningRef.current,
+        savedFocusBreak: savedFocusBreakRef.current,
+        savedAt: Date.now(),
+      };
+      window.localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // localStorage may be unavailable (private mode, quota). Fail silently.
+    }
+  }, [timeLeft, isRunning, isBreak, mode, relaxTime, relaxPaused]);
+
+  // When the tab becomes visible again, reconcile the timer against the
+  // wall clock. Chrome throttles setInterval in background tabs to ~1/min,
+  // so without this the user would see a stale countdown that then "jumps".
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) return;
+      const restored = loadPersistedState();
+      if (!restored) return;
+
+      if (restored.mode === "focus" && restored.isRunning) {
+        setTimeLeft(restored.timeLeft);
+        if (restored.timeLeft <= 0) {
+          setIsRunning(false);
+        }
+      } else if (restored.mode === "relax" && !restored.relaxPaused) {
+        setRelaxTime(restored.relaxTime);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
 
   // Focus timer interval
   useEffect(() => {
