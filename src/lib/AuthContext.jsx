@@ -15,6 +15,15 @@ export const AuthProvider = ({ children }) => {
     // while the SDK is still processing auth tokens from the URL
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Ignore TOKEN_REFRESHED events that still have a valid session —
+        // they would otherwise cause a new `user` object reference to
+        // propagate through the context, triggering re-renders (and in
+        // some cases re-mounting downstream providers that hold the
+        // active focus session state).
+        if (event === "TOKEN_REFRESHED" && session?.user) {
+          setIsLoadingAuth(false);
+          return;
+        }
         setUser(session?.user ?? null);
         setIsAuthenticated(!!session?.user);
         setIsLoadingAuth(false);
@@ -31,7 +40,31 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Background Chrome tabs throttle JS timers, which can starve
+    // supabase-js's autoRefreshToken loop. When the user comes back after
+    // a while, the access token may already be expired and the next API
+    // call would sign them out. Proactively refresh on tab visibility so
+    // the session stays alive across long backgrounding.
+    const handleVisibilityChange = async () => {
+      if (document.hidden) return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+        // Refresh if the token is expired or within 60s of expiring.
+        if (expiresAt && expiresAt - Date.now() < 60_000) {
+          await supabase.auth.refreshSession();
+        }
+      } catch {
+        // Network errors are fine — the SDK will retry on the next call.
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const login = async (email, password) => {
