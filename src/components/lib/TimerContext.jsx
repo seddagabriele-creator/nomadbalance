@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { audioManager } from "./audioManager";
 import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, ONE_SECOND_MS, getAudioUrl } from "../../constants";
+import { getDailyDefaults } from "../../hooks/useDailyDefaults";
+
+// How long to extend the focus phase when the user taps "+15 min" on the
+// break screen. Kept as a module-level constant for now; could be made
+// configurable from Settings later.
+const EXTEND_FOCUS_MINUTES = 15;
 
 const TimerContext = createContext();
 
@@ -52,6 +58,7 @@ function loadPersistedState() {
       mode,
       relaxTime,
       relaxPaused,
+      sessionComplete: !!parsed.sessionComplete,
       savedFocusTime: typeof parsed.savedFocusTime === "number" ? parsed.savedFocusTime : 0,
       savedFocusRunning: !!parsed.savedFocusRunning,
       savedFocusBreak: !!parsed.savedFocusBreak,
@@ -84,6 +91,12 @@ export function TimerProvider({ children }) {
   const savedFocusRunningRef = useRef(initial?.savedFocusRunning ?? false);
   const savedFocusBreakRef = useRef(initial?.savedFocusBreak ?? false);
 
+  // Tracks whether the previous focus+break cycle has just ended. While this
+  // is true, initializeTimer must NOT re-arm the timer to workMinutes*60,
+  // otherwise an unattended cycle (user in another tab) would look like a
+  // "reset" when they come back. Cleared by explicit user action (play/reset).
+  const sessionCompleteRef = useRef(initial?.sessionComplete ?? false);
+
   const intervalRef = useRef(null);
   const relaxIntervalRef = useRef(null);
   const isRunningRef = useRef(false);
@@ -113,6 +126,7 @@ export function TimerProvider({ children }) {
         mode,
         relaxTime,
         relaxPaused,
+        sessionComplete: sessionCompleteRef.current,
         savedFocusTime: savedFocusTimeRef.current,
         savedFocusRunning: savedFocusRunningRef.current,
         savedFocusBreak: savedFocusBreakRef.current,
@@ -150,6 +164,12 @@ export function TimerProvider({ children }) {
   }, []);
 
   // Focus timer interval
+  // NOTE: `isBreak` is in the dep array on purpose. When the focus phase
+  // ends we flip isBreak from false → true inside the interval callback
+  // and clearInterval() it manually. Without isBreak as a dep, neither
+  // isRunning nor mode would change, so this effect would not re-run and
+  // the break phase would never get its own interval — the UI would show
+  // 5:00 in "running" state but the timer would never tick down.
   useEffect(() => {
     if (!isRunning || mode !== "focus") return;
     intervalRef.current = setInterval(() => {
@@ -160,19 +180,27 @@ export function TimerProvider({ children }) {
             onSessionCompleteRef.current?.();
             setIsBreak(true);
             setIsRunning(true);
-            audioManager.pause();
+            // Don't pause audio here: the audio effect will swap to the
+            // relax track if auto_relax_on_break is enabled, or pause
+            // otherwise. Calling pause() here would cause a brief
+            // silence before the relax track fades in.
             return breakMinutesRef.current * 60;
           } else {
+            // End of break: do NOT auto-rearm to workMinutes*60. Stop at 0
+            // and mark the cycle as complete so initializeTimer can't
+            // bounce it back up. The user explicitly starts the next
+            // session by pressing play (handled by toggleTimer).
+            sessionCompleteRef.current = true;
             setIsBreak(false);
             setIsRunning(false);
-            return workMinutesRef.current * 60;
+            return 0;
           }
         }
         return prev - 1;
       });
     }, ONE_SECOND_MS);
     return () => clearInterval(intervalRef.current);
-  }, [isRunning, mode]);
+  }, [isRunning, mode, isBreak]);
 
   // Relax timer interval (counts up)
   useEffect(() => {
@@ -183,13 +211,30 @@ export function TimerProvider({ children }) {
     return () => clearInterval(relaxIntervalRef.current);
   }, [mode, relaxPaused]);
 
-  // Audio control — always fall back to a valid sound ID
+  // Audio control — always fall back to a valid sound ID.
+  // Priority:
+  //   1. explicit relax mode → relax track
+  //   2. focus mode + break phase + auto-relax-on-break enabled → relax track
+  //      (smooth acoustic transition from work → rest instead of a silent cliff)
+  //   3. focus mode + work phase + running → focus track
+  //   4. everything else → paused
   useEffect(() => {
     if (mode === "relax" && !relaxPaused) {
       const url = getAudioUrl(relaxSoundId) || getAudioUrl("10hz-binaural-ocean");
       if (url) audioManager.play(url);
     } else if (mode === "relax" && relaxPaused) {
       audioManager.pause();
+    } else if (isRunning && isBreak) {
+      // Read the toggle at effect-run time so Settings changes take
+      // effect on the next state transition without needing a provider
+      // rerender path.
+      const autoRelax = getDailyDefaults().auto_relax_on_break !== false;
+      if (autoRelax) {
+        const url = getAudioUrl(relaxSoundId) || getAudioUrl("10hz-binaural-ocean");
+        if (url) audioManager.play(url);
+      } else {
+        audioManager.pause();
+      }
     } else if (isRunning && !isBreak) {
       const url = getAudioUrl(focusSoundId) || getAudioUrl("40hz-wind");
       if (url) audioManager.play(url);
@@ -201,6 +246,10 @@ export function TimerProvider({ children }) {
   const toggleTimer = () => {
     if (mode === "relax") return; // In relax mode, use switchToFocus instead
     if (timeLeft === 0) {
+      // Explicit user action starts a fresh cycle: clear the
+      // session-complete flag so initializeTimer stops guarding.
+      sessionCompleteRef.current = false;
+      setIsBreak(false);
       setTimeLeft(workMinutes * 60);
       setIsRunning(true);
     } else {
@@ -214,6 +263,7 @@ export function TimerProvider({ children }) {
       switchToFocus();
       return;
     }
+    sessionCompleteRef.current = false;
     setIsRunning(false);
     setIsBreak(false);
     setTimeLeft(workMinutes * 60);
@@ -227,6 +277,12 @@ export function TimerProvider({ children }) {
     setBreakMinutes(breakTime);
     if (callback) setOnSessionComplete(() => callback);
 
+    // Don't auto-arm the timer while a cycle is sitting in the "just
+    // completed" state — the user has to press play explicitly. Without
+    // this guard, a cycle that ended unattended (user in another tab)
+    // would look like the timer "reset" itself.
+    if (sessionCompleteRef.current) return;
+
     if (timeLeftRef.current === 0 || (!isRunningRef.current && prevWork !== work)) {
       setTimeLeft(work * 60);
     }
@@ -236,6 +292,19 @@ export function TimerProvider({ children }) {
     setIsRunning(false);
     audioManager.pause();
   };
+
+  // Mid-break escape hatch: when the user is in the break phase but feels
+  // they were in the middle of something important, this abandons the
+  // break and re-enters the focus phase for `minutes` more minutes. The
+  // audio effect will swap back to the focus track automatically.
+  const extendFocus = useCallback((minutes = EXTEND_FOCUS_MINUTES) => {
+    if (!isBreakRef.current) return;
+    // Clear the break state and re-arm the focus countdown.
+    sessionCompleteRef.current = false;
+    setIsBreak(false);
+    setTimeLeft(minutes * 60);
+    setIsRunning(true);
+  }, []);
 
   const resumeTimer = () => {
     if (timeLeft > 0) {
@@ -300,6 +369,7 @@ export function TimerProvider({ children }) {
         initializeTimer,
         pauseTimer,
         resumeTimer,
+        extendFocus,
         focusSoundId,
         setFocusSoundId,
         relaxSoundId,

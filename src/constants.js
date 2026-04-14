@@ -101,6 +101,10 @@ export const INITIAL_DAILY_DEFAULTS = {
   focus_break_minutes: DEFAULT_BREAK_MINUTES,
   focus_sound: "40hz-wind",
   relax_sound: "10hz-binaural-ocean",
+  // When a focus session ends and the 5-min break begins, automatically
+  // swap the ambient audio from the focus track to the relax track so
+  // the transition isn't a silent cliff. User can disable in Settings.
+  auto_relax_on_break: true,
   body_breaks_target: DEFAULT_BODY_BREAKS_TARGET,
   break_interval_minutes: DEFAULT_BREAK_INTERVAL_MINUTES,
   exercise_selection: "auto",

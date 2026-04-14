@@ -654,7 +654,14 @@ export default function Dashboard() {
 
   const markAsAway = React.useCallback(() => {
     if (!session?.id || isAway) return;
-    pauseTimer();
+    // NOTE: intentionally NOT calling pauseTimer() here. Auto-away is a
+    // heuristic (tab hidden for 30+5 min, or no input for 15 min while
+    // visible); it can easily misfire when the user is genuinely working
+    // in another tab with background audio. We still flip the desk
+    // status so break reminders don't fire while they're presumed away,
+    // but the active focus session and its audio keep running. The
+    // manual at-desk / away toggle (handleToggleDeskStatus) DOES still
+    // pause the timer — that's an explicit user action.
     const now = new Date().toISOString();
     if (hasDeskColumns) {
       daySessionService.update(session.id, {
@@ -665,7 +672,7 @@ export default function Dashboard() {
       setLocalDeskStatus("away");
       setLocalAwaySince(now);
     }
-  }, [session, isAway, hasDeskColumns, pauseTimer, queryClient]);
+  }, [session, isAway, hasDeskColumns, queryClient]);
 
   // Auto-away if break notification is ignored for 10 min
   useEffect(() => {
