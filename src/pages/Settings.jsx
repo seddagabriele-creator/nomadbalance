@@ -455,6 +455,21 @@ export default function Settings() {
                     />
                   </div>
                 </div>
+
+                {/* Auto relax on break */}
+                <div className="flex items-start justify-between gap-3 pt-1">
+                  <div className="flex-1">
+                    <Label htmlFor="auto-relax-on-break" className="text-white/80 text-sm">Auto relax audio on break</Label>
+                    <p className="text-white/40 text-xs mt-0.5">
+                      When the focus phase ends, automatically switch the ambient audio to the relax track instead of stopping it.
+                    </p>
+                  </div>
+                  <Switch
+                    id="auto-relax-on-break"
+                    checked={localDefaults.auto_relax_on_break !== false}
+                    onCheckedChange={(checked) => setLocalDefaults({ ...localDefaults, auto_relax_on_break: checked })}
+                  />
+                </div>
               </div>
 
               {/* Stretch Break Interval */}

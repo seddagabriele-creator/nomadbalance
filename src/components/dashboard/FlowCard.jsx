@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Play, Pause, RotateCcw, Wind, Waves, Shell, Moon, Sun } from "lucide-react";
+import { Play, Pause, RotateCcw, Wind, Waves, Shell, Moon, Sun, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTimer } from "../lib/TimerContext";
 import { getDailyDefaults } from "../../hooks/useDailyDefaults";
@@ -20,6 +20,7 @@ export default function FlowCard({ session, onSessionComplete, onSoundChange }) 
     timeLeft, isRunning, isBreak, toggleTimer, resetTimer, initializeTimer,
     setFocusSoundId, setRelaxSoundId, focusSoundId, relaxSoundId,
     mode, relaxTime, relaxPaused, switchToRelax, switchToFocus, toggleRelaxPause,
+    extendFocus,
   } = useTimer();
 
   const userDuration = (() => {
@@ -147,6 +148,26 @@ export default function FlowCard({ session, onSessionComplete, onSoundChange }) 
         <div className={`text-[10px] uppercase tracking-wider mt-1 ${isRelaxMode ? "text-cyan-400/50" : "text-white/30"}`}>
           {isRelaxMode ? "Relaxing" : isBreak ? "Break" : "Focus"}
         </div>
+
+        {/* Extend-focus escape hatch: only during break phase, lets the user
+            abandon the break and jump back into a fresh 15-min focus block
+            when they feel they're in the middle of something important. */}
+        {isBreak && !isRelaxMode && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              extendFocus(15);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="mt-2 flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 text-violet-300 text-[10px] font-medium transition-colors"
+            aria-label="Skip break and extend focus by 15 minutes"
+          >
+            <Plus className="w-2.5 h-2.5" />
+            +15 min focus
+          </button>
+        )}
       </div>
 
       {/* Controls + Sound */}

@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { audioManager } from "./audioManager";
 import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, ONE_SECOND_MS, getAudioUrl } from "../../constants";
+import { getDailyDefaults } from "../../hooks/useDailyDefaults";
+
+// How long to extend the focus phase when the user taps "+15 min" on the
+// break screen. Kept as a module-level constant for now; could be made
+// configurable from Settings later.
+const EXTEND_FOCUS_MINUTES = 15;
 
 const TimerContext = createContext();
 
@@ -174,7 +180,10 @@ export function TimerProvider({ children }) {
             onSessionCompleteRef.current?.();
             setIsBreak(true);
             setIsRunning(true);
-            audioManager.pause();
+            // Don't pause audio here: the audio effect will swap to the
+            // relax track if auto_relax_on_break is enabled, or pause
+            // otherwise. Calling pause() here would cause a brief
+            // silence before the relax track fades in.
             return breakMinutesRef.current * 60;
           } else {
             // End of break: do NOT auto-rearm to workMinutes*60. Stop at 0
@@ -202,13 +211,30 @@ export function TimerProvider({ children }) {
     return () => clearInterval(relaxIntervalRef.current);
   }, [mode, relaxPaused]);
 
-  // Audio control — always fall back to a valid sound ID
+  // Audio control — always fall back to a valid sound ID.
+  // Priority:
+  //   1. explicit relax mode → relax track
+  //   2. focus mode + break phase + auto-relax-on-break enabled → relax track
+  //      (smooth acoustic transition from work → rest instead of a silent cliff)
+  //   3. focus mode + work phase + running → focus track
+  //   4. everything else → paused
   useEffect(() => {
     if (mode === "relax" && !relaxPaused) {
       const url = getAudioUrl(relaxSoundId) || getAudioUrl("10hz-binaural-ocean");
       if (url) audioManager.play(url);
     } else if (mode === "relax" && relaxPaused) {
       audioManager.pause();
+    } else if (isRunning && isBreak) {
+      // Read the toggle at effect-run time so Settings changes take
+      // effect on the next state transition without needing a provider
+      // rerender path.
+      const autoRelax = getDailyDefaults().auto_relax_on_break !== false;
+      if (autoRelax) {
+        const url = getAudioUrl(relaxSoundId) || getAudioUrl("10hz-binaural-ocean");
+        if (url) audioManager.play(url);
+      } else {
+        audioManager.pause();
+      }
     } else if (isRunning && !isBreak) {
       const url = getAudioUrl(focusSoundId) || getAudioUrl("40hz-wind");
       if (url) audioManager.play(url);
@@ -266,6 +292,19 @@ export function TimerProvider({ children }) {
     setIsRunning(false);
     audioManager.pause();
   };
+
+  // Mid-break escape hatch: when the user is in the break phase but feels
+  // they were in the middle of something important, this abandons the
+  // break and re-enters the focus phase for `minutes` more minutes. The
+  // audio effect will swap back to the focus track automatically.
+  const extendFocus = useCallback((minutes = EXTEND_FOCUS_MINUTES) => {
+    if (!isBreakRef.current) return;
+    // Clear the break state and re-arm the focus countdown.
+    sessionCompleteRef.current = false;
+    setIsBreak(false);
+    setTimeLeft(minutes * 60);
+    setIsRunning(true);
+  }, []);
 
   const resumeTimer = () => {
     if (timeLeft > 0) {
@@ -330,6 +369,7 @@ export function TimerProvider({ children }) {
         initializeTimer,
         pauseTimer,
         resumeTimer,
+        extendFocus,
         focusSoundId,
         setFocusSoundId,
         relaxSoundId,
