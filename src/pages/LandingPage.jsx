@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
-  Timer, Droplets, Activity, Target, Wind, Moon, Sun,
+  Timer, Droplets, Activity, Target, Wind, Sun,
   ChevronRight, CheckCircle, Sparkles, Smartphone, Shield,
   ArrowRight, Zap, BarChart3, Users, Coffee
 } from "lucide-react";
@@ -38,9 +38,8 @@ const FEATURES = [
 ];
 
 const SECONDARY_FEATURES = [
-  { icon: Wind, label: "Breathing Sessions", desc: "4-7-8 and Box Breathing techniques with guided visual pacer for decompression." },
-  { icon: Moon, label: "Day Close Ritual", desc: "End your workday intentionally with a breathing session before signing off." },
-  { icon: Coffee, label: "Desk Status Tracking", desc: "Toggle away/at-desk to auto-pause break reminders and shift schedules." },
+  { icon: Wind, label: "Breathing Sessions", desc: "4-7-8 and Box Breathing techniques with a guided visual pacer — launch one anytime from the menu to decompress." },
+  { icon: Coffee, label: "Desk Status Tracking", desc: "Auto-away on inactivity plus a manual at-desk / away toggle to pause break reminders when you step out." },
   { icon: Users, label: "Meeting Mode", desc: "One tap to pause all notifications during calls and meetings." },
   { icon: BarChart3, label: "Reports & Badges", desc: "Weekly summaries, streak tracking, focus time stats, and achievement badges." },
   { icon: Smartphone, label: "PWA — Install on Phone", desc: "Works offline. Add to home screen on any device for a native-app experience." },
@@ -69,11 +68,11 @@ const FAQ = [
   },
   {
     q: "How do the exercise breaks work?",
-    a: "When you start your day, the app schedules exercise breaks aligned with your focus timer. When it's time, you get a notification with a specific exercise, complete with image, dosage, execution instructions, and anti-cheating tips. You can snooze, swap, or skip — but your body will thank you for doing them.",
+    a: "Based on your work hours and chosen break interval, the app automatically reminds you to stretch every N minutes throughout the day. Each notification shows a specific exercise with image, dosage, execution instructions, and anti-cheating tips. You can snooze, swap, or skip — but your body will thank you for doing them.",
   },
   {
     q: "Can I customize everything?",
-    a: "Yes. Focus duration, break length, fasting protocol, eating window, number of exercise breaks, muscle groups to target — everything adapts to your schedule and preferences. Save defaults for quick daily starts.",
+    a: "Yes. Focus duration, break length, fasting protocol, eating window, stretch break interval, and the muscle groups you want to target — everything adapts to your schedule and preferences from the Settings page.",
   },
   {
     q: "Is my data private?",
@@ -209,11 +208,11 @@ export default function LandingPage() {
 
         <div className="space-y-4 max-w-2xl mx-auto">
           {[
-            { icon: Sun, time: "Morning", text: "Hit Start Day. The wizard sets up your eating window, focus rhythm, exercise plan, and tasks — or use saved defaults for a one-tap start." },
+            { icon: Sun, time: "Log in", text: "Sign in and your day is already set up — eating window, focus rhythm, and exercise schedule are generated automatically from your Settings. No wizard, no friction." },
             { icon: Timer, time: "Work blocks", text: "Focus timer counts down your work phase with ambient audio. When it ends, you get a short break. Exercises are scheduled to align with your break windows." },
-            { icon: Activity, time: "Break time", text: "A notification shows you exactly which exercise to do — with image, reps, and form tips. Snooze, swap for a different one, or complete it in 2-3 minutes." },
+            { icon: Activity, time: "Stretch breaks", text: "Every N minutes during your work hours (you set the interval), a notification shows exactly which exercise to do — with image, reps, and form tips. Snooze, swap, or complete it in 2-3 minutes." },
             { icon: Droplets, time: "Meal time", text: "The app knows your eating window and work schedule. Tap to log meals. It tracks how many you've had and how long until the window closes." },
-            { icon: Moon, time: "End of day", text: "Close the day with a guided breathing session (4-7-8 or Box Breathing). Review your stats, check completed tasks, and sign off feeling good." },
+            { icon: Wind, time: "Decompress", text: "Launch a guided breathing session (4-7-8 or Box Breathing) anytime from the menu — before a meeting, between deep-work blocks, or whenever you need to reset." },
           ].map((step, i) => (
             <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ delay: i * 0.08 }} className="flex gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
               <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
@@ -313,7 +312,7 @@ export default function LandingPage() {
           </Link>
         </div>
         <div className="text-center mt-8">
-          <Link to="/blog" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Browse all 27 articles &rarr;</Link>
+          <Link to="/blog" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Browse all 47 articles &rarr;</Link>
         </div>
       </section>
 
