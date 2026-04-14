@@ -158,6 +158,12 @@ export function TimerProvider({ children }) {
   }, []);
 
   // Focus timer interval
+  // NOTE: `isBreak` is in the dep array on purpose. When the focus phase
+  // ends we flip isBreak from false → true inside the interval callback
+  // and clearInterval() it manually. Without isBreak as a dep, neither
+  // isRunning nor mode would change, so this effect would not re-run and
+  // the break phase would never get its own interval — the UI would show
+  // 5:00 in "running" state but the timer would never tick down.
   useEffect(() => {
     if (!isRunning || mode !== "focus") return;
     intervalRef.current = setInterval(() => {
@@ -185,7 +191,7 @@ export function TimerProvider({ children }) {
       });
     }, ONE_SECOND_MS);
     return () => clearInterval(intervalRef.current);
-  }, [isRunning, mode]);
+  }, [isRunning, mode, isBreak]);
 
   // Relax timer interval (counts up)
   useEffect(() => {
