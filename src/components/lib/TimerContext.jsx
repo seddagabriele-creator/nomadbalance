@@ -52,6 +52,7 @@ function loadPersistedState() {
       mode,
       relaxTime,
       relaxPaused,
+      sessionComplete: !!parsed.sessionComplete,
       savedFocusTime: typeof parsed.savedFocusTime === "number" ? parsed.savedFocusTime : 0,
       savedFocusRunning: !!parsed.savedFocusRunning,
       savedFocusBreak: !!parsed.savedFocusBreak,
@@ -84,6 +85,12 @@ export function TimerProvider({ children }) {
   const savedFocusRunningRef = useRef(initial?.savedFocusRunning ?? false);
   const savedFocusBreakRef = useRef(initial?.savedFocusBreak ?? false);
 
+  // Tracks whether the previous focus+break cycle has just ended. While this
+  // is true, initializeTimer must NOT re-arm the timer to workMinutes*60,
+  // otherwise an unattended cycle (user in another tab) would look like a
+  // "reset" when they come back. Cleared by explicit user action (play/reset).
+  const sessionCompleteRef = useRef(initial?.sessionComplete ?? false);
+
   const intervalRef = useRef(null);
   const relaxIntervalRef = useRef(null);
   const isRunningRef = useRef(false);
@@ -113,6 +120,7 @@ export function TimerProvider({ children }) {
         mode,
         relaxTime,
         relaxPaused,
+        sessionComplete: sessionCompleteRef.current,
         savedFocusTime: savedFocusTimeRef.current,
         savedFocusRunning: savedFocusRunningRef.current,
         savedFocusBreak: savedFocusBreakRef.current,
@@ -163,9 +171,14 @@ export function TimerProvider({ children }) {
             audioManager.pause();
             return breakMinutesRef.current * 60;
           } else {
+            // End of break: do NOT auto-rearm to workMinutes*60. Stop at 0
+            // and mark the cycle as complete so initializeTimer can't
+            // bounce it back up. The user explicitly starts the next
+            // session by pressing play (handled by toggleTimer).
+            sessionCompleteRef.current = true;
             setIsBreak(false);
             setIsRunning(false);
-            return workMinutesRef.current * 60;
+            return 0;
           }
         }
         return prev - 1;
@@ -201,6 +214,10 @@ export function TimerProvider({ children }) {
   const toggleTimer = () => {
     if (mode === "relax") return; // In relax mode, use switchToFocus instead
     if (timeLeft === 0) {
+      // Explicit user action starts a fresh cycle: clear the
+      // session-complete flag so initializeTimer stops guarding.
+      sessionCompleteRef.current = false;
+      setIsBreak(false);
       setTimeLeft(workMinutes * 60);
       setIsRunning(true);
     } else {
@@ -214,6 +231,7 @@ export function TimerProvider({ children }) {
       switchToFocus();
       return;
     }
+    sessionCompleteRef.current = false;
     setIsRunning(false);
     setIsBreak(false);
     setTimeLeft(workMinutes * 60);
@@ -226,6 +244,12 @@ export function TimerProvider({ children }) {
     setWorkMinutes(work);
     setBreakMinutes(breakTime);
     if (callback) setOnSessionComplete(() => callback);
+
+    // Don't auto-arm the timer while a cycle is sitting in the "just
+    // completed" state — the user has to press play explicitly. Without
+    // this guard, a cycle that ended unattended (user in another tab)
+    // would look like the timer "reset" itself.
+    if (sessionCompleteRef.current) return;
 
     if (timeLeftRef.current === 0 || (!isRunningRef.current && prevWork !== work)) {
       setTimeLeft(work * 60);
