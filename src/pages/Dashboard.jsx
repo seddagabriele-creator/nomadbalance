@@ -19,6 +19,7 @@ import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
 import BreakNotification from "../components/body/BreakNotification";
 import DeskStatusToggle from "../components/dashboard/DeskStatusToggle";
 import { useTimer } from "../components/lib/TimerContext";
+import { getDailyDefaults } from "../hooks/useDailyDefaults";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -773,22 +774,27 @@ export default function Dashboard() {
     if (!userSettings || Object.keys(userSettings).length === 0) return;
     autoCreateAttempted.current = true;
 
-    // Build session from user settings
+    // Daily defaults (fasting, eating window, focus, break interval, exercise
+    // groups, sounds) live in localStorage, not in the user_settings DB row.
+    // userSettings only holds profile + work-hour + notification fields.
+    const defaults = getDailyDefaults();
+
+    // Build session from user settings + daily defaults
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const workStart = userSettings.work_start_time || DEFAULT_WORK_HOURS.morning_start;
-    const workEnd = userSettings.work_end_time || DEFAULT_WORK_HOURS.afternoon_end;
+    const workStart = userSettings.morning_work_start || DEFAULT_WORK_HOURS.morning_start;
+    const workEnd = userSettings.afternoon_work_end || DEFAULT_WORK_HOURS.afternoon_end;
     const workStartMinutes = toMinutes(workStart);
     const workEndMinutes = toMinutes(workEnd);
     const effectiveStart = Math.max(nowMinutes, workStartMinutes);
 
     // Generate interval-based break schedule
-    const breakInterval = userSettings.break_interval_minutes || DEFAULT_BREAK_INTERVAL_MINUTES;
-    const focusWork = userSettings.focus_work_minutes || DEFAULT_WORK_MINUTES;
-    const focusBreak = userSettings.focus_break_minutes || DEFAULT_BREAK_MINUTES;
+    const breakInterval = defaults.break_interval_minutes || DEFAULT_BREAK_INTERVAL_MINUTES;
+    const focusWork = defaults.focus_work_minutes || DEFAULT_WORK_MINUTES;
+    const focusBreak = defaults.focus_break_minutes || DEFAULT_BREAK_MINUTES;
 
     // Get exercises
-    const selectedGroups = userSettings.selected_exercise_groups || [];
+    const selectedGroups = defaults.selected_groups || [];
     let availableExercises = exercises;
     if (selectedGroups.length > 0) {
       const filtered = exercises.filter(ex => selectedGroups.includes(ex.group));
@@ -818,17 +824,18 @@ export default function Dashboard() {
     }
 
     // Calculate eating window
-    const eatingHours = getEatingHours(userSettings.fasting_preset || "16:8", userSettings.custom_fasting_hours);
-    const windowStart = userSettings.eating_window_start_time || "12:00";
+    const eatingHours = getEatingHours(defaults.fasting_preset || "16/8", defaults.custom_fasting_hours);
+    const windowStart = defaults.eating_window_start_time || "12:00";
     const windowEnd = calculateEatingWindowEnd(windowStart, eatingHours);
 
     createSession.mutate({
       focus_work_minutes: focusWork,
       focus_break_minutes: focusBreak,
-      focus_sound: userSettings.focus_sound || "40hz-wind",
-      relax_sound: userSettings.relax_sound || "10hz-binaural-ocean",
-      fasting_preset: userSettings.fasting_preset || "16:8",
-      max_meals: userSettings.max_meals || 3,
+      focus_sound: defaults.focus_sound || "40hz-wind",
+      relax_sound: defaults.relax_sound || "10hz-binaural-ocean",
+      fasting_preset: defaults.fasting_preset || "16/8",
+      custom_fasting_hours: defaults.custom_fasting_hours || null,
+      max_meals: defaults.max_meals || 3,
       eating_window_start: windowStart,
       eating_window_end: windowEnd,
       meals_logged: [],

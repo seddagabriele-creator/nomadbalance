@@ -13,7 +13,8 @@ import { createPageUrl } from "../utils";
 import { toast } from "sonner";
 import { userSettingsService, daySessionService, taskService } from "../api/services";
 import useDailyDefaults from "../hooks/useDailyDefaults";
-import { DEFAULT_WORK_HOURS, FASTING_PRESETS, calculateEatingWindowEnd } from "../constants";
+import { DEFAULT_WORK_HOURS, FASTING_PRESETS, calculateEatingWindowEnd, getEatingHours } from "../constants";
+import { getLocalDateString } from "../utils";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -57,13 +58,52 @@ export default function Settings() {
     },
   });
 
-  const handleSave = () => {
+  // When saving General Settings, cascade the relevant fields down to
+  // today's active session so the user sees changes immediately on the
+  // dashboard cards instead of waiting until tomorrow's auto-session.
+  // Per-session edits made from the Fuel card (Fuel.jsx) remain a
+  // one-day-only override — they never write back to Settings.
+  const cascadeToTodaySession = async (newDefaults) => {
+    try {
+      const today = getLocalDateString();
+      const sessions = await daySessionService.getByDate(today);
+      const todaySession = sessions?.[0];
+      if (!todaySession?.id) return;
+
+      const eatingHours = getEatingHours(
+        newDefaults.fasting_preset || "16/8",
+        newDefaults.custom_fasting_hours
+      );
+      const windowStart = newDefaults.eating_window_start_time || "12:00";
+      const windowEnd = calculateEatingWindowEnd(windowStart, eatingHours);
+
+      const patch = {
+        fasting_preset: newDefaults.fasting_preset || "16/8",
+        custom_fasting_hours: newDefaults.custom_fasting_hours ?? null,
+        max_meals: newDefaults.max_meals || 3,
+        eating_window_start: windowStart,
+        eating_window_end: windowEnd,
+      };
+      if (newDefaults.focus_work_minutes != null) patch.focus_work_minutes = newDefaults.focus_work_minutes;
+      if (newDefaults.focus_break_minutes != null) patch.focus_break_minutes = newDefaults.focus_break_minutes;
+      if (newDefaults.focus_sound) patch.focus_sound = newDefaults.focus_sound;
+      if (newDefaults.relax_sound) patch.relax_sound = newDefaults.relax_sound;
+
+      await daySessionService.update(todaySession.id, patch);
+      queryClient.invalidateQueries({ queryKey: ["daySession"] });
+    } catch (err) {
+      console.error("Failed to cascade settings to today's session:", err);
+    }
+  };
+
+  const handleSave = async () => {
     if (!userSettings.id) {
       toast.error("Settings still loading, please wait...");
       return;
     }
     saveMutation.mutate(formData);
     saveDailyDefaults(localDefaults);
+    await cascadeToTodaySession(localDefaults);
     toast.success("Settings saved successfully");
     navigate("/");
   };
