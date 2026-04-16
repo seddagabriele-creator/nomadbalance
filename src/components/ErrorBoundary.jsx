@@ -1,5 +1,6 @@
 import React from "react";
 import { AlertTriangle, RotateCcw } from "lucide-react";
+import { debugLog } from "../lib/debugLog";
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -13,6 +14,11 @@ export default class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error("ErrorBoundary caught:", error, errorInfo);
+    debugLog("error", "ErrorBoundary caught", {
+      message: error?.message,
+      stack: error?.stack?.slice(0, 300),
+      componentStack: errorInfo?.componentStack?.slice(0, 300),
+    });
   }
 
   handleReset = () => {
