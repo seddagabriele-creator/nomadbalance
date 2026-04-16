@@ -14,6 +14,7 @@ import CookiePolicy from '@/pages/CookiePolicy';
 import TermsOfService from '@/pages/TermsOfService';
 import AuthCallback from '@/pages/AuthCallback';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { debugLog } from '@/lib/debugLog';
 
 import BlogIndex from '@/pages/blog/BlogIndex';
 import AboutPage from '@/pages/AboutPage';
@@ -263,6 +264,17 @@ const AppRoutes = () => {
   );
 };
 
+
+// Log unhandled promise rejections (e.g. failed Supabase calls that nobody
+// caught). These survive page reload via the debugLog ring buffer.
+if (typeof window !== "undefined") {
+  window.addEventListener("unhandledrejection", (e) => {
+    debugLog("error", "unhandledrejection", {
+      message: e.reason?.message || String(e.reason),
+      stack: e.reason?.stack?.slice(0, 300),
+    });
+  });
+}
 
 function App() {
 

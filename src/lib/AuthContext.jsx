@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/api/supabaseClient';
+import { debugLog } from './debugLog';
 
 const AuthContext = createContext();
 
@@ -15,6 +16,16 @@ export const AuthProvider = ({ children }) => {
     // while the SDK is still processing auth tokens from the URL
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        const hasUser = !!session?.user;
+        const expiresAt = session?.expires_at
+          ? new Date(session.expires_at * 1000).toISOString()
+          : "n/a";
+        debugLog("auth", `onAuthStateChange: ${event}`, {
+          hasUser,
+          expiresAt,
+          userId: session?.user?.id?.slice(0, 8),
+        });
+
         // Ignore TOKEN_REFRESHED events that still have a valid session —
         // they would otherwise cause a new `user` object reference to
         // propagate through the context, triggering re-renders (and in
@@ -25,7 +36,7 @@ export const AuthProvider = ({ children }) => {
           return;
         }
         setUser(session?.user ?? null);
-        setIsAuthenticated(!!session?.user);
+        setIsAuthenticated(hasUser);
         setIsLoadingAuth(false);
         if (event === "PASSWORD_RECOVERY") {
           setIsRecovery(true);
@@ -35,6 +46,12 @@ export const AuthProvider = ({ children }) => {
 
     // Then check current session as fallback
     supabase.auth.getSession().then(({ data: { session } }) => {
+      debugLog("auth", "getSession (initial)", {
+        hasUser: !!session?.user,
+        expiresAt: session?.expires_at
+          ? new Date(session.expires_at * 1000).toISOString()
+          : "n/a",
+      });
       setUser(session?.user ?? null);
       setIsAuthenticated(!!session?.user);
       setIsLoadingAuth(false);
@@ -49,14 +66,24 @@ export const AuthProvider = ({ children }) => {
       if (document.hidden) return;
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+        if (!session) {
+          debugLog("auth", "visibility: tab visible, no session found");
+          return;
+        }
         const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+        const ttl = expiresAt ? Math.round((expiresAt - Date.now()) / 1000) : null;
         // Refresh if the token is expired or within 60s of expiring.
         if (expiresAt && expiresAt - Date.now() < 60_000) {
-          await supabase.auth.refreshSession();
+          debugLog("auth", "visibility: refreshing session", { ttl });
+          const { error } = await supabase.auth.refreshSession();
+          if (error) {
+            debugLog("auth", "visibility: refresh FAILED", { error: error.message });
+          } else {
+            debugLog("auth", "visibility: refresh OK");
+          }
         }
-      } catch {
-        // Network errors are fine — the SDK will retry on the next call.
+      } catch (err) {
+        debugLog("auth", "visibility: error", { error: err?.message || String(err) });
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
