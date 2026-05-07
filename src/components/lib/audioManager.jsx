@@ -55,7 +55,8 @@ class AudioManager {
         throw new Error(`Audio fetch failed: ${response.status} ${response.statusText}`);
       }
       const arrayBuffer = await response.arrayBuffer();
-      this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      const rawBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      this.audioBuffer = this._crossfade(rawBuffer);
       this.currentUrl = url;
       this.loadRetries = 0;
     } catch (err) {
@@ -67,6 +68,36 @@ class AudioManager {
       }
       this.loadRetries = 0;
     }
+  }
+
+  // Lightweight crossfade: blend 0.5 s of the tail into the head so
+  // loop=true has no audible seam. Uses linear fade (~22 K iterations
+  // per channel, <1 ms) instead of the old 20%-of-track equal-power
+  // crossfade that blocked the main thread for 200-500 ms.
+  _crossfade(buffer) {
+    const FADE_SEC = 0.5;
+    const sampleRate = buffer.sampleRate;
+    const channels = buffer.numberOfChannels;
+    const len = buffer.length;
+    const fadeSamples = Math.min(Math.floor(sampleRate * FADE_SEC), Math.floor(len / 3));
+    if (fadeSamples < 64) return buffer;
+
+    const newLen = len - fadeSamples;
+    const out = this.audioContext.createBuffer(channels, newLen, sampleRate);
+
+    for (let ch = 0; ch < channels; ch++) {
+      const src = buffer.getChannelData(ch);
+      const dst = out.getChannelData(ch);
+
+      for (let i = 0; i < fadeSamples; i++) {
+        const t = i / fadeSamples;
+        dst[i] = src[i] * t + src[newLen + i] * (1 - t);
+      }
+      for (let i = fadeSamples; i < newLen; i++) {
+        dst[i] = src[i];
+      }
+    }
+    return out;
   }
 
   async startPlayback() {
