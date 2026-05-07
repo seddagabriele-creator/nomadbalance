@@ -70,12 +70,13 @@ class AudioManager {
     }
   }
 
-  // Lightweight crossfade: blend 0.5 s of the tail into the head so
-  // loop=true has no audible seam. Uses linear fade (~22 K iterations
-  // per channel, <1 ms) instead of the old 20%-of-track equal-power
-  // crossfade that blocked the main thread for 200-500 ms.
+  // Crossfade: blend the tail of the track into the head so loop=true
+  // produces a seamless loop. Uses 5 seconds with equal-power curves
+  // (sin/cos) to maintain perceived volume through the blend — long
+  // enough for ambient ocean/wind cycles (~5-10 s), fast enough to
+  // compute in <10 ms (~440 K iterations vs the old 16 M).
   _crossfade(buffer) {
-    const FADE_SEC = 0.5;
+    const FADE_SEC = 5;
     const sampleRate = buffer.sampleRate;
     const channels = buffer.numberOfChannels;
     const len = buffer.length;
@@ -84,6 +85,7 @@ class AudioManager {
 
     const newLen = len - fadeSamples;
     const out = this.audioContext.createBuffer(channels, newLen, sampleRate);
+    const halfPi = Math.PI / 2;
 
     for (let ch = 0; ch < channels; ch++) {
       const src = buffer.getChannelData(ch);
@@ -91,7 +93,7 @@ class AudioManager {
 
       for (let i = 0; i < fadeSamples; i++) {
         const t = i / fadeSamples;
-        dst[i] = src[i] * t + src[newLen + i] * (1 - t);
+        dst[i] = src[i] * Math.sin(t * halfPi) + src[newLen + i] * Math.cos(t * halfPi);
       }
       for (let i = fadeSamples; i < newLen; i++) {
         dst[i] = src[i];
