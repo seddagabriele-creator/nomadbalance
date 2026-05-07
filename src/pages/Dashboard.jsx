@@ -202,6 +202,7 @@ export default function Dashboard() {
     if (userSettings.notifications_enabled === false) return;
 
     const checkTaskAlarms = () => {
+      if (document.hidden) return;
       const now = new Date();
       const nowTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
@@ -237,6 +238,7 @@ export default function Dashboard() {
     if (userSettings.notifications_enabled === false) return;
 
     const checkBreaks = () => {
+      if (document.hidden) return;
       if (activeBreakNotification || overdueBreaks || breakActionInProgress.current) return; // already showing or completing one
 
       // Respect notification time window

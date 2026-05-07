@@ -7,7 +7,7 @@ export default function DeskStatusToggle({ isAway, awaySince, onToggle }) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const intervalRef = useRef(null);
 
-  // Track elapsed away time
+  // Track elapsed away time — only tick when the tab is visible
   useEffect(() => {
     if (isAway && awaySince) {
       const calcElapsed = () => {
@@ -16,7 +16,7 @@ export default function DeskStatusToggle({ isAway, awaySince, onToggle }) {
       };
       setElapsedSeconds(calcElapsed());
       intervalRef.current = setInterval(() => {
-        setElapsedSeconds(calcElapsed());
+        if (!document.hidden) setElapsedSeconds(calcElapsed());
       }, ONE_SECOND_MS);
     } else {
       setElapsedSeconds(0);

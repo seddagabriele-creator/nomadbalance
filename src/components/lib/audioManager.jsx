@@ -1,4 +1,7 @@
-// Global audio manager with Web Audio API and crossfade for seamless looping
+// Global audio manager with Web Audio API.
+// Designed to be lightweight in background tabs: the AudioContext is
+// suspended on tab hide and resumed on tab show. Decoded buffers are
+// released on suspend to free ~38 MB of PCM data per track.
 class AudioManager {
   constructor() {
     this.audioContext = null;
@@ -9,9 +12,16 @@ class AudioManager {
     this.currentUrl = null;
     this.loadRetries = 0;
     this.maxRetries = 2;
+    this._pendingUrl = null;
   }
 
   async play(url) {
+    // Never attempt audio work while the tab is hidden — Chrome throttles
+    // background JS and may kill the renderer if we trigger heavy decoding.
+    if (typeof document !== "undefined" && document.hidden) {
+      this._pendingUrl = url;
+      return;
+    }
     try {
       if (this.currentUrl !== url || !this.audioBuffer) {
         await this.loadAudio(url);
@@ -45,16 +55,13 @@ class AudioManager {
         throw new Error(`Audio fetch failed: ${response.status} ${response.statusText}`);
       }
       const arrayBuffer = await response.arrayBuffer();
-      const rawBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-      // Build a crossfaded buffer so loop = true has zero gap
-      this.audioBuffer = this.createCrossfadeBuffer(rawBuffer);
+      this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
       this.currentUrl = url;
       this.loadRetries = 0;
     } catch (err) {
       console.error("Audio load failed:", err);
       this.loadRetries++;
       if (this.loadRetries <= this.maxRetries) {
-        console.warn(`Retrying audio load (attempt ${this.loadRetries}/${this.maxRetries})...`);
         await new Promise(resolve => setTimeout(resolve, 1000 * this.loadRetries));
         return this.loadAudio(url);
       }
@@ -62,64 +69,13 @@ class AudioManager {
     }
   }
 
-  /**
-   * Creates a new AudioBuffer where the tail of the track is crossfaded into
-   * the head, eliminating any audible seam when Web Audio loops the buffer.
-   *
-   * Uses 20% of the buffer length as crossfade region (capped at 20s) to
-   * ensure the blend reaches past any silent/sparse sections at the edges
-   * of the track (e.g. ocean waves that only play in the middle).
-   *
-   * Equal-power (sine/cosine) curves keep perceived volume constant.
-   */
-  createCrossfadeBuffer(buffer) {
-    const sampleRate = buffer.sampleRate;
-    const channels = buffer.numberOfChannels;
-    const originalLength = buffer.length;
-
-    // 20% of buffer, capped at 20 seconds — reaches into the "good" middle
-    const maxFadeSamples = Math.floor(sampleRate * 20);
-    const fadeSamples = Math.min(
-      Math.floor(originalLength * 0.20),
-      maxFadeSamples
-    );
-
-    // Need at least twice the fade region to make a meaningful crossfade
-    if (originalLength < fadeSamples * 3) return buffer;
-
-    const newLength = originalLength - fadeSamples;
-    const newBuffer = this.audioContext.createBuffer(channels, newLength, sampleRate);
-
-    for (let ch = 0; ch < channels; ch++) {
-      const oldData = buffer.getChannelData(ch);
-      const newData = newBuffer.getChannelData(ch);
-
-      // Crossfade region: equal-power blend (sine/cosine curves)
-      for (let i = 0; i < fadeSamples; i++) {
-        const t = i / fadeSamples;
-        const fadeIn = Math.sin(t * Math.PI / 2);
-        const fadeOut = Math.cos(t * Math.PI / 2);
-        newData[i] = oldData[i] * fadeIn + oldData[newLength + i] * fadeOut;
-      }
-
-      // Remainder: copy unchanged
-      for (let i = fadeSamples; i < newLength; i++) {
-        newData[i] = oldData[i];
-      }
-    }
-
-    return newBuffer;
-  }
-
   async startPlayback() {
     if (!this.audioBuffer || !this.audioContext) return;
 
-    // Resume context if suspended (browser autoplay policy)
     if (this.audioContext.state === "suspended") {
       await this.audioContext.resume();
     }
 
-    // Cancel any lingering gain automation (e.g. fade-out from pause)
     const now = this.audioContext.currentTime;
     this.gainNode.gain.cancelScheduledValues(now);
     this.gainNode.gain.setValueAtTime(0, now);
@@ -136,19 +92,18 @@ class AudioManager {
   pause() {
     if (this.source && this.isPlaying) {
       try {
-        // Fade out over 0.5s before stopping
         const now = this.audioContext.currentTime;
         this.gainNode.gain.cancelScheduledValues(now);
         this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
         this.gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
         const src = this.source;
         setTimeout(() => {
-          try { src.stop(); } catch { /* already stopped */ }
-          try { src.disconnect(); } catch { /* already disconnected */ }
+          try { src.stop(); } catch {}
+          try { src.disconnect(); } catch {}
         }, 550);
       } catch {
-        try { this.source.stop(); } catch { /* already stopped */ }
-        try { this.source.disconnect(); } catch { /* already disconnected */ }
+        try { this.source.stop(); } catch {}
+        try { this.source.disconnect(); } catch {}
       }
       this.source = null;
       this.isPlaying = false;
@@ -157,6 +112,32 @@ class AudioManager {
 
   stop() {
     this.pause();
+  }
+
+  // Called when the tab goes hidden. Suspends the AudioContext (tells
+  // Chrome we don't need the audio thread) and releases the decoded
+  // buffer so ~38 MB of PCM data can be reclaimed.
+  suspend() {
+    this.pause();
+    this.audioBuffer = null;
+    if (this.audioContext && this.audioContext.state === "running") {
+      this.audioContext.suspend().catch(() => {});
+    }
+  }
+
+  // Called when the tab becomes visible. If audio was playing before
+  // suspend, the caller should call play(url) again — loadAudio will
+  // re-fetch and re-decode (fast, since the file is cached by the
+  // browser's HTTP cache).
+  async unsuspend() {
+    if (this.audioContext && this.audioContext.state === "suspended") {
+      await this.audioContext.resume().catch(() => {});
+    }
+    if (this._pendingUrl) {
+      const url = this._pendingUrl;
+      this._pendingUrl = null;
+      await this.play(url);
+    }
   }
 
   getIsPlaying() {
