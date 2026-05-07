@@ -61,7 +61,7 @@ export default function FuelCard({ session, onLogMeal }) {
 
   useEffect(() => {
     setStatus(getSmartFuelStatus(session));
-    const interval = setInterval(() => setStatus(getSmartFuelStatus(session)), ONE_MINUTE_MS);
+    const interval = setInterval(() => { if (!document.hidden) setStatus(getSmartFuelStatus(session)); }, ONE_MINUTE_MS);
     return () => clearInterval(interval);
   }, [session?.eating_window_start, session?.eating_window_end, session?.meals_logged?.length, session?.max_meals]);
 

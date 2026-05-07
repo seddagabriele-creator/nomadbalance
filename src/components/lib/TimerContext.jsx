@@ -183,6 +183,10 @@ export function TimerProvider({ children }) {
         clearInterval(intervalRef.current);
         clearInterval(relaxIntervalRef.current);
         persistNow();
+        // Suspend the AudioContext and free decoded buffers (~38 MB).
+        // Web Audio will stop playing, but that's expected — the user
+        // isn't looking at the app. Audio resumes when the tab returns.
+        audioManager.suspend();
       } else {
         // ── TAB VISIBLE ──
         const restored = loadPersistedState();
@@ -206,6 +210,11 @@ export function TimerProvider({ children }) {
         if (restored.focusEndedWhileAway) {
           onSessionCompleteRef.current?.();
         }
+
+        // Resume the AudioContext. The audio effect will re-fire due to
+        // the state changes above and call audioManager.play(url), which
+        // will re-decode the buffer (fast — HTTP-cached) and start playback.
+        audioManager.unsuspend();
       }
     };
 
@@ -251,7 +260,11 @@ export function TimerProvider({ children }) {
   }, [mode, relaxPaused]);
 
   // ─── Audio control ─────────────────────────────────────────────────
+  // Skipped while the tab is hidden — audioManager.suspend() has already
+  // freed resources, and triggering play() in background could force a
+  // heavy re-decode that blocks the throttled JS budget.
   useEffect(() => {
+    if (typeof document !== "undefined" && document.hidden) return;
     if (mode === "relax" && !relaxPaused) {
       const url = getAudioUrl(relaxSoundId) || getAudioUrl("10hz-binaural-ocean");
       if (url) audioManager.play(url);
