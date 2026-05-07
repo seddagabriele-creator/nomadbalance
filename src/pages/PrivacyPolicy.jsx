@@ -1,5 +1,6 @@
 import React from "react";
 import useSEO from "@/hooks/useSEO";
+import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap } from "lucide-react";
 
@@ -138,6 +139,7 @@ export default function PrivacyPolicy() {
           </section>
         </div>
       </article>
+      <Footer />
     </div>
   );
 }
