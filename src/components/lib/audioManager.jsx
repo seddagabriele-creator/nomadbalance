@@ -1,7 +1,6 @@
 // Global audio manager with Web Audio API.
-// Designed to be lightweight in background tabs: the AudioContext is
-// suspended on tab hide and resumed on tab show. Decoded buffers are
-// released on suspend to free ~38 MB of PCM data per track.
+// Audio keeps playing when the tab is backgrounded — Chrome gives higher
+// priority to tabs producing audio and won't discard them.
 class AudioManager {
   constructor() {
     this.audioContext = null;
@@ -12,16 +11,9 @@ class AudioManager {
     this.currentUrl = null;
     this.loadRetries = 0;
     this.maxRetries = 2;
-    this._pendingUrl = null;
   }
 
   async play(url) {
-    // Never attempt audio work while the tab is hidden — Chrome throttles
-    // background JS and may kill the renderer if we trigger heavy decoding.
-    if (typeof document !== "undefined" && document.hidden) {
-      this._pendingUrl = url;
-      return;
-    }
     try {
       if (this.currentUrl !== url || !this.audioBuffer) {
         await this.loadAudio(url);
@@ -145,32 +137,6 @@ class AudioManager {
 
   stop() {
     this.pause();
-  }
-
-  // Called when the tab goes hidden. Suspends the AudioContext (tells
-  // Chrome we don't need the audio thread) and releases the decoded
-  // buffer so ~38 MB of PCM data can be reclaimed.
-  suspend() {
-    this.pause();
-    this.audioBuffer = null;
-    if (this.audioContext && this.audioContext.state === "running") {
-      this.audioContext.suspend().catch(() => {});
-    }
-  }
-
-  // Called when the tab becomes visible. If audio was playing before
-  // suspend, the caller should call play(url) again — loadAudio will
-  // re-fetch and re-decode (fast, since the file is cached by the
-  // browser's HTTP cache).
-  async unsuspend() {
-    if (this.audioContext && this.audioContext.state === "suspended") {
-      await this.audioContext.resume().catch(() => {});
-    }
-    if (this._pendingUrl) {
-      const url = this._pendingUrl;
-      this._pendingUrl = null;
-      await this.play(url);
-    }
   }
 
   getIsPlaying() {
