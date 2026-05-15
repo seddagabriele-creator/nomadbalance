@@ -254,11 +254,10 @@ export function TimerProvider({ children }) {
   }, [mode, relaxPaused]);
 
   // ─── Audio control ─────────────────────────────────────────────────
-  // Skipped while the tab is hidden — audioManager.suspend() has already
-  // freed resources, and triggering play() in background could force a
-  // heavy re-decode that blocks the throttled JS budget.
+  // No visibility guard here: the audio must keep playing when the tab
+  // is backgrounded. The crossfade is lightweight (<10 ms) so there's
+  // no risk of blocking the main thread on decode.
   useEffect(() => {
-    if (typeof document !== "undefined" && document.hidden) return;
     if (mode === "relax" && !relaxPaused) {
       const url = getAudioUrl(relaxSoundId) || getAudioUrl("10hz-binaural-ocean");
       if (url) audioManager.play(url);
