@@ -35,14 +35,7 @@ const toMinutes = (t) => {
   return h * 60 + m;
 };
 
-// Shared AudioContext singleton for notification chimes
-let _chimeCtx = null;
-function getChimeContext() {
-  if (!_chimeCtx || _chimeCtx.state === "closed") {
-    _chimeCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  return _chimeCtx;
-}
+import { getChimeContext } from "../components/lib/chimeContext";
 
 // Play a gentle two-tone chime for notifications
 function playNotificationChime() {
