@@ -55,7 +55,8 @@ class AudioManager {
         throw new Error(`Audio fetch failed: ${response.status} ${response.statusText}`);
       }
       const arrayBuffer = await response.arrayBuffer();
-      this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      const rawBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      this.audioBuffer = this._crossfade(rawBuffer);
       this.currentUrl = url;
       this.loadRetries = 0;
     } catch (err) {
@@ -67,6 +68,38 @@ class AudioManager {
       }
       this.loadRetries = 0;
     }
+  }
+
+  // Crossfade: blend the tail of the track into the head so loop=true
+  // produces a seamless loop. Uses 5 seconds with equal-power curves
+  // (sin/cos) to maintain perceived volume through the blend — long
+  // enough for ambient ocean/wind cycles (~5-10 s), fast enough to
+  // compute in <10 ms (~440 K iterations vs the old 16 M).
+  _crossfade(buffer) {
+    const FADE_SEC = 5;
+    const sampleRate = buffer.sampleRate;
+    const channels = buffer.numberOfChannels;
+    const len = buffer.length;
+    const fadeSamples = Math.min(Math.floor(sampleRate * FADE_SEC), Math.floor(len / 3));
+    if (fadeSamples < 64) return buffer;
+
+    const newLen = len - fadeSamples;
+    const out = this.audioContext.createBuffer(channels, newLen, sampleRate);
+    const halfPi = Math.PI / 2;
+
+    for (let ch = 0; ch < channels; ch++) {
+      const src = buffer.getChannelData(ch);
+      const dst = out.getChannelData(ch);
+
+      for (let i = 0; i < fadeSamples; i++) {
+        const t = i / fadeSamples;
+        dst[i] = src[i] * Math.sin(t * halfPi) + src[newLen + i] * Math.cos(t * halfPi);
+      }
+      for (let i = fadeSamples; i < newLen; i++) {
+        dst[i] = src[i];
+      }
+    }
+    return out;
   }
 
   async startPlayback() {

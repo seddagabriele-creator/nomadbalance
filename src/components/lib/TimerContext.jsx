@@ -180,13 +180,12 @@ export function TimerProvider({ children }) {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         // ── TAB HIDDEN ──
+        // Stop display intervals (zero JS overhead in background).
+        // Audio keeps playing via Web Audio API — it doesn't need JS
+        // ticks and Chrome won't kill tabs that are producing audio.
         clearInterval(intervalRef.current);
         clearInterval(relaxIntervalRef.current);
         persistNow();
-        // Suspend the AudioContext and free decoded buffers (~38 MB).
-        // Web Audio will stop playing, but that's expected — the user
-        // isn't looking at the app. Audio resumes when the tab returns.
-        audioManager.suspend();
       } else {
         // ── TAB VISIBLE ──
         const restored = loadPersistedState();
@@ -210,11 +209,6 @@ export function TimerProvider({ children }) {
         if (restored.focusEndedWhileAway) {
           onSessionCompleteRef.current?.();
         }
-
-        // Resume the AudioContext. The audio effect will re-fire due to
-        // the state changes above and call audioManager.play(url), which
-        // will re-decode the buffer (fast — HTTP-cached) and start playback.
-        audioManager.unsuspend();
       }
     };
 
