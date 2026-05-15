@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Play, Clock, SkipForward, X, ChevronRight, AlertCircle, Info, CheckCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ONE_SECOND_MS } from "../../constants";
+import { getChimeContext } from "../lib/chimeContext";
 
 const SNOOZE_OPTIONS = [3, 5, 10]; // minutes
 
@@ -24,10 +25,7 @@ export default function BreakNotification({
   // Play notification chime on mount (reuse singleton AudioContext)
   useEffect(() => {
     try {
-      if (!window._nomadChimeCtx || window._nomadChimeCtx.state === "closed") {
-        window._nomadChimeCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      const ctx = window._nomadChimeCtx;
+      const ctx = getChimeContext();
       if (ctx.state === "suspended") ctx.resume();
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();

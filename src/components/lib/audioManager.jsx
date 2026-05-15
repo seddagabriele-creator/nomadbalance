@@ -1,142 +1,126 @@
-// Global audio manager with Web Audio API.
-// Audio keeps playing when the tab is backgrounded — Chrome gives higher
-// priority to tabs producing audio and won't discard them.
+// Global audio manager using HTML5 <audio> element for streaming playback.
+// Instead of decoding the entire MP3 into a ~38 MB PCM AudioBuffer, we let
+// the browser stream and decode on-the-fly — memory usage drops to ~2-5 MB.
+// We still use Web Audio API (MediaElementSourceNode → GainNode) for smooth
+// fade-in / fade-out volume control.
+
 class AudioManager {
   constructor() {
     this.audioContext = null;
-    this.audioBuffer = null;
-    this.source = null;
     this.gainNode = null;
+    this.sourceNode = null;
+    this.audioEl = null;
     this.isPlaying = false;
     this.currentUrl = null;
-    this.loadRetries = 0;
-    this.maxRetries = 2;
+    this._fadeTimeout = null;
+  }
+
+  _ensureContext() {
+    if (!this.audioContext || this.audioContext.state === "closed") {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      this.gainNode = this.audioContext.createGain();
+      this.gainNode.gain.value = 0;
+      this.gainNode.connect(this.audioContext.destination);
+    }
   }
 
   async play(url) {
     try {
-      if (this.currentUrl !== url || !this.audioBuffer) {
-        await this.loadAudio(url);
+      if (this.currentUrl === url && this.isPlaying) return;
+
+      // If switching tracks, stop the old one first
+      if (this.currentUrl !== url) {
+        this._stopImmediate();
       }
 
-      if (!this.isPlaying && this.audioBuffer) {
-        await this.startPlayback();
-      }
-    } catch (err) {
-      console.error("[AudioManager] play error:", err);
-    }
-  }
-
-  async loadAudio(url) {
-    try {
-      this.stop();
-
-      if (!this.audioContext || this.audioContext.state === "closed") {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.gainNode = this.audioContext.createGain();
-        this.gainNode.gain.value = 0.7;
-        this.gainNode.connect(this.audioContext.destination);
-      }
+      this._ensureContext();
 
       if (this.audioContext.state === "suspended") {
         await this.audioContext.resume();
       }
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Audio fetch failed: ${response.status} ${response.statusText}`);
+      if (!this.audioEl || this.currentUrl !== url) {
+        // Create a new <audio> element for the track
+        if (this.audioEl) {
+          this._disconnectAudioEl();
+        }
+
+        this.audioEl = new Audio();
+        this.audioEl.crossOrigin = "anonymous";
+        this.audioEl.loop = true;
+        this.audioEl.preload = "auto";
+        this.audioEl.src = url;
+
+        // Connect through Web Audio for gain control
+        this.sourceNode = this.audioContext.createMediaElementSource(this.audioEl);
+        this.sourceNode.connect(this.gainNode);
+        this.currentUrl = url;
       }
-      const arrayBuffer = await response.arrayBuffer();
-      const rawBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-      this.audioBuffer = this._crossfade(rawBuffer);
-      this.currentUrl = url;
-      this.loadRetries = 0;
+
+      // Fade in
+      const now = this.audioContext.currentTime;
+      this.gainNode.gain.cancelScheduledValues(now);
+      this.gainNode.gain.setValueAtTime(0, now);
+      this.gainNode.gain.linearRampToValueAtTime(0.7, now + 1.5);
+
+      await this.audioEl.play();
+      this.isPlaying = true;
     } catch (err) {
-      console.error("Audio load failed:", err);
-      this.loadRetries++;
-      if (this.loadRetries <= this.maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * this.loadRetries));
-        return this.loadAudio(url);
-      }
-      this.loadRetries = 0;
-    }
-  }
-
-  // Crossfade: blend the tail of the track into the head so loop=true
-  // produces a seamless loop. Uses 5 seconds with equal-power curves
-  // (sin/cos) to maintain perceived volume through the blend — long
-  // enough for ambient ocean/wind cycles (~5-10 s), fast enough to
-  // compute in <10 ms (~440 K iterations vs the old 16 M).
-  _crossfade(buffer) {
-    const FADE_SEC = 5;
-    const sampleRate = buffer.sampleRate;
-    const channels = buffer.numberOfChannels;
-    const len = buffer.length;
-    const fadeSamples = Math.min(Math.floor(sampleRate * FADE_SEC), Math.floor(len / 3));
-    if (fadeSamples < 64) return buffer;
-
-    const newLen = len - fadeSamples;
-    const out = this.audioContext.createBuffer(channels, newLen, sampleRate);
-    const halfPi = Math.PI / 2;
-
-    for (let ch = 0; ch < channels; ch++) {
-      const src = buffer.getChannelData(ch);
-      const dst = out.getChannelData(ch);
-
-      for (let i = 0; i < fadeSamples; i++) {
-        const t = i / fadeSamples;
-        dst[i] = src[i] * Math.sin(t * halfPi) + src[newLen + i] * Math.cos(t * halfPi);
-      }
-      for (let i = fadeSamples; i < newLen; i++) {
-        dst[i] = src[i];
+      // Autoplay blocked or network error — fail silently, user can retry
+      if (err.name !== "NotAllowedError") {
+        console.error("[AudioManager] play error:", err);
       }
     }
-    return out;
-  }
-
-  async startPlayback() {
-    if (!this.audioBuffer || !this.audioContext) return;
-
-    if (this.audioContext.state === "suspended") {
-      await this.audioContext.resume();
-    }
-
-    const now = this.audioContext.currentTime;
-    this.gainNode.gain.cancelScheduledValues(now);
-    this.gainNode.gain.setValueAtTime(0, now);
-    this.gainNode.gain.linearRampToValueAtTime(0.7, now + 1.5);
-
-    this.source = this.audioContext.createBufferSource();
-    this.source.buffer = this.audioBuffer;
-    this.source.loop = true;
-    this.source.connect(this.gainNode);
-    this.source.start(0);
-    this.isPlaying = true;
   }
 
   pause() {
-    if (this.source && this.isPlaying) {
-      try {
-        const now = this.audioContext.currentTime;
-        this.gainNode.gain.cancelScheduledValues(now);
-        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-        this.gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
-        const src = this.source;
-        setTimeout(() => {
-          try { src.stop(); } catch {}
-          try { src.disconnect(); } catch {}
-        }, 550);
-      } catch {
-        try { this.source.stop(); } catch {}
-        try { this.source.disconnect(); } catch {}
-      }
-      this.source = null;
-      this.isPlaying = false;
+    if (!this.isPlaying || !this.audioEl) return;
+
+    clearTimeout(this._fadeTimeout);
+
+    if (this.audioContext && this.gainNode) {
+      const now = this.audioContext.currentTime;
+      this.gainNode.gain.cancelScheduledValues(now);
+      this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+      this.gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+
+      // Pause the element after fade-out completes
+      this._fadeTimeout = setTimeout(() => {
+        if (this.audioEl) {
+          this.audioEl.pause();
+        }
+      }, 550);
+    } else {
+      this.audioEl.pause();
     }
+
+    this.isPlaying = false;
   }
 
   stop() {
     this.pause();
+  }
+
+  _stopImmediate() {
+    clearTimeout(this._fadeTimeout);
+    if (this.audioEl) {
+      this.audioEl.pause();
+      this._disconnectAudioEl();
+    }
+    this.isPlaying = false;
+    this.currentUrl = null;
+  }
+
+  _disconnectAudioEl() {
+    if (this.sourceNode) {
+      try { this.sourceNode.disconnect(); } catch {}
+      this.sourceNode = null;
+    }
+    if (this.audioEl) {
+      this.audioEl.src = "";
+      this.audioEl.load();
+      this.audioEl = null;
+    }
   }
 
   getIsPlaying() {
