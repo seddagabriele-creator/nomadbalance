@@ -7,42 +7,131 @@ const SpeechRecognition = typeof window !== "undefined"
   ? window.SpeechRecognition || window.webkitSpeechRecognition
   : null;
 
-// Intent patterns: [regex, action key, extract group index (optional)]
-const INTENTS = [
-  // Tasks
-  [/(?:aggiungi|nuova?|crea|add)\s*(?:task|compito|attività)\s+(.+)/i, "addTask", 1],
-  [/(?:aggiungi|nuova?|crea|add)\s+(.+)\s+(?:alla lista|alle task|ai compiti|to list)/i, "addTask", 1],
-  // Meals
-  [/(?:aggiungi|registra|log)\s*(?:pasto|meal|pranzo|cena|colazione|snack)/i, "logMeal"],
-  [/(?:ho (?:mangiato|pranzato|cenato))/i, "logMeal"],
-  // Timer / Audio
-  [/(?:avvia|parti|start|play)\s*(?:audio|musica|music|focus|timer|sessione)/i, "startFocus"],
-  [/(?:metti|avvia)\s*(?:la\s+)?musica/i, "startFocus"],
-  [/(?:pausa|pause|stop|ferma|stoppa)\s*(?:audio|musica|music|timer|tutto)?/i, "pauseTimer"],
-  [/(?:riprendi|resume|continua)\s*(?:audio|musica|timer)?/i, "resumeTimer"],
-  // Relax
-  [/(?:relax|rilassati|rilassa|chill|decompression)/i, "switchRelax"],
-  [/(?:torna|back|switch)\s*(?:a|to)?\s*(?:focus|lavoro|work)/i, "switchFocus"],
-  // Breathing
-  [/(?:respirazione|breathing|respira|breath)/i, "startBreathing"],
-  // Away / Desk
-  [/(?:sono\s+(?:via|away)|vado\s+via|me ne vado|going away)/i, "goAway"],
-  [/(?:sono\s+(?:tornato|qui|back)|torno|i'?m back)/i, "comeBack"],
-  // Reset
-  [/(?:reset|resetta|ricomincia)\s*(?:timer)?/i, "resetTimer"],
-];
+// ── Fuzzy intent matching ───────────────────────────────────────────
+// Each intent has a list of trigger words/phrases and a score weight.
+// We tokenize the input text, check how many trigger words appear, and
+// pick the intent with the highest score. This handles natural Italian
+// phrasing without needing an LLM.
+
+const INTENT_DEFS = {
+  addTask: {
+    triggers: ["task", "compito", "attività", "promemoria", "nota", "ricordami", "segna", "scrivi", "appunta", "aggiungi", "nuova", "nuovo", "crea", "metti", "to do", "todo"],
+    needsParam: true,
+    // Words that precede the actual task title — stripped from the param
+    prefixWords: ["task", "compito", "attività", "promemoria", "nota", "che", "di", "un", "una", "il", "la", "lo", "to do", "todo", "nuovo", "nuova"],
+  },
+  logMeal: {
+    triggers: ["pasto", "meal", "mangiato", "pranzo", "pranzato", "cena", "cenato", "colazione", "snack", "spuntino", "merenda", "mangio", "mangiare", "cibo", "food", "registra pasto", "log meal", "ho fame"],
+  },
+  startFocus: {
+    triggers: ["musica", "music", "audio", "focus", "concentrazione", "suono", "suona", "play", "avvia", "parti", "start", "inizia", "comincia", "lavorare", "lavoro", "sessione", "metti su", "accendi"],
+    boostPhrases: ["metti musica", "avvia musica", "parti musica", "start focus", "metti su la musica", "fammi sentire", "voglio concentrarmi", "inizia a lavorare", "metti l'audio", "accendi la musica"],
+  },
+  pauseTimer: {
+    triggers: ["pausa", "pause", "stop", "ferma", "fermati", "basta", "smetti", "aspetta", "un momento", "un attimo", "hold", "wait"],
+    boostPhrases: ["metti in pausa", "fermati un attimo", "stop musica", "ferma tutto", "pausa timer"],
+  },
+  resumeTimer: {
+    triggers: ["riprendi", "resume", "continua", "vai", "go", "ricomincia", "riprendere", "avanti", "prosegui"],
+    boostPhrases: ["continua a suonare", "riprendi la musica", "vai avanti", "continua il timer"],
+  },
+  switchRelax: {
+    triggers: ["relax", "rilassati", "rilassa", "rilassamento", "chill", "calma", "tranquillo", "decompressione", "stacca"],
+    boostPhrases: ["voglio rilassarmi", "metti relax", "modalità relax", "stacca un po'", "ho bisogno di calma"],
+  },
+  switchFocus: {
+    triggers: ["focus", "concentrazione", "lavoro", "work", "produttivo", "torna"],
+    boostPhrases: ["torna al focus", "torna a lavorare", "basta relax", "modalità lavoro", "concentrazione"],
+    // Only match if "torna" or "back" or "basta relax" present — otherwise conflicts with startFocus
+    requireAny: ["torna", "back", "basta", "modalità lavoro", "switch"],
+  },
+  startBreathing: {
+    triggers: ["respirazione", "breathing", "respira", "breath", "respiro", "inspira", "espira", "calma"],
+    boostPhrases: ["esercizio di respirazione", "facciamo respirazione", "voglio respirare", "breathing session"],
+  },
+  goAway: {
+    triggers: ["via", "away", "vado", "esco", "torno dopo", "pausa pranzo", "pausa caffè", "allontano"],
+    boostPhrases: ["sono via", "vado via", "me ne vado", "going away", "mi allontano", "pausa pranzo", "torno dopo"],
+    requireAny: ["via", "away", "vado", "esco", "allontano", "pausa pranzo", "pausa caffè"],
+  },
+  comeBack: {
+    triggers: ["tornato", "back", "qui", "tornata", "presente", "rientro", "rientrato"],
+    boostPhrases: ["sono tornato", "sono qui", "sono back", "i'm back", "sono rientrato", "eccomi"],
+    requireAny: ["tornato", "tornata", "back", "qui", "rientro", "rientrato", "eccomi", "presente"],
+  },
+  resetTimer: {
+    triggers: ["reset", "resetta", "azzera", "ricomincia", "da capo", "daccapo"],
+    boostPhrases: ["reset timer", "resetta il timer", "ricomincia da capo", "azzera tutto"],
+  },
+};
 
 function matchIntent(text) {
   const normalized = text.toLowerCase().trim();
-  for (const [pattern, action, groupIdx] of INTENTS) {
-    const match = normalized.match(pattern);
-    if (match) {
-      return { action, param: groupIdx ? match[groupIdx]?.trim() : null };
+  const words = normalized.split(/\s+/);
+  const wordSet = new Set(words);
+
+  let bestAction = null;
+  let bestScore = 0;
+  let bestParam = null;
+
+  for (const [action, def] of Object.entries(INTENT_DEFS)) {
+    let score = 0;
+
+    // Check trigger words
+    for (const trigger of def.triggers) {
+      if (trigger.includes(" ")) {
+        if (normalized.includes(trigger)) score += 2;
+      } else {
+        if (wordSet.has(trigger)) score += 1;
+        else if (normalized.includes(trigger)) score += 0.5;
+      }
+    }
+
+    // Boost phrases (exact substring match = strong signal)
+    if (def.boostPhrases) {
+      for (const phrase of def.boostPhrases) {
+        if (normalized.includes(phrase)) score += 3;
+      }
+    }
+
+    // requireAny gate: at least one of these words must be present
+    if (def.requireAny) {
+      const hasRequired = def.requireAny.some(w =>
+        w.includes(" ") ? normalized.includes(w) : wordSet.has(w) || normalized.includes(w)
+      );
+      if (!hasRequired) score = 0;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestAction = action;
+
+      // Extract parameter for addTask: everything after trigger words
+      if (def.needsParam) {
+        let param = normalized;
+        // Remove common action verbs and noise words
+        const removeWords = [
+          "aggiungi", "nuova", "nuovo", "crea", "metti", "scrivi", "appunta",
+          "segna", "ricordami", "add", "create", "task", "compito", "attività",
+          "promemoria", "nota", "un", "una", "il", "la", "lo", "che", "di",
+          "devo", "dovrei", "bisogna", "alle", "alla", "al", "to do", "todo",
+        ];
+        for (const w of removeWords) {
+          param = param.replace(new RegExp(`\\b${w}\\b`, "gi"), "");
+        }
+        param = param.replace(/\s+/g, " ").trim();
+        if (param) bestParam = param;
+      }
     }
   }
-  return null;
+
+  // Minimum score threshold to avoid false positives
+  if (bestScore < 1) return null;
+
+  return { action: bestAction, param: bestParam };
 }
 
+// ── Speech synthesis ────────────────────────────────────────────────
 function speak(text) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   const utterance = new SpeechSynthesisUtterance(text);
@@ -52,6 +141,22 @@ function speak(text) {
   window.speechSynthesis.speak(utterance);
 }
 
+// ── Action responses ────────────────────────────────────────────────
+const ACTION_RESPONSES = {
+  addTask: (p) => p ? `Task aggiunta: ${p}` : "Non ho capito il nome della task.",
+  logMeal: () => "Pasto registrato!",
+  startFocus: () => "Focus avviato!",
+  pauseTimer: () => "In pausa.",
+  resumeTimer: () => "Ripreso!",
+  switchRelax: () => "Modalità relax.",
+  switchFocus: () => "Torna al focus.",
+  startBreathing: () => "Sessione di respirazione.",
+  goAway: () => "Stato: via dalla scrivania.",
+  comeBack: () => "Bentornato!",
+  resetTimer: () => "Timer resettato.",
+};
+
+// ── Component ───────────────────────────────────────────────────────
 export default function VoiceAssistant({ actions }) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -62,87 +167,28 @@ export default function VoiceAssistant({ actions }) {
     const intent = matchIntent(text);
     if (!intent) {
       setFeedback("Non ho capito. Riprova.");
-      speak("Non ho capito.");
-      setTimeout(() => setFeedback(""), 2000);
+      speak("Non ho capito, puoi ripetere?");
+      setTimeout(() => setFeedback(""), 2500);
       return;
     }
 
     const { action, param } = intent;
-    let msg = "";
+    const handler = actions[action];
 
-    switch (action) {
-      case "addTask":
-        if (param && actions.addTask) {
-          actions.addTask(param);
-          msg = `Task aggiunta: ${param}`;
-        } else {
-          msg = "Non ho capito il nome della task.";
-        }
-        break;
-      case "logMeal":
-        if (actions.logMeal) {
-          actions.logMeal();
-          msg = "Pasto registrato!";
-        }
-        break;
-      case "startFocus":
-        if (actions.startFocus) {
-          actions.startFocus();
-          msg = "Focus avviato!";
-        }
-        break;
-      case "pauseTimer":
-        if (actions.pauseTimer) {
-          actions.pauseTimer();
-          msg = "In pausa.";
-        }
-        break;
-      case "resumeTimer":
-        if (actions.resumeTimer) {
-          actions.resumeTimer();
-          msg = "Ripreso!";
-        }
-        break;
-      case "switchRelax":
-        if (actions.switchRelax) {
-          actions.switchRelax();
-          msg = "Modalità relax.";
-        }
-        break;
-      case "switchFocus":
-        if (actions.switchFocus) {
-          actions.switchFocus();
-          msg = "Torna al focus.";
-        }
-        break;
-      case "startBreathing":
-        if (actions.startBreathing) {
-          actions.startBreathing();
-          msg = "Sessione di respirazione.";
-        }
-        break;
-      case "goAway":
-        if (actions.goAway) {
-          actions.goAway();
-          msg = "Stato: via dalla scrivania.";
-        }
-        break;
-      case "comeBack":
-        if (actions.comeBack) {
-          actions.comeBack();
-          msg = "Bentornato!";
-        }
-        break;
-      case "resetTimer":
-        if (actions.resetTimer) {
-          actions.resetTimer();
-          msg = "Timer resettato.";
-        }
-        break;
-      default:
-        msg = "Comando non supportato.";
+    if (action === "addTask") {
+      if (param && handler) {
+        handler(param);
+      } else {
+        setFeedback("Non ho capito cosa aggiungere.");
+        speak("Non ho capito cosa aggiungere.");
+        setTimeout(() => setFeedback(""), 2500);
+        return;
+      }
+    } else if (handler) {
+      handler();
     }
 
+    const msg = ACTION_RESPONSES[action]?.(param) || "Fatto!";
     setFeedback(msg);
     speak(msg);
     toast.success(msg);
@@ -249,7 +295,7 @@ export default function VoiceAssistant({ actions }) {
                 <p className="text-cyan-400 text-sm font-medium">{feedback}</p>
               )}
               {isListening && !transcript && !feedback && (
-                <p className="text-white/40 text-xs">Dì un comando: "aggiungi task...", "avvia musica", "registra pasto"...</p>
+                <p className="text-white/40 text-xs">Parla naturalmente — ad esempio "metti su la musica", "scrivi che devo chiamare Marco", "ho mangiato"...</p>
               )}
             </div>
           </motion.div>
