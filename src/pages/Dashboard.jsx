@@ -18,6 +18,7 @@ import MeetingModeDialog from "../components/MeetingModeDialog";
 import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
 import BreakNotification from "../components/body/BreakNotification";
 import DeskStatusToggle from "../components/dashboard/DeskStatusToggle";
+import VoiceAssistant from "../components/VoiceAssistant";
 import { useTimer } from "../components/lib/TimerContext";
 import { getDailyDefaults } from "../hooks/useDailyDefaults";
 
@@ -95,7 +96,7 @@ export default function Dashboard() {
 
   const queryClient = useQueryClient();
   const today = getLocalDateString();
-  const { pauseTimer, resumeTimer, isRunning: timerRunning, isBreak: timerOnBreak, timeLeft: timerTimeLeft } = useTimer();
+  const { pauseTimer, resumeTimer, toggleTimer, resetTimer, switchToRelax, switchToFocus, isRunning: timerRunning, isBreak: timerOnBreak, timeLeft: timerTimeLeft } = useTimer();
 
   const timerRunningRef = React.useRef(timerRunning);
   const timerOnBreakRef = React.useRef(timerOnBreak);
@@ -1208,6 +1209,21 @@ export default function Dashboard() {
           <OnboardingTutorial onComplete={handleOnboardingComplete} />
         )}
       </AnimatePresence>
+
+      {/* Voice Assistant */}
+      <VoiceAssistant actions={{
+        addTask: handleQuickAddTask,
+        logMeal: handleQuickLogMeal,
+        startFocus: () => { if (!timerRunning) toggleTimer(); },
+        pauseTimer,
+        resumeTimer,
+        resetTimer,
+        switchRelax: switchToRelax,
+        switchFocus: switchToFocus,
+        startBreathing: () => { setBreathingDuration(5); setShowBreathing(true); },
+        goAway: () => { if (!isAway) handleToggleDeskStatus(); },
+        comeBack: () => { if (isAway) handleToggleDeskStatus(); },
+      }} />
     </div>
   );
 }
