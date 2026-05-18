@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService, taskService } from "../api/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock, ArrowUp, ArrowDown, MessageSquare, Save, CheckSquare, X } from "lucide-react";
+import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock, ArrowUp, ArrowDown, MessageSquare, Save, CheckSquare, X, Pencil } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
@@ -27,6 +27,8 @@ export default function Journal() {
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [editingNotes, setEditingNotes] = useState({});
+  const [editingTitle, setEditingTitle] = useState(null);
+  const [editTitleValue, setEditTitleValue] = useState("");
   const [selectedPrevTasks, setSelectedPrevTasks] = useState(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
   const [showPreviousTasks, setShowPreviousTasks] = useState(false);
@@ -131,6 +133,17 @@ export default function Journal() {
       else next.add(taskId);
       return next;
     });
+  };
+
+  const handleSaveTitle = (task) => {
+    const title = editTitleValue.trim();
+    if (!title || title === task.title) {
+      setEditingTitle(null);
+      return;
+    }
+    updateTask.mutate({ id: task.id, data: { title } });
+    setEditingTitle(null);
+    toast.success("Task updated");
   };
 
   const handleSaveNotes = (task) => {
@@ -405,16 +418,29 @@ export default function Journal() {
                                 </button>
                                 <div
                                   className="flex-1 min-w-0 cursor-pointer"
-                                  onClick={() => setExpandedTaskId(prev => prev === task.id ? null : task.id)}
+                                  onClick={() => { if (editingTitle !== task.id) setExpandedTaskId(prev => prev === task.id ? null : task.id); }}
                                 >
-                                  <span
-                                    className={`text-sm leading-5 ${
-                                      isExpanded ? "whitespace-normal break-words" : "block truncate"
-                                    } ${task.completed ? "text-white/40 line-through" : "text-white"}`}
-                                  >
-                                    {task.title}
-                                  </span>
-                                  {isExpanded && (
+                                  {editingTitle === task.id ? (
+                                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                      <input
+                                        autoFocus
+                                        value={editTitleValue}
+                                        onChange={(e) => setEditTitleValue(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === "Enter") handleSaveTitle(task); if (e.key === "Escape") setEditingTitle(null); }}
+                                        onBlur={() => handleSaveTitle(task)}
+                                        className="flex-1 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-cyan-500/50"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <span
+                                      className={`text-sm leading-5 ${
+                                        isExpanded ? "whitespace-normal break-words" : "block truncate"
+                                      } ${task.completed ? "text-white/40 line-through" : "text-white"}`}
+                                    >
+                                      {task.title}
+                                    </span>
+                                  )}
+                                  {isExpanded && editingTitle !== task.id && (
                                     <div className="mt-1.5 pt-1.5 border-t border-white/10 space-y-2">
                                       <div className="flex items-center gap-1">
                                         {task.alarm_time && (
@@ -477,6 +503,14 @@ export default function Journal() {
                                           className={`h-7 w-7 ${task.notes ? 'text-indigo-400' : 'text-white/40'} hover:text-indigo-300 hover:bg-indigo-500/10`}
                                         >
                                           <MessageSquare className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={(e) => { e.stopPropagation(); setEditingTitle(task.id); setEditTitleValue(task.title); }}
+                                          className="h-7 w-7 text-white/40 hover:text-white hover:bg-white/10"
+                                        >
+                                          <Pencil className="w-3.5 h-3.5" />
                                         </Button>
                                         <Button
                                           variant="ghost"
@@ -697,6 +731,7 @@ export default function Journal() {
                                 <div
                                   className="flex-1 min-w-0 cursor-pointer"
                                   onClick={() => {
+                                    if (editingTitle === task.id) return;
                                     if (selectionMode) {
                                       handleToggleSelectPrev(task.id);
                                     } else {
@@ -704,14 +739,27 @@ export default function Journal() {
                                     }
                                   }}
                                 >
-                                  <span
-                                    className={`text-sm leading-5 ${
-                                      isExpanded ? "whitespace-normal break-words" : "block truncate"
-                                    } ${task.completed ? "text-white/40 line-through" : "text-white"}`}
-                                  >
-                                    {task.title}
-                                  </span>
-                                  {isExpanded && !selectionMode && (
+                                  {editingTitle === task.id ? (
+                                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                      <input
+                                        autoFocus
+                                        value={editTitleValue}
+                                        onChange={(e) => setEditTitleValue(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === "Enter") handleSaveTitle(task); if (e.key === "Escape") setEditingTitle(null); }}
+                                        onBlur={() => handleSaveTitle(task)}
+                                        className="flex-1 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-amber-500/50"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <span
+                                      className={`text-sm leading-5 ${
+                                        isExpanded ? "whitespace-normal break-words" : "block truncate"
+                                      } ${task.completed ? "text-white/40 line-through" : "text-white"}`}
+                                    >
+                                      {task.title}
+                                    </span>
+                                  )}
+                                  {isExpanded && !selectionMode && editingTitle !== task.id && (
                                     <div className="mt-1.5 pt-1.5 border-t border-amber-500/20 space-y-2">
                                       <div className="flex items-center gap-1">
                                         {task.alarm_time && (
@@ -783,6 +831,14 @@ export default function Journal() {
                                           className={`h-7 w-7 ${task.notes ? 'text-indigo-400' : 'text-white/40'} hover:text-indigo-300 hover:bg-indigo-500/10`}
                                         >
                                           <MessageSquare className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={(e) => { e.stopPropagation(); setEditingTitle(task.id); setEditTitleValue(task.title); }}
+                                          className="h-7 w-7 text-white/40 hover:text-white hover:bg-white/10"
+                                        >
+                                          <Pencil className="w-3.5 h-3.5" />
                                         </Button>
                                         <Button
                                           variant="ghost"
