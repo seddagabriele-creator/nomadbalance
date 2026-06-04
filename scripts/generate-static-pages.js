@@ -6,6 +6,10 @@
  * article body text extracted from the JSX source. This is what Google's
  * crawler and AdSense reviewers see instead of an empty <div id="root">.
  *
+ * Key for SEO: every page includes internal <a href> links so Google can
+ * discover and crawl all content pages. Blog index lists all articles,
+ * each article links to related posts, landing page links to guides/blog.
+ *
  * Usage: node scripts/generate-static-pages.js
  */
 
@@ -41,15 +45,13 @@ function buildSlugToFileMap() {
   const appSrc = fs.readFileSync(path.join(SRC, "App.jsx"), "utf-8");
   const map = {};
 
-  // Extract imports: import CompName from '@/pages/blog/CompName';
   const imports = {};
   const importRe = /import\s+(\w+)\s+from\s+['"]@\/pages\/blog\/(\w+)['"]/g;
   let im;
   while ((im = importRe.exec(appSrc)) !== null) {
-    imports[im[1]] = im[2]; // CompName → filename (without .jsx)
+    imports[im[1]] = im[2];
   }
 
-  // Extract routes: <Route path="/blog/slug" element={<CompName />} />
   const routeRe = /path="\/blog\/([^"]+)"[^>]*element=\{<(\w+)/g;
   let rm;
   while ((rm = routeRe.exec(appSrc)) !== null) {
@@ -70,41 +72,31 @@ function extractArticleContent(jsxPath) {
   if (!fs.existsSync(jsxPath)) return "";
   const src = fs.readFileSync(jsxPath, "utf-8");
 
-  // Find the return ( ... ) block
   const returnIdx = src.indexOf("return (");
   if (returnIdx === -1) return "";
   const jsx = src.slice(returnIdx);
 
-  // Strip JSX-specific syntax to get clean HTML-like content
   let html = jsx
-    // Remove JSX expressions: {variable}, {condition && ...}, {`template`}
     .replace(/\{[^{}]*\}/g, "")
-    // Remove component self-closing tags: <Brain />, <CheckCircle />, etc.
     .replace(/<[A-Z]\w*\s*[^>]*\/>/g, "")
-    // Remove component opening/closing tags: <Link to="...">...</Link>
     .replace(/<Link[^>]*>/g, "").replace(/<\/Link>/g, "")
     .replace(/<Button[^>]*>/g, "").replace(/<\/Button>/g, "")
-    // Remove className, style, and other JSX props
     .replace(/\s(className|style|onClick|onMouseDown|onTouchStart|aria-\w+|role|initial|animate|whileInView|viewport|transition|variants|key|id|htmlFor|dangerouslySetInnerHTML)="[^"]*"/g, "")
     .replace(/\s(className|style)=\{[^}]*\}/g, "")
-    // Remove motion.div → div
     .replace(/<motion\.\w+/g, "<div").replace(/<\/motion\.\w+>/g, "</div>")
-    // Remove nav, footer wrapper components (keep article content)
     .replace(/<nav[\s\S]*?<\/nav>/g, "")
     .replace(/<Footer\s*\/>/g, "")
     .replace(/<RelatedArticles\s*\/>/g, "")
     .replace(/<AuthorBio\s*\/>/g, "");
 
-  // Extract text from remaining HTML-like tags
   const textParts = [];
-  // Match heading and paragraph tags with their content
   const tagRe = /<(h[1-6]|p|li|blockquote|strong|em|span)[^>]*>([\s\S]*?)<\/\1>/g;
   let tm;
   while ((tm = tagRe.exec(html)) !== null) {
     const tag = tm[1];
     let text = tm[2]
-      .replace(/<[^>]+>/g, "") // strip nested tags
-      .replace(/\s+/g, " ")   // normalize whitespace
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
       .trim();
 
     if (text.length > 10) {
@@ -122,15 +114,119 @@ function extractArticleContent(jsxPath) {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Extract content from non-blog pages (landing, about, guides, etc.)
+// 4. Generate blog index HTML with all articles linked
 // ---------------------------------------------------------------------------
-function extractPageContent(pagePath) {
-  if (!fs.existsSync(pagePath)) return "";
-  return extractArticleContent(pagePath);
+function generateBlogIndexContent(blogPosts) {
+  const categories = {};
+  for (const post of blogPosts) {
+    if (!categories[post.category]) categories[post.category] = [];
+    categories[post.category].push(post);
+  }
+
+  const categoryOrder = ["Focus", "Nutrition", "Movement", "Planning"];
+  const categoryDescriptions = {
+    Focus: "Techniques and strategies to achieve deep focus, manage distractions, and enter flow state while working remotely.",
+    Nutrition: "Evidence-based nutrition guides for remote workers — meal timing, fasting, hydration, and brain-boosting foods.",
+    Movement: "Desk exercises, ergonomic setups, and movement routines designed for people who sit at a computer all day.",
+    Planning: "Daily planning methods, routines, and mental health strategies for productive and balanced remote work.",
+  };
+
+  let html = `<h1>Blog: Remote Work Productivity, Focus, Health &amp; Planning</h1>
+<p>Expert articles on remote work productivity, focus techniques, nutrition, desk exercises, and daily planning for digital nomads and remote professionals. ${blogPosts.length} in-depth guides to help you work better from anywhere.</p>
+<nav>
+<p><a href="/">Home</a> · <a href="/about">About</a> · <a href="/guide/pomodoro-focus-timer">Pomodoro Guide</a> · <a href="/guide/intermittent-fasting-for-professionals">Fasting Guide</a> · <a href="/guide/desk-exercises-remote-workers">Exercise Guide</a></p>
+</nav>`;
+
+  for (const cat of categoryOrder) {
+    const posts = categories[cat];
+    if (!posts?.length) continue;
+
+    html += `\n<h2>${escapeHtml(cat)} (${posts.length} articles)</h2>`;
+    html += `\n<p>${escapeHtml(categoryDescriptions[cat] || "")}</p>`;
+    html += "\n<ul>";
+    for (const post of posts) {
+      html += `\n<li><a href="/blog/${escapeHtml(post.slug)}">${escapeHtml(post.title)}</a> — ${escapeHtml(post.description)}</li>`;
+    }
+    html += "\n</ul>";
+  }
+
+  return html;
 }
 
 // ---------------------------------------------------------------------------
-// 5. Static page metadata with source file paths
+// 5. Generate related articles HTML for a blog post
+// ---------------------------------------------------------------------------
+function generateRelatedArticles(currentSlug, currentCategory, blogPosts) {
+  const sameCat = blogPosts.filter(p => p.category === currentCategory && p.slug !== currentSlug);
+  const otherCat = blogPosts.filter(p => p.category !== currentCategory && p.slug !== currentSlug);
+  const related = [...sameCat.slice(0, 3), ...otherCat.slice(0, 1)].slice(0, 4);
+
+  if (!related.length) return "";
+
+  let html = `\n<hr>\n<h2>Related Articles</h2>\n<ul>`;
+  for (const post of related) {
+    html += `\n<li><a href="/blog/${escapeHtml(post.slug)}">${escapeHtml(post.title)}</a> — ${escapeHtml(post.description)}</li>`;
+  }
+  html += `\n</ul>`;
+  html += `\n<p><a href="/blog">View all ${blogPosts.length} articles</a></p>`;
+  return html;
+}
+
+// ---------------------------------------------------------------------------
+// 6. Generate landing page footer with links to guides and recent articles
+// ---------------------------------------------------------------------------
+function generateLandingFooterLinks(blogPosts) {
+  const recentPosts = blogPosts.slice(0, 12);
+
+  let html = `\n<hr>
+<h2>In-Depth Guides</h2>
+<ul>
+<li><a href="/guide/pomodoro-focus-timer">Pomodoro Technique Guide: Focus Timer for Productivity</a> — Master timed work sessions with breaks to transform your remote work routine.</li>
+<li><a href="/guide/intermittent-fasting-for-professionals">Intermittent Fasting Guide for Professionals</a> — Learn how strategic meal timing can boost your energy and focus throughout the workday.</li>
+<li><a href="/guide/desk-exercises-remote-workers">Desk Exercises for Remote Workers</a> — Quick exercises and stretches designed for remote workers to combat sitting and boost productivity.</li>
+</ul>
+
+<h2>Latest Articles</h2>
+<ul>`;
+  for (const post of recentPosts) {
+    html += `\n<li><a href="/blog/${escapeHtml(post.slug)}">${escapeHtml(post.title)}</a> — ${escapeHtml(post.description)}</li>`;
+  }
+  html += `\n</ul>
+<p><a href="/blog">Browse all ${blogPosts.length} articles</a></p>
+
+<h2>Explore NomadBalance</h2>
+<ul>
+<li><a href="/about">About NomadBalance</a> — Our mission to help remote workers stay focused, healthy, and productive.</li>
+<li><a href="/blog">Blog</a> — ${blogPosts.length} expert articles on remote work productivity, health, and wellness.</li>
+<li><a href="/contact">Contact Us</a> — Get in touch with questions, feedback, or suggestions.</li>
+</ul>`;
+
+  return html;
+}
+
+// ---------------------------------------------------------------------------
+// 7. Generate guide page footer with related blog links
+// ---------------------------------------------------------------------------
+function generateGuideFooterLinks(guideCategory, blogPosts) {
+  const catMap = {
+    "pomodoro-focus-timer": "Focus",
+    "intermittent-fasting-for-professionals": "Nutrition",
+    "desk-exercises-remote-workers": "Movement",
+  };
+  const category = catMap[guideCategory] || "Focus";
+  const related = blogPosts.filter(p => p.category === category).slice(0, 5);
+
+  let html = `\n<hr>\n<h2>Related Blog Articles</h2>\n<ul>`;
+  for (const post of related) {
+    html += `\n<li><a href="/blog/${escapeHtml(post.slug)}">${escapeHtml(post.title)}</a> — ${escapeHtml(post.description)}</li>`;
+  }
+  html += `\n</ul>`;
+  html += `\n<p><a href="/blog">Browse all ${blogPosts.length} articles</a> · <a href="/">Back to home</a></p>`;
+  return html;
+}
+
+// ---------------------------------------------------------------------------
+// 8. Static page metadata with source file paths
 // ---------------------------------------------------------------------------
 const STATIC_PAGES = [
   {
@@ -159,7 +255,6 @@ const STATIC_PAGES = [
     title: "Blog: Remote Work Productivity, Focus, Health & Planning | NomadBalance",
     description: "Expert articles on remote work productivity, focus techniques, nutrition, desk exercises, and daily planning for digital nomads and remote professionals.",
     ogType: "website",
-    srcFile: path.join(SRC, "pages/blog/BlogIndex.jsx"),
   },
   {
     route: "/privacy",
@@ -206,7 +301,7 @@ const STATIC_PAGES = [
 ];
 
 // ---------------------------------------------------------------------------
-// 6. HTML helpers
+// 9. HTML helpers
 // ---------------------------------------------------------------------------
 function escapeHtml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -223,7 +318,6 @@ function generateHtml(template, { title, description, canonicalUrl, ogType, cont
   html = html.replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/?>/, `<meta property="og:url" content="${escapeHtml(canonicalUrl)}" />`);
   html = html.replace(/<meta\s+property="og:type"\s+content="[^"]*"\s*\/?>/, `<meta property="og:type" content="${escapeHtml(ogType)}" />`);
 
-  // Insert article content inside <div id="root"> — React replaces it on mount
   const wrappedContent = `<div id="root"><article>${contentHtml}</article></div>`;
   html = html.replace('<div id="root"></div>', wrappedContent);
 
@@ -231,7 +325,7 @@ function generateHtml(template, { title, description, canonicalUrl, ogType, cont
 }
 
 // ---------------------------------------------------------------------------
-// 7. Main
+// 10. Main
 // ---------------------------------------------------------------------------
 function main() {
   console.log("\n[generate-static-pages] Starting...\n");
@@ -244,6 +338,7 @@ function main() {
 
   const template = fs.readFileSync(templatePath, "utf-8");
   const slugToFile = buildSlugToFileMap();
+  const blogPosts = parseBlogData();
   let totalContentChars = 0;
 
   // --- Static pages ---
@@ -252,12 +347,22 @@ function main() {
     const canonicalUrl = `${SITE_URL}${page.route === "/" ? "" : page.route}`;
     let contentHtml = "";
 
-    if (page.srcFile) {
-      contentHtml = extractPageContent(page.srcFile);
+    if (page.route === "/blog") {
+      contentHtml = generateBlogIndexContent(blogPosts);
+    } else if (page.srcFile) {
+      contentHtml = extractArticleContent(page.srcFile);
     }
+
     if (!contentHtml) {
       const previewTitle = page.title.replace(/ \| NomadBalance$/, "");
       contentHtml = `<h1>${escapeHtml(previewTitle)}</h1><p>${escapeHtml(page.description)}</p>`;
+    }
+
+    if (page.route === "/") {
+      contentHtml += generateLandingFooterLinks(blogPosts);
+    } else if (page.route.startsWith("/guide/")) {
+      const guideSlug = page.route.split("/").pop();
+      contentHtml += generateGuideFooterLinks(guideSlug, blogPosts);
     }
 
     totalContentChars += contentHtml.length;
@@ -283,7 +388,6 @@ function main() {
 
   // --- Blog posts ---
   console.log("  Generating blog article pages...");
-  const blogPosts = parseBlogData();
   let articlesWithContent = 0;
 
   for (const post of blogPosts) {
@@ -298,9 +402,11 @@ function main() {
     if (contentHtml.length > 100) {
       articlesWithContent++;
     } else {
-      // Fallback: at least title + description
       contentHtml = `<h1>${escapeHtml(post.title)}</h1><p>${escapeHtml(post.description)}</p>`;
     }
+
+    contentHtml += `\n<nav><p><a href="/">Home</a> · <a href="/blog">Blog</a> · ${escapeHtml(post.category)}</p></nav>`;
+    contentHtml += generateRelatedArticles(post.slug, post.category, blogPosts);
 
     totalContentChars += contentHtml.length;
 
