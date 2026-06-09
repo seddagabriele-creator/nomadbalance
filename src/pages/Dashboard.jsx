@@ -37,36 +37,34 @@ const toMinutes = (t) => {
 
 import { getChimeContext } from "../components/lib/chimeContext";
 
-// Play a gentle two-tone chime for notifications
+// Play a gentle two-tone chime for notifications.
+// Uses onended to disconnect nodes safely — setTimeout disconnect
+// can race with the audio thread's stop() processing and crash Chrome.
 function playNotificationChime() {
   try {
     const ctx = getChimeContext();
     if (ctx.state === "suspended") ctx.resume();
-    // First tone
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
-    osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc1.frequency.setValueAtTime(587.33, ctx.currentTime);
     gain1.gain.setValueAtTime(0.25, ctx.currentTime);
     gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
     osc1.start(ctx.currentTime);
     osc1.stop(ctx.currentTime + 0.3);
-    // Disconnect after sound ends
-    setTimeout(() => { osc1.disconnect(); gain1.disconnect(); }, 400);
-    // Second tone (higher)
+    osc1.onended = () => { osc1.disconnect(); gain1.disconnect(); };
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
-    osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.15); // G5
+    osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.15);
     gain2.gain.setValueAtTime(0, ctx.currentTime);
     gain2.gain.setValueAtTime(0.25, ctx.currentTime + 0.15);
     gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
     osc2.start(ctx.currentTime + 0.15);
     osc2.stop(ctx.currentTime + 0.6);
-    // Disconnect after sound ends
-    setTimeout(() => { osc2.disconnect(); gain2.disconnect(); }, 700);
+    osc2.onended = () => { osc2.disconnect(); gain2.disconnect(); };
   } catch (e) {
     // Audio not available
   }
