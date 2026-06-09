@@ -23,6 +23,14 @@ function loadPersistedState() {
     if (!parsed || typeof parsed !== "object") return null;
 
     const savedAt = typeof parsed.savedAt === "number" ? parsed.savedAt : Date.now();
+
+    const savedDay = new Date(savedAt).toDateString();
+    const today = new Date().toDateString();
+    if (savedDay !== today) {
+      window.localStorage.removeItem(TIMER_STORAGE_KEY);
+      return null;
+    }
+
     const elapsedSec = Math.max(0, Math.floor((Date.now() - savedAt) / 1000));
 
     let timeLeft = typeof parsed.timeLeft === "number" ? parsed.timeLeft : 0;
@@ -283,7 +291,7 @@ export function TimerProvider({ children }) {
 
   const toggleTimer = () => {
     if (mode === "relax") return;
-    if (timeLeft === 0) {
+    if (timeLeft === 0 || (isBreak && !isRunning)) {
       sessionCompleteRef.current = false;
       setIsBreak(false);
       setTimeLeft(workMinutes * 60);

@@ -157,15 +157,15 @@ export default function FlowCard({ session, onSessionComplete, onSoundChange }) 
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              extendFocus(15);
+              extendFocus(sessionWorkMinutes);
             }}
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
             className="mt-2 flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 text-violet-300 text-[10px] font-medium transition-colors"
-            aria-label="Skip break and extend focus by 15 minutes"
+            aria-label="Skip break and start focus session"
           >
-            <Plus className="w-2.5 h-2.5" />
-            +15 min focus
+            <Play className="w-2.5 h-2.5" />
+            Skip Break
           </button>
         )}
       </div>
