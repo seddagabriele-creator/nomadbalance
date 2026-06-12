@@ -7,6 +7,8 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { SubscriptionProvider } from '@/lib/SubscriptionContext';
+import UpgradeModal from '@/components/UpgradeModal';
 import Login from '@/pages/Login';
 import LandingPage from '@/pages/LandingPage';
 import UpdatePassword from '@/pages/UpdatePassword';
@@ -135,11 +137,14 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <Suspense fallback={<PageLoader />}>
-              <AppRoutes />
-            </Suspense>
-          </Router>
+          <SubscriptionProvider>
+            <Router>
+              <Suspense fallback={<PageLoader />}>
+                <AppRoutes />
+              </Suspense>
+            </Router>
+            <UpgradeModal />
+          </SubscriptionProvider>
           <Toaster />
           <SonnerToaster
             position="top-center"

@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
-import { Play, Pause, RotateCcw, Wind, Waves, Shell, Moon, Sun, Plus } from "lucide-react";
+import { Play, Pause, RotateCcw, Wind, Waves, Shell, Moon, Sun } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTimer } from "../lib/TimerContext";
+import { useSubscription } from "@/lib/SubscriptionContext";
 import { getDailyDefaults } from "../../hooks/useDailyDefaults";
 import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES } from "../../constants";
 
@@ -22,6 +23,7 @@ export default function FlowCard({ session, onSessionComplete, onSoundChange }) 
     mode, relaxTime, relaxPaused, switchToRelax, switchToFocus, toggleRelaxPause,
     extendFocus,
   } = useTimer();
+  const { isPro, promptUpgrade } = useSubscription();
 
   const userDuration = (() => {
     const defaults = getDailyDefaults();
@@ -62,6 +64,11 @@ export default function FlowCard({ session, onSessionComplete, onSoundChange }) 
     e.preventDefault();
     e.stopPropagation();
     if (!session || !onSoundChange) return;
+    // Free tier ships with one soundscape per mode — the rest are Pro
+    if (!isPro) {
+      promptUpgrade();
+      return;
+    }
 
     const currentIndex = currentSounds.findIndex(s => s.id === currentSoundId);
     const nextIndex = (currentIndex + 1) % currentSounds.length;

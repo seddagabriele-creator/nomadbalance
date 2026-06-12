@@ -12,6 +12,7 @@ import { createPageUrl, getLocalDateString } from "../utils";
 import { DEFAULT_WORK_MINUTES } from "../constants";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import ProGate from "@/components/ProGate";
 
 // ─── Level system ───
 const LEVELS = [
@@ -350,6 +351,10 @@ export default function Reports() {
             <p className="text-white/40">Complete your first day to see reports</p>
           </div>
         ) : (
+          <ProGate
+            title="Your progress lives here"
+            description="Weekly trends, badges, streaks and personal records — unlock the full picture of your work habits."
+          >
           <div className="space-y-8">
             {/* Level Banner */}
             <motion.div
@@ -550,6 +555,7 @@ export default function Reports() {
               </p>
             </div>
           </div>
+          </ProGate>
         )}
       </div>
     </div>

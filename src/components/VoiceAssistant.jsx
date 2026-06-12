@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from "react";
-import { Mic, MicOff, X, Loader2 } from "lucide-react";
+import { Mic, MicOff, X, Loader2, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useSubscription } from "@/lib/SubscriptionContext";
 
 const SpeechRecognition = typeof window !== "undefined"
   ? window.SpeechRecognition || window.webkitSpeechRecognition
@@ -158,6 +159,7 @@ export default function VoiceAssistant({ actions }) {
   const [feedback, setFeedback] = useState("");
   const [processing, setProcessing] = useState(false);
   const recognitionRef = useRef(null);
+  const { isPro, promptUpgrade } = useSubscription();
 
   const handleResult = useCallback(async (text) => {
     setProcessing(true);
@@ -259,18 +261,23 @@ export default function VoiceAssistant({ actions }) {
 
   return (
     <>
-      {/* Floating mic button */}
+      {/* Floating mic button — Pro feature (each command is an AI call) */}
       <motion.button
-        onClick={isListening ? stopListening : startListening}
+        onClick={!isPro ? promptUpgrade : isListening ? stopListening : startListening}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
           isListening
             ? "bg-red-500 hover:bg-red-400 shadow-red-500/30"
             : "bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 shadow-violet-500/20"
         }`}
         whileTap={{ scale: 0.9 }}
-        aria-label={isListening ? "Stop listening" : "Voice command"}
+        aria-label={!isPro ? "Voice assistant (Pro feature)" : isListening ? "Stop listening" : "Voice command"}
       >
         {isListening ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
+        {!isPro && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-slate-900 border border-violet-400/60 flex items-center justify-center">
+            <Sparkles className="w-2.5 h-2.5 text-violet-300" />
+          </span>
+        )}
       </motion.button>
 
       {/* Transcript overlay */}

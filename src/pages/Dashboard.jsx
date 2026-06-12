@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Users, MoreVertical, Settings as SettingsIcon, Wind, Coffee, Activity, BarChart3, LogOut, Sunset, Flame, Sun } from "lucide-react";
+import { Users, MoreVertical, Settings as SettingsIcon, Wind, Coffee, Activity, BarChart3, LogOut, Sunset, Flame, Sun, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import BreakNotification from "../components/body/BreakNotification";
 import DeskStatusToggle from "../components/dashboard/DeskStatusToggle";
 import DayRecap from "../components/dashboard/DayRecap";
 import { useTimer } from "../components/lib/TimerContext";
+import { useSubscription } from "../lib/SubscriptionContext";
 import { getDailyDefaults } from "../hooks/useDailyDefaults";
 
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,7 @@ export default function Dashboard() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [queryClient]);
   const { pauseTimer, resumeTimer, isRunning: timerRunning, isBreak: timerOnBreak, timeLeft: timerTimeLeft } = useTimer();
+  const { trialActive, trialDaysLeft, promptUpgrade } = useSubscription();
 
   const timerRunningRef = React.useRef(timerRunning);
   const timerOnBreakRef = React.useRef(timerOnBreak);
@@ -1060,12 +1062,23 @@ export default function Dashboard() {
                   </span>
                 </>
               )}
-              {currentStreak >= 2 && (
-                <span className="ml-auto flex items-center gap-1 rounded-full bg-orange-500/10 border border-orange-500/25 px-2 py-0.5">
-                  <Flame className="w-3 h-3 text-orange-400" />
-                  <span className="text-[10px] font-semibold text-orange-300">{currentStreak} days</span>
-                </span>
-              )}
+              <span className="ml-auto flex items-center gap-1.5">
+                {trialActive && (
+                  <button
+                    onClick={promptUpgrade}
+                    className="flex items-center gap-1 rounded-full bg-violet-500/10 border border-violet-500/25 px-2 py-0.5 hover:bg-violet-500/20 transition-colors"
+                  >
+                    <Sparkles className="w-3 h-3 text-violet-300" />
+                    <span className="text-[10px] font-semibold text-violet-300">Pro trial · {trialDaysLeft}d</span>
+                  </button>
+                )}
+                {currentStreak >= 2 && (
+                  <span className="flex items-center gap-1 rounded-full bg-orange-500/10 border border-orange-500/25 px-2 py-0.5">
+                    <Flame className="w-3 h-3 text-orange-400" />
+                    <span className="text-[10px] font-semibold text-orange-300">{currentStreak} days</span>
+                  </span>
+                )}
+              </span>
             </div>
           )}
 

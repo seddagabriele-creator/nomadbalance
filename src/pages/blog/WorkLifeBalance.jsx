@@ -3,7 +3,7 @@ import useSEO from "@/hooks/useSEO";
 import RelatedArticles from "@/components/RelatedArticles";
 import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, Globe, Clock, Shield, Users, Heart, Sunset } from "lucide-react";
+import { ArrowLeft, Zap, Globe, Shield, Users, Heart, Sunset } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
 import Footer from "@/components/Footer";
 
