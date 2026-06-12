@@ -92,7 +92,48 @@ export default function Dashboard() {
   const [localAwaySince, setLocalAwaySince] = useState(null);
 
   const queryClient = useQueryClient();
-  const today = getLocalDateString();
+  // Guards the once-per-day session auto-create (reset on midnight rollover)
+  const autoCreateAttempted = React.useRef(false);
+  // State (not a per-render const) so the midnight rollover effect below can
+  // force a new day: queryKey changes → fresh session query → auto-create.
+  const [today, setToday] = useState(() => getLocalDateString());
+
+  useEffect(() => {
+    const scheduleRollover = () => {
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 5, 0); // 00:00:05 — small buffer past midnight
+      return setTimeout(() => {
+        setToday(getLocalDateString());
+        autoCreateAttempted.current = false;
+        queryClient.invalidateQueries({ queryKey: ["daySession"] });
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+        timerId = scheduleRollover();
+      }, nextMidnight.getTime() - Date.now());
+    };
+    let timerId = scheduleRollover();
+    return () => clearTimeout(timerId);
+  }, [queryClient]);
+
+  // Tab was hidden/suspended over midnight: timers don't fire reliably in
+  // background tabs, so also re-check the date when the tab becomes visible.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.hidden) return;
+      const current = getLocalDateString();
+      setToday((prev) => {
+        if (prev !== current) {
+          autoCreateAttempted.current = false;
+          queryClient.invalidateQueries({ queryKey: ["daySession"] });
+          queryClient.invalidateQueries({ queryKey: ["tasks"] });
+          queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+        }
+        return current;
+      });
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [queryClient]);
   const { pauseTimer, resumeTimer, isRunning: timerRunning, isBreak: timerOnBreak, timeLeft: timerTimeLeft } = useTimer();
 
   const timerRunningRef = React.useRef(timerRunning);
@@ -319,7 +360,10 @@ export default function Dashboard() {
   });
 
   const updateSession = useMutation({
-    mutationFn: (data) => daySessionService.update(session.id, data),
+    mutationFn: (data) => {
+      if (!session?.id) return Promise.reject(new Error("No active session"));
+      return daySessionService.update(session.id, data);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
     onError: (error) => {
       toast.error("Failed to update session");
@@ -503,28 +547,41 @@ export default function Dashboard() {
     if (!session?.id || oldUncompletedTasks.length === 0) return;
     const maxOrder = tasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
     let offset = 0;
-    for (const task of oldUncompletedTasks) {
-      offset++;
-      await taskService.update(task.id, { session_id: session.id, order: maxOrder + offset });
+    let moved = 0;
+    try {
+      for (const task of oldUncompletedTasks) {
+        offset++;
+        await taskService.update(task.id, { session_id: session.id, order: maxOrder + offset });
+        moved++;
+      }
+      toast.success(`Moved ${moved} task${moved > 1 ? "s" : ""} to today`);
+    } catch (error) {
+      console.error("Move tasks error:", error);
+      toast.error(moved > 0 ? `Moved ${moved} of ${oldUncompletedTasks.length} tasks — retry for the rest` : "Failed to move tasks. Please try again.");
+    } finally {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
     }
-    queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    queryClient.invalidateQueries({ queryKey: ["allTasks"] });
-    toast.success(`Moved ${oldUncompletedTasks.length} task${oldUncompletedTasks.length > 1 ? "s" : ""} to today`);
   };
 
   // Quick action: add a task from the dashboard
   const handleQuickAddTask = async (title) => {
     if (!session?.id || !title.trim()) return;
     const maxOrder = tasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
-    await taskService.create({
-      session_id: session.id,
-      title: title.trim(),
-      order: maxOrder + 1,
-      completed: false,
-    });
-    queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    queryClient.invalidateQueries({ queryKey: ["allTasks"] });
-    toast.success("Task added");
+    try {
+      await taskService.create({
+        session_id: session.id,
+        title: title.trim(),
+        order: maxOrder + 1,
+        completed: false,
+      });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+      toast.success("Task added");
+    } catch (error) {
+      console.error("Task creation error:", error);
+      toast.error("Failed to add task. Please try again.");
+    }
   };
 
   // Quick action: change sound from FlowCard
@@ -767,8 +824,8 @@ export default function Dashboard() {
   const isActive = session?.status === "active";
 
   // Auto-create session when none exists for today
-  const autoCreateAttempted = React.useRef(false);
-
+  // (autoCreateAttempted ref is declared at the top of the component so the
+  // midnight-rollover effects can reset it for the new day)
   useEffect(() => {
     if (isLoading || session || createSession.isPending || autoCreateAttempted.current) return;
     if (!userSettings || Object.keys(userSettings).length === 0) return;
@@ -924,8 +981,13 @@ export default function Dashboard() {
                   <DropdownMenuSeparator className="bg-white/10" />
                   <DropdownMenuItem
                     onClick={async () => {
-                      await logout();
-                      navigate("/login");
+                      try {
+                        await logout();
+                        navigate("/login");
+                      } catch (error) {
+                        console.error("Logout error:", error);
+                        toast.error("Logout failed. Please try again.");
+                      }
                     }}
                     className="text-red-400 hover:bg-white/10 cursor-pointer"
                   >

@@ -323,6 +323,12 @@ export function TimerProvider({ children }) {
     if (sessionCompleteRef.current) return;
 
     if (timeLeftRef.current === 0 || (!isRunningRef.current && prevWork !== work)) {
+      // Fresh timer setup — make sure we're not carrying a stale break flag
+      // (e.g. yesterday's session ended mid-break), which would label a full
+      // work-length countdown as "BREAK".
+      if (!isRunningRef.current && isBreakRef.current) {
+        setIsBreak(false);
+      }
       setTimeLeft(work * 60);
     }
   }, []);
