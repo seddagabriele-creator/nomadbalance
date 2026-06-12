@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, BarChart3, Mic, Music, CalendarDays, Check } from "lucide-react";
+import { X, Sparkles, BarChart3, Mic, Music, CalendarDays, Check, Brain, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/lib/SubscriptionContext";
 
 const PRO_FEATURES = [
+  { icon: Brain, label: "AI Weekly Coach", desc: "Personalized insights from your work patterns" },
   { icon: BarChart3, label: "Full Reports", desc: "Weekly trends, badges, personal records" },
   { icon: CalendarDays, label: "Task history", desc: "Unlimited history with calendar view" },
   { icon: Mic, label: "AI voice assistant", desc: "Natural-language commands powered by Claude" },
   { icon: Music, label: "Full audio library", desc: "All binaural focus & relax soundscapes" },
+  { icon: ShieldOff, label: "Ad-free everywhere", desc: "No ads on the blog or anywhere else" },
 ];
 
 export default function UpgradeModal() {

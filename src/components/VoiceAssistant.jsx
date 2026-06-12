@@ -3,6 +3,7 @@ import { Mic, MicOff, X, Loader2, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useSubscription } from "@/lib/SubscriptionContext";
+import { supabase } from "@/api/supabaseClient";
 
 const SpeechRecognition = typeof window !== "undefined"
   ? window.SpeechRecognition || window.webkitSpeechRecognition
@@ -10,9 +11,14 @@ const SpeechRecognition = typeof window !== "undefined"
 
 // ── LLM intent classification ──────────────────────────────────────
 async function classifyIntent(transcript) {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
   const res = await fetch("/api/voice-intent", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ transcript }),
   });
   if (!res.ok) throw new Error(`API ${res.status}`);

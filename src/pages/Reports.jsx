@@ -13,6 +13,7 @@ import { DEFAULT_WORK_MINUTES } from "../constants";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import ProGate from "@/components/ProGate";
+import WeeklyCoach from "@/components/reports/WeeklyCoach";
 
 // ─── Level system ───
 const LEVELS = [
@@ -356,6 +357,9 @@ export default function Reports() {
             description="Weekly trends, badges, streaks and personal records — unlock the full picture of your work habits."
           >
           <div className="space-y-8">
+            {/* AI Weekly Coach */}
+            <WeeklyCoach sessions={sessions} completedTasks={allTasks} />
+
             {/* Level Banner */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}

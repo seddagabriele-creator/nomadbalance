@@ -4,7 +4,9 @@ import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { useSubscription } from '@/lib/SubscriptionContext';
+import { syncAdServing } from '@/lib/adsense';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { SubscriptionProvider } from '@/lib/SubscriptionContext';
@@ -56,6 +58,17 @@ const contentRoutes = [
     <Route key={`blog-${slug}`} path={`/blog/${slug}`} element={<ArticlePage />} />
   )),
 ];
+
+// Unpauses AdSense only on public content routes for non-Pro visitors;
+// everywhere else (the whole authenticated app) ads stay paused.
+const AdsenseController = () => {
+  const { pathname } = useLocation();
+  const { isProSubscriber } = useSubscription();
+  React.useEffect(() => {
+    syncAdServing(pathname, { isProSubscriber });
+  }, [pathname, isProSubscriber]);
+  return null;
+};
 
 const AppRoutes = () => {
   const { isLoadingAuth, isAuthenticated, isRecovery } = useAuth();
@@ -139,6 +152,7 @@ function App() {
         <QueryClientProvider client={queryClientInstance}>
           <SubscriptionProvider>
             <Router>
+              <AdsenseController />
               <Suspense fallback={<PageLoader />}>
                 <AppRoutes />
               </Suspense>
