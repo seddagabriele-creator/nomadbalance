@@ -5,11 +5,11 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
-import { useSubscription } from '@/lib/SubscriptionContext';
+import { SubscriptionProvider, useSubscription } from '@/lib/SubscriptionContext';
 import { syncAdServing } from '@/lib/adsense';
+import AdBanner from '@/components/AdBanner';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { SubscriptionProvider } from '@/lib/SubscriptionContext';
 import UpgradeModal from '@/components/UpgradeModal';
 import Login from '@/pages/Login';
 import LandingPage from '@/pages/LandingPage';
@@ -59,14 +59,13 @@ const contentRoutes = [
   )),
 ];
 
-// Unpauses AdSense only on public content routes for non-Pro visitors;
-// everywhere else (the whole authenticated app) ads stay paused.
+// Unpause AdSense for free users (Pro = no ads anywhere).
 const AdsenseController = () => {
-  const { pathname } = useLocation();
+  const { isAuthenticated } = useAuth();
   const { isProSubscriber } = useSubscription();
   React.useEffect(() => {
-    syncAdServing(pathname, { isProSubscriber });
-  }, [pathname, isProSubscriber]);
+    syncAdServing({ isAuthenticated, isProSubscriber });
+  }, [isAuthenticated, isProSubscriber]);
   return null;
 };
 
@@ -158,6 +157,7 @@ function App() {
               </Suspense>
             </Router>
             <UpgradeModal />
+            <AdBanner />
           </SubscriptionProvider>
           <Toaster />
           <SonnerToaster

@@ -267,10 +267,12 @@ export default function VoiceAssistant({ actions }) {
 
   return (
     <>
-      {/* Floating mic button — Pro feature (each command is an AI call) */}
+      {/* Floating mic button — Pro feature (each command is an AI call).
+          bottom-20 clears the AdBanner for free users; Pro users get
+          bottom-6 since they have no banner. */}
       <motion.button
         onClick={!isPro ? promptUpgrade : isListening ? stopListening : startListening}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
+        className={`fixed ${isPro ? "bottom-6" : "bottom-20"} right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
           isListening
             ? "bg-red-500 hover:bg-red-400 shadow-red-500/30"
             : "bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 shadow-violet-500/20"
@@ -293,7 +295,7 @@ export default function VoiceAssistant({ actions }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 left-4 right-4 z-50 max-w-sm mx-auto"
+            className={`fixed ${isPro ? "bottom-24" : "bottom-36"} left-4 right-4 z-50 max-w-sm mx-auto`}
           >
             <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
               {isListening && (
