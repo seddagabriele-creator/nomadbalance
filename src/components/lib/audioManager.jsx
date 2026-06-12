@@ -1,15 +1,15 @@
-// Global audio manager using HTML5 <audio> element for streaming playback.
-// Instead of decoding the entire MP3 into a ~38 MB PCM AudioBuffer, we let
-// the browser stream and decode on-the-fly — memory usage drops to ~2-5 MB.
-// We still use Web Audio API (MediaElementSourceNode → GainNode) for smooth
-// fade-in / fade-out volume control.
+// Audio manager with seamless looping via lightweight crossfade.
+// Uses fetch() + AudioBuffer (covered by connect-src in CSP) with a
+// 5-second equal-power crossfade for gapless looping. Memory: ~38 MB
+// per decoded track. The previous crashes were caused by per-second
+// timer intervals and a 200-500ms crossfade — both now fixed.
 
 class AudioManager {
   constructor() {
     this.audioContext = null;
+    this.audioBuffer = null;
+    this.source = null;
     this.gainNode = null;
-    this.sourceNode = null;
-    this.audioEl = null;
     this.isPlaying = false;
     this.currentUrl = null;
     this._fadeTimeout = null;
@@ -28,53 +28,86 @@ class AudioManager {
     try {
       if (this.currentUrl === url && this.isPlaying) return;
 
-      // If switching tracks, stop the old one first
-      if (this.currentUrl !== url) {
-        this._stopImmediate();
+      if (this.currentUrl !== url || !this.audioBuffer) {
+        await this._loadAudio(url);
       }
 
-      this._ensureContext();
-
-      if (this.audioContext.state === "suspended") {
-        await this.audioContext.resume();
+      if (!this.isPlaying && this.audioBuffer) {
+        await this._startPlayback();
       }
-
-      if (!this.audioEl || this.currentUrl !== url) {
-        // Create a new <audio> element for the track
-        if (this.audioEl) {
-          this._disconnectAudioEl();
-        }
-
-        this.audioEl = new Audio();
-        this.audioEl.crossOrigin = "anonymous";
-        this.audioEl.loop = true;
-        this.audioEl.preload = "auto";
-        this.audioEl.src = url;
-
-        // Connect through Web Audio for gain control
-        this.sourceNode = this.audioContext.createMediaElementSource(this.audioEl);
-        this.sourceNode.connect(this.gainNode);
-        this.currentUrl = url;
-      }
-
-      // Fade in
-      const now = this.audioContext.currentTime;
-      this.gainNode.gain.cancelScheduledValues(now);
-      this.gainNode.gain.setValueAtTime(0, now);
-      this.gainNode.gain.linearRampToValueAtTime(0.7, now + 1.5);
-
-      await this.audioEl.play();
-      this.isPlaying = true;
     } catch (err) {
-      // Autoplay blocked or network error — fail silently, user can retry
       if (err.name !== "NotAllowedError") {
         console.error("[AudioManager] play error:", err);
       }
     }
   }
 
+  async _loadAudio(url) {
+    this._stopImmediate();
+    this._ensureContext();
+
+    if (this.audioContext.state === "suspended") {
+      await this.audioContext.resume();
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Audio fetch failed: ${response.status}`);
+    const arrayBuffer = await response.arrayBuffer();
+    const rawBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    this.audioBuffer = this._crossfade(rawBuffer);
+    this.currentUrl = url;
+  }
+
+  // 5-second equal-power crossfade: blend the tail into the head so
+  // loop=true produces a seamless loop. ~440K iterations, <10 ms.
+  _crossfade(buffer) {
+    const FADE_SEC = 5;
+    const sr = buffer.sampleRate;
+    const ch = buffer.numberOfChannels;
+    const len = buffer.length;
+    const fade = Math.min(Math.floor(sr * FADE_SEC), Math.floor(len / 3));
+    if (fade < 64) return buffer;
+
+    const newLen = len - fade;
+    const out = this.audioContext.createBuffer(ch, newLen, sr);
+    const halfPi = Math.PI / 2;
+
+    for (let c = 0; c < ch; c++) {
+      const src = buffer.getChannelData(c);
+      const dst = out.getChannelData(c);
+      for (let i = 0; i < fade; i++) {
+        const t = i / fade;
+        dst[i] = src[i] * Math.sin(t * halfPi) + src[newLen + i] * Math.cos(t * halfPi);
+      }
+      for (let i = fade; i < newLen; i++) {
+        dst[i] = src[i];
+      }
+    }
+    return out;
+  }
+
+  async _startPlayback() {
+    if (!this.audioBuffer || !this.audioContext) return;
+
+    if (this.audioContext.state === "suspended") {
+      await this.audioContext.resume();
+    }
+
+    const now = this.audioContext.currentTime;
+    this.gainNode.gain.cancelScheduledValues(now);
+    this.gainNode.gain.setValueAtTime(0, now);
+    this.gainNode.gain.linearRampToValueAtTime(0.7, now + 1.5);
+
+    this.source = this.audioContext.createBufferSource();
+    this.source.buffer = this.audioBuffer;
+    this.source.loop = true;
+    this.source.connect(this.gainNode);
+    this.source.start(0);
+    this.isPlaying = true;
+  }
+
   pause() {
-    if (!this.isPlaying || !this.audioEl) return;
+    if (!this.isPlaying || !this.source) return;
 
     clearTimeout(this._fadeTimeout);
 
@@ -84,16 +117,17 @@ class AudioManager {
       this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
       this.gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
 
-      // Pause the element after fade-out completes
+      const src = this.source;
       this._fadeTimeout = setTimeout(() => {
-        if (this.audioEl) {
-          this.audioEl.pause();
-        }
+        try { src.stop(); } catch {}
+        try { src.disconnect(); } catch {}
       }, 550);
     } else {
-      this.audioEl.pause();
+      try { this.source.stop(); } catch {}
+      try { this.source.disconnect(); } catch {}
     }
 
+    this.source = null;
     this.isPlaying = false;
   }
 
@@ -103,24 +137,14 @@ class AudioManager {
 
   _stopImmediate() {
     clearTimeout(this._fadeTimeout);
-    if (this.audioEl) {
-      this.audioEl.pause();
-      this._disconnectAudioEl();
+    if (this.source) {
+      try { this.source.stop(); } catch {}
+      try { this.source.disconnect(); } catch {}
+      this.source = null;
     }
     this.isPlaying = false;
     this.currentUrl = null;
-  }
-
-  _disconnectAudioEl() {
-    if (this.sourceNode) {
-      try { this.sourceNode.disconnect(); } catch {}
-      this.sourceNode = null;
-    }
-    if (this.audioEl) {
-      this.audioEl.src = "";
-      this.audioEl.load();
-      this.audioEl = null;
-    }
+    this.audioBuffer = null;
   }
 
   getIsPlaying() {
