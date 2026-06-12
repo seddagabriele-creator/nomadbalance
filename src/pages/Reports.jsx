@@ -3,15 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { daySessionService, taskService } from "../api/services";
 import { Button } from "@/components/ui/button";
 import {
-  ArrowLeft, BarChart3, TrendingUp, TrendingDown, Flame, Dumbbell, CheckCircle,
-  Clock, Trophy, Star, Zap, Target, Heart, Award, Sun, Utensils, ChevronUp,
-  ChevronDown, Minus, Calendar, Crown
+  ArrowLeft, BarChart3, TrendingUp, Flame, Dumbbell, CheckCircle,
+  Clock, Trophy, Star, Target, Heart, Award, Sun, Utensils, ChevronUp,
+  ChevronDown, Crown
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils";
+import { createPageUrl, getLocalDateString } from "../utils";
 import { DEFAULT_WORK_MINUTES } from "../constants";
 import { motion } from "framer-motion";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import ProGate from "@/components/ProGate";
+import WeeklyCoach from "@/components/reports/WeeklyCoach";
 
 // ─── Level system ───
 const LEVELS = [
@@ -115,14 +117,16 @@ export default function Reports() {
     if (!sessions.length) return null;
 
     const sorted = [...sessions].sort((a, b) => a.date.localeCompare(b.date));
-    const today = new Date().toISOString().slice(0, 10);
+    // Local date, NOT toISOString (UTC) — otherwise the streak looks broken
+    // for users ahead of UTC during the late evening / after midnight.
+    const today = getLocalDateString();
     const dateSet = new Set(sorted.map((s) => s.date));
 
     // ── Current streak ──
     let currentStreak = 0;
-    let checkDate = new Date(today);
+    let checkDate = new Date(today + "T00:00:00");
     if (!dateSet.has(today)) checkDate.setDate(checkDate.getDate() - 1);
-    while (dateSet.has(checkDate.toISOString().slice(0, 10))) {
+    while (dateSet.has(getLocalDateString(checkDate))) {
       currentStreak++;
       checkDate.setDate(checkDate.getDate() - 1);
     }
@@ -348,7 +352,14 @@ export default function Reports() {
             <p className="text-white/40">Complete your first day to see reports</p>
           </div>
         ) : (
+          <ProGate
+            title="Your progress lives here"
+            description="Weekly trends, badges, streaks and personal records — unlock the full picture of your work habits."
+          >
           <div className="space-y-8">
+            {/* AI Weekly Coach */}
+            <WeeklyCoach sessions={sessions} completedTasks={allTasks} />
+
             {/* Level Banner */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -548,6 +559,7 @@ export default function Reports() {
               </p>
             </div>
           </div>
+          </ProGate>
         )}
       </div>
     </div>

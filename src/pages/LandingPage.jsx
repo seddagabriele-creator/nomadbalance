@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   Timer, Droplets, Activity, Target, Wind, Sun,
-  ChevronRight, CheckCircle, Sparkles, Smartphone, Shield,
+  ChevronRight, CheckCircle, Sparkles, Smartphone,
   ArrowRight, Zap, BarChart3, Users, Coffee
 } from "lucide-react";
 import useSEO from "@/hooks/useSEO";

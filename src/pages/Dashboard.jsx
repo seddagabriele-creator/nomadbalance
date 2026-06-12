@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Users, MoreVertical, Settings as SettingsIcon, Wind, Coffee, Activity, BarChart3, LogOut } from "lucide-react";
+import { Users, MoreVertical, Settings as SettingsIcon, Wind, Coffee, Activity, BarChart3, LogOut, Sunset, Flame, Sun, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
@@ -18,8 +18,9 @@ import MeetingModeDialog from "../components/MeetingModeDialog";
 import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
 import BreakNotification from "../components/body/BreakNotification";
 import DeskStatusToggle from "../components/dashboard/DeskStatusToggle";
-import VoiceAssistant from "../components/VoiceAssistant";
+import DayRecap from "../components/dashboard/DayRecap";
 import { useTimer } from "../components/lib/TimerContext";
+import { useSubscription } from "../lib/SubscriptionContext";
 import { getDailyDefaults } from "../hooks/useDailyDefaults";
 
 import { Button } from "@/components/ui/button";
@@ -38,36 +39,34 @@ const toMinutes = (t) => {
 
 import { getChimeContext } from "../components/lib/chimeContext";
 
-// Play a gentle two-tone chime for notifications
+// Play a gentle two-tone chime for notifications.
+// Uses onended to disconnect nodes safely — setTimeout disconnect
+// can race with the audio thread's stop() processing and crash Chrome.
 function playNotificationChime() {
   try {
     const ctx = getChimeContext();
     if (ctx.state === "suspended") ctx.resume();
-    // First tone
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
-    osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc1.frequency.setValueAtTime(587.33, ctx.currentTime);
     gain1.gain.setValueAtTime(0.25, ctx.currentTime);
     gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
     osc1.start(ctx.currentTime);
     osc1.stop(ctx.currentTime + 0.3);
-    // Disconnect after sound ends
-    setTimeout(() => { osc1.disconnect(); gain1.disconnect(); }, 400);
-    // Second tone (higher)
+    osc1.onended = () => { osc1.disconnect(); gain1.disconnect(); };
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
-    osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.15); // G5
+    osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.15);
     gain2.gain.setValueAtTime(0, ctx.currentTime);
     gain2.gain.setValueAtTime(0.25, ctx.currentTime + 0.15);
     gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
     osc2.start(ctx.currentTime + 0.15);
     osc2.stop(ctx.currentTime + 0.6);
-    // Disconnect after sound ends
-    setTimeout(() => { osc2.disconnect(); gain2.disconnect(); }, 700);
+    osc2.onended = () => { osc2.disconnect(); gain2.disconnect(); };
   } catch (e) {
     // Audio not available
   }
@@ -85,6 +84,7 @@ export default function Dashboard() {
   });
   const [activeBreakNotification, setActiveBreakNotification] = useState(null);
   const [overdueBreaks, setOverdueBreaks] = useState(null); // batch overdue breaks dialog
+  const [showDayRecap, setShowDayRecap] = useState(false);
   const breakCheckRef = React.useRef(null);
   const breakActionInProgress = React.useRef(false);
   const deskReturnedAt = React.useRef(null);
@@ -95,8 +95,50 @@ export default function Dashboard() {
   const [localAwaySince, setLocalAwaySince] = useState(null);
 
   const queryClient = useQueryClient();
-  const today = getLocalDateString();
-  const { pauseTimer, resumeTimer, toggleTimer, resetTimer, switchToRelax, switchToFocus, isRunning: timerRunning, isBreak: timerOnBreak, timeLeft: timerTimeLeft } = useTimer();
+  // Guards the once-per-day session auto-create (reset on midnight rollover)
+  const autoCreateAttempted = React.useRef(false);
+  // State (not a per-render const) so the midnight rollover effect below can
+  // force a new day: queryKey changes → fresh session query → auto-create.
+  const [today, setToday] = useState(() => getLocalDateString());
+
+  useEffect(() => {
+    const scheduleRollover = () => {
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 5, 0); // 00:00:05 — small buffer past midnight
+      return setTimeout(() => {
+        setToday(getLocalDateString());
+        autoCreateAttempted.current = false;
+        queryClient.invalidateQueries({ queryKey: ["daySession"] });
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+        timerId = scheduleRollover();
+      }, nextMidnight.getTime() - Date.now());
+    };
+    let timerId = scheduleRollover();
+    return () => clearTimeout(timerId);
+  }, [queryClient]);
+
+  // Tab was hidden/suspended over midnight: timers don't fire reliably in
+  // background tabs, so also re-check the date when the tab becomes visible.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.hidden) return;
+      const current = getLocalDateString();
+      setToday((prev) => {
+        if (prev !== current) {
+          autoCreateAttempted.current = false;
+          queryClient.invalidateQueries({ queryKey: ["daySession"] });
+          queryClient.invalidateQueries({ queryKey: ["tasks"] });
+          queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+        }
+        return current;
+      });
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [queryClient]);
+  const { pauseTimer, resumeTimer, isRunning: timerRunning, isBreak: timerOnBreak, timeLeft: timerTimeLeft } = useTimer();
+  const { trialActive, trialDaysLeft, promptUpgrade } = useSubscription();
 
   const timerRunningRef = React.useRef(timerRunning);
   const timerOnBreakRef = React.useRef(timerOnBreak);
@@ -147,6 +189,29 @@ export default function Dashboard() {
   const deskStatus = hasDeskColumns ? session.desk_status : localDeskStatus;
   const awaySince = hasDeskColumns ? session.away_since : localAwaySince;
   const isAway = deskStatus === "away";
+
+  // All sessions (for the streak) — refreshed lazily, it only changes once a day
+  const { data: allSessions = [] } = useQuery({
+    queryKey: ["allSessions"],
+    queryFn: () => daySessionService.listAll(),
+    staleTime: 5 * ONE_MINUTE_MS,
+  });
+
+  // Current streak: consecutive days with a session, counting back from today
+  // (same logic as Reports — today itself is optional so an early-morning
+  // visit before the session exists doesn't show a broken streak)
+  const currentStreak = React.useMemo(() => {
+    if (!allSessions.length) return 0;
+    const dateSet = new Set(allSessions.map((s) => s.date));
+    let streak = 0;
+    const checkDate = new Date(today + "T00:00:00");
+    if (!dateSet.has(today)) checkDate.setDate(checkDate.getDate() - 1);
+    while (dateSet.has(getLocalDateString(checkDate))) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+    return streak;
+  }, [allSessions, today]);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", session?.id],
@@ -322,7 +387,10 @@ export default function Dashboard() {
   });
 
   const updateSession = useMutation({
-    mutationFn: (data) => daySessionService.update(session.id, data),
+    mutationFn: (data) => {
+      if (!session?.id) return Promise.reject(new Error("No active session"));
+      return daySessionService.update(session.id, data);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["daySession"] }),
     onError: (error) => {
       toast.error("Failed to update session");
@@ -506,28 +574,41 @@ export default function Dashboard() {
     if (!session?.id || oldUncompletedTasks.length === 0) return;
     const maxOrder = tasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
     let offset = 0;
-    for (const task of oldUncompletedTasks) {
-      offset++;
-      await taskService.update(task.id, { session_id: session.id, order: maxOrder + offset });
+    let moved = 0;
+    try {
+      for (const task of oldUncompletedTasks) {
+        offset++;
+        await taskService.update(task.id, { session_id: session.id, order: maxOrder + offset });
+        moved++;
+      }
+      toast.success(`Moved ${moved} task${moved > 1 ? "s" : ""} to today`);
+    } catch (error) {
+      console.error("Move tasks error:", error);
+      toast.error(moved > 0 ? `Moved ${moved} of ${oldUncompletedTasks.length} tasks — retry for the rest` : "Failed to move tasks. Please try again.");
+    } finally {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
     }
-    queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    queryClient.invalidateQueries({ queryKey: ["allTasks"] });
-    toast.success(`Moved ${oldUncompletedTasks.length} task${oldUncompletedTasks.length > 1 ? "s" : ""} to today`);
   };
 
   // Quick action: add a task from the dashboard
   const handleQuickAddTask = async (title) => {
     if (!session?.id || !title.trim()) return;
     const maxOrder = tasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
-    await taskService.create({
-      session_id: session.id,
-      title: title.trim(),
-      order: maxOrder + 1,
-      completed: false,
-    });
-    queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    queryClient.invalidateQueries({ queryKey: ["allTasks"] });
-    toast.success("Task added");
+    try {
+      await taskService.create({
+        session_id: session.id,
+        title: title.trim(),
+        order: maxOrder + 1,
+        completed: false,
+      });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+      toast.success("Task added");
+    } catch (error) {
+      console.error("Task creation error:", error);
+      toast.error("Failed to add task. Please try again.");
+    }
   };
 
   // Quick action: change sound from FlowCard
@@ -576,6 +657,25 @@ export default function Dashboard() {
         updateSession.mutate({ meeting_mode: false });
       }
     }
+  };
+
+  // End-of-day: close the session (status → completed) after the recap
+  const handleEndDay = () => {
+    if (!session) return;
+    pauseTimer();
+    const now = new Date();
+    const endTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    updateSession.mutate({ status: "completed", work_end_today: session.work_end_today || endTime });
+    queryClient.invalidateQueries({ queryKey: ["allSessions"] });
+    setShowDayRecap(false);
+    toast.success("Day closed — see you tomorrow!", { icon: "🌅" });
+  };
+
+  // Mis-click escape hatch: reopen a closed day
+  const handleReopenDay = () => {
+    if (!session) return;
+    updateSession.mutate({ status: "active" });
+    toast.success("Day reopened");
   };
 
   const handleMeetingConfirm = (breathingMinutes) => {
@@ -770,8 +870,8 @@ export default function Dashboard() {
   const isActive = session?.status === "active";
 
   // Auto-create session when none exists for today
-  const autoCreateAttempted = React.useRef(false);
-
+  // (autoCreateAttempted ref is declared at the top of the component so the
+  // midnight-rollover effects can reset it for the new day)
   useEffect(() => {
     if (isLoading || session || createSession.isPending || autoCreateAttempted.current) return;
     if (!userSettings || Object.keys(userSettings).length === 0) return;
@@ -927,8 +1027,13 @@ export default function Dashboard() {
                   <DropdownMenuSeparator className="bg-white/10" />
                   <DropdownMenuItem
                     onClick={async () => {
-                      await logout();
-                      navigate("/login");
+                      try {
+                        await logout();
+                        navigate("/login");
+                      } catch (error) {
+                        console.error("Logout error:", error);
+                        toast.error("Logout failed. Please try again.");
+                      }
                     }}
                     className="text-red-400 hover:bg-white/10 cursor-pointer"
                   >
@@ -957,6 +1062,37 @@ export default function Dashboard() {
                   </span>
                 </>
               )}
+              <span className="ml-auto flex items-center gap-1.5">
+                {trialActive && (
+                  <button
+                    onClick={promptUpgrade}
+                    className="flex items-center gap-1 rounded-full bg-violet-500/10 border border-violet-500/25 px-2 py-0.5 hover:bg-violet-500/20 transition-colors"
+                  >
+                    <Sparkles className="w-3 h-3 text-violet-300" />
+                    <span className="text-[10px] font-semibold text-violet-300">Pro trial · {trialDaysLeft}d</span>
+                  </button>
+                )}
+                {currentStreak >= 2 && (
+                  <span className="flex items-center gap-1 rounded-full bg-orange-500/10 border border-orange-500/25 px-2 py-0.5">
+                    <Flame className="w-3 h-3 text-orange-400" />
+                    <span className="text-[10px] font-semibold text-orange-300">{currentStreak} days</span>
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+
+          {session?.status === "completed" && (
+            <div className="flex items-center gap-2 mt-3 rounded-2xl bg-violet-500/10 border border-violet-500/25 px-3 py-2">
+              <Sunset className="w-4 h-4 text-amber-300" />
+              <span className="text-xs font-medium text-white/70">Day closed — enjoy your evening!</span>
+              <button
+                onClick={handleReopenDay}
+                className="ml-auto flex items-center gap-1 text-[10px] font-semibold text-violet-300 hover:text-violet-200 transition-colors"
+              >
+                <Sun className="w-3 h-3" />
+                Reopen
+              </button>
             </div>
           )}
         </motion.div>
@@ -1063,11 +1199,38 @@ export default function Dashboard() {
                     : "Meeting mode — all notifications and reminders are paused"}
                 </div>
               </div>
+              <div className="relative group/endday">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowDayRecap(true)}
+                  className="h-12 px-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 bg-white/10 border border-white/10 text-white/70 hover:bg-amber-500/15 hover:border-amber-500/25 hover:text-amber-300 transition-all"
+                  aria-label="End the day and see your recap"
+                >
+                  <Sunset className="w-4 h-4" />
+                </motion.button>
+                <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-44 rounded-xl bg-gray-900/95 border border-white/10 px-3 py-2 text-xs text-white/80 text-center opacity-0 group-hover/endday:opacity-100 transition-opacity duration-200 backdrop-blur-sm z-50">
+                  End the day — see your recap and close the session
+                </div>
+              </div>
             </motion.div>
           </>
         )}
 
       </div>
+
+      {/* End-of-day Recap */}
+      <AnimatePresence>
+        {showDayRecap && session && (
+          <DayRecap
+            session={session}
+            totalTasks={totalTasks}
+            completedTasks={completedTasks}
+            streak={currentStreak}
+            onConfirm={handleEndDay}
+            onDismiss={() => setShowDayRecap(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Breathing Overlay */}
       <AnimatePresence>
@@ -1209,21 +1372,6 @@ export default function Dashboard() {
           <OnboardingTutorial onComplete={handleOnboardingComplete} />
         )}
       </AnimatePresence>
-
-      {/* Voice Assistant */}
-      <VoiceAssistant actions={{
-        addTask: handleQuickAddTask,
-        logMeal: handleQuickLogMeal,
-        startFocus: () => { if (!timerRunning) toggleTimer(); },
-        pauseTimer,
-        resumeTimer,
-        resetTimer,
-        switchRelax: switchToRelax,
-        switchFocus: switchToFocus,
-        startBreathing: () => { setBreathingDuration(5); setShowBreathing(true); },
-        goAway: () => { if (!isAway) handleToggleDeskStatus(); },
-        comeBack: () => { if (isAway) handleToggleDeskStatus(); },
-      }} />
     </div>
   );
 }

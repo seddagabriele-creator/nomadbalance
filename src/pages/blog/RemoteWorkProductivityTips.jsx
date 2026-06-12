@@ -3,7 +3,7 @@ import useSEO from "@/hooks/useSEO";
 import RelatedArticles from "@/components/RelatedArticles";
 import AuthorBio from "@/components/AuthorBio";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, Clock, LayoutGrid, MessageCircleOff, Battery, Brain, Music, Coffee, CalendarCheck, RefreshCw, Smartphone, Users, Trophy } from "lucide-react";
+import { ArrowLeft, Zap, Clock, LayoutGrid, MessageCircleOff, Battery, Music, CalendarCheck, Smartphone, Trophy } from "lucide-react";
 import { articleJsonLd } from "@/lib/jsonLd";
 import Footer from "@/components/Footer";
 

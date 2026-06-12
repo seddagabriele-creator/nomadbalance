@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { daySessionService, taskService } from "../api/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock, ArrowUp, ArrowDown, MessageSquare, Save, CheckSquare, X, Pencil } from "lucide-react";
+import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock, ArrowUp, MessageSquare, Save, CheckSquare, X, Pencil } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import TaskHistoryCalendar from "../components/journal/TaskHistoryCalendar";
+import ProGate from "@/components/ProGate";
 
 export default function Journal() {
   const queryClient = useQueryClient();
@@ -953,7 +954,12 @@ export default function Journal() {
             </div>
           )}
 
-          <TaskHistoryCalendar />
+          <ProGate
+            title="Task history"
+            description="Browse every task you've ever completed, search them, and bring old ones back — your full work memory."
+          >
+            <TaskHistoryCalendar />
+          </ProGate>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, CheckCircle, BookOpen, Bell, BellOff, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, BookOpen, Bell, BellOff, Trash2, Sparkles } from "lucide-react";
+import { useSubscription } from "@/lib/SubscriptionContext";
 // breakFeasibility no longer needed — interval-based scheduling
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -18,6 +19,7 @@ import { getLocalDateString } from "../utils";
 
 export default function Settings() {
   const queryClient = useQueryClient();
+  const { billingEnabled, isProSubscriber, trialActive, trialDaysLeft, promptUpgrade } = useSubscription();
   const navigate = useNavigate();
   const { defaults: dailyDefaults, setDefaults: saveDailyDefaults } = useDailyDefaults();
   const [localDefaults, setLocalDefaults] = useState(dailyDefaults);
@@ -140,6 +142,35 @@ export default function Settings() {
         </div>
 
         <div className="space-y-6">
+          {/* Subscription */}
+          {billingEnabled && (
+            <section className="bg-gradient-to-br from-violet-500/10 to-cyan-500/10 backdrop-blur-xl border border-violet-500/25 rounded-2xl p-6" aria-label="Subscription">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-violet-300" />
+                    NomadBalance Pro
+                  </h2>
+                  <p className="text-white/40 text-xs mt-1">
+                    {isProSubscriber
+                      ? "You're a Pro subscriber — thank you for supporting NomadBalance!"
+                      : trialActive
+                        ? `Free trial: ${trialDaysLeft} day${trialDaysLeft > 1 ? "s" : ""} of Pro left`
+                        : "Free plan — Reports, task history, voice assistant and the full audio library are Pro features"}
+                  </p>
+                </div>
+                {!isProSubscriber && (
+                  <Button
+                    onClick={promptUpgrade}
+                    className="shrink-0 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 font-semibold text-sm"
+                  >
+                    Upgrade
+                  </Button>
+                )}
+              </div>
+            </section>
+          )}
+
           {/* Personal */}
           <section className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6" aria-label="Personal settings">
             <h2 className="text-lg font-semibold mb-4">Personal</h2>

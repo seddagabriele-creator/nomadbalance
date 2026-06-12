@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Coffee, Monitor, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
+import { Coffee, Monitor } from "lucide-react";
 import { ONE_SECOND_MS } from "../../constants";
 
 export default function DeskStatusToggle({ isAway, awaySince, onToggle }) {

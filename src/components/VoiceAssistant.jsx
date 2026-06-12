@@ -1,71 +1,81 @@
 import React, { useState, useRef, useCallback } from "react";
-import { Mic, MicOff, X } from "lucide-react";
+import { Mic, MicOff, X, Loader2, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useSubscription } from "@/lib/SubscriptionContext";
+import { supabase } from "@/api/supabaseClient";
 
 const SpeechRecognition = typeof window !== "undefined"
   ? window.SpeechRecognition || window.webkitSpeechRecognition
   : null;
 
-// ── Fuzzy intent matching ───────────────────────────────────────────
-// Each intent has a list of trigger words/phrases and a score weight.
-// We tokenize the input text, check how many trigger words appear, and
-// pick the intent with the highest score. This handles natural Italian
-// phrasing without needing an LLM.
+// ── LLM intent classification ──────────────────────────────────────
+async function classifyIntent(transcript) {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  const res = await fetch("/api/voice-intent", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ transcript }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
 
+// ── Local fallback (fuzzy matching) ────────────────────────────────
 const INTENT_DEFS = {
   addTask: {
     triggers: ["task", "compito", "attività", "promemoria", "nota", "ricordami", "segna", "scrivi", "appunta", "aggiungi", "nuova", "nuovo", "crea", "metti", "to do", "todo"],
     needsParam: true,
-    // Words that precede the actual task title — stripped from the param
-    prefixWords: ["task", "compito", "attività", "promemoria", "nota", "che", "di", "un", "una", "il", "la", "lo", "to do", "todo", "nuovo", "nuova"],
   },
   logMeal: {
-    triggers: ["pasto", "meal", "mangiato", "pranzo", "pranzato", "cena", "cenato", "colazione", "snack", "spuntino", "merenda", "mangio", "mangiare", "cibo", "food", "registra pasto", "log meal", "ho fame"],
+    triggers: ["pasto", "meal", "mangiato", "pranzo", "pranzato", "cena", "cenato", "colazione", "snack", "spuntino", "merenda", "mangio", "mangiare", "cibo", "food", "ho fame"],
   },
   startFocus: {
-    triggers: ["musica", "music", "audio", "focus", "concentrazione", "suono", "suona", "play", "avvia", "parti", "start", "inizia", "comincia", "lavorare", "lavoro", "sessione", "metti su", "accendi"],
-    boostPhrases: ["metti musica", "avvia musica", "parti musica", "start focus", "metti su la musica", "fammi sentire", "voglio concentrarmi", "inizia a lavorare", "metti l'audio", "accendi la musica"],
+    triggers: ["musica", "music", "audio", "focus", "concentrazione", "suono", "suona", "play", "avvia", "parti", "start", "inizia", "comincia", "lavorare", "lavoro", "sessione", "accendi"],
+    boostPhrases: ["metti musica", "avvia musica", "start focus", "voglio concentrarmi", "inizia a lavorare"],
   },
   pauseTimer: {
-    triggers: ["pausa", "pause", "stop", "ferma", "fermati", "basta", "smetti", "aspetta", "un momento", "un attimo", "hold", "wait"],
-    boostPhrases: ["metti in pausa", "fermati un attimo", "stop musica", "ferma tutto", "pausa timer"],
+    triggers: ["pausa", "pause", "stop", "ferma", "fermati", "basta", "smetti", "aspetta"],
+    boostPhrases: ["metti in pausa", "stop musica", "ferma tutto"],
   },
   resumeTimer: {
-    triggers: ["riprendi", "resume", "continua", "vai", "go", "ricomincia", "riprendere", "avanti", "prosegui"],
-    boostPhrases: ["continua a suonare", "riprendi la musica", "vai avanti", "continua il timer"],
+    triggers: ["riprendi", "resume", "continua", "vai", "go", "ricomincia", "avanti", "prosegui"],
+    boostPhrases: ["riprendi la musica", "vai avanti", "continua il timer"],
   },
   switchRelax: {
-    triggers: ["relax", "rilassati", "rilassa", "rilassamento", "chill", "calma", "tranquillo", "decompressione", "stacca"],
-    boostPhrases: ["voglio rilassarmi", "metti relax", "modalità relax", "stacca un po'", "ho bisogno di calma"],
+    triggers: ["relax", "rilassati", "rilassa", "chill", "calma", "tranquillo", "stacca"],
+    boostPhrases: ["voglio rilassarmi", "metti relax", "modalità relax"],
   },
   switchFocus: {
     triggers: ["focus", "concentrazione", "lavoro", "work", "produttivo", "torna"],
-    boostPhrases: ["torna al focus", "torna a lavorare", "basta relax", "modalità lavoro", "concentrazione"],
-    // Only match if "torna" or "back" or "basta relax" present — otherwise conflicts with startFocus
+    boostPhrases: ["torna al focus", "torna a lavorare", "basta relax", "modalità lavoro"],
     requireAny: ["torna", "back", "basta", "modalità lavoro", "switch"],
   },
   startBreathing: {
-    triggers: ["respirazione", "breathing", "respira", "breath", "respiro", "inspira", "espira", "calma"],
-    boostPhrases: ["esercizio di respirazione", "facciamo respirazione", "voglio respirare", "breathing session"],
+    triggers: ["respirazione", "breathing", "respira", "breath", "respiro", "inspira", "espira"],
+    boostPhrases: ["esercizio di respirazione", "facciamo respirazione"],
   },
   goAway: {
-    triggers: ["via", "away", "vado", "esco", "torno dopo", "pausa pranzo", "pausa caffè", "allontano"],
-    boostPhrases: ["sono via", "vado via", "me ne vado", "going away", "mi allontano", "pausa pranzo", "torno dopo"],
-    requireAny: ["via", "away", "vado", "esco", "allontano", "pausa pranzo", "pausa caffè"],
+    triggers: ["via", "away", "vado", "esco", "allontano"],
+    boostPhrases: ["sono via", "vado via", "me ne vado", "pausa pranzo", "mi allontano"],
+    requireAny: ["via", "away", "vado", "esco", "allontano", "pausa pranzo"],
   },
   comeBack: {
     triggers: ["tornato", "back", "qui", "tornata", "presente", "rientro", "rientrato"],
-    boostPhrases: ["sono tornato", "sono qui", "sono back", "i'm back", "sono rientrato", "eccomi"],
-    requireAny: ["tornato", "tornata", "back", "qui", "rientro", "rientrato", "eccomi", "presente"],
+    boostPhrases: ["sono tornato", "sono qui", "sono back", "eccomi"],
+    requireAny: ["tornato", "tornata", "back", "qui", "rientro", "eccomi", "presente"],
   },
   resetTimer: {
-    triggers: ["reset", "resetta", "azzera", "ricomincia", "da capo", "daccapo"],
-    boostPhrases: ["reset timer", "resetta il timer", "ricomincia da capo", "azzera tutto"],
+    triggers: ["reset", "resetta", "azzera", "ricomincia", "da capo"],
+    boostPhrases: ["reset timer", "resetta il timer", "ricomincia da capo"],
   },
 };
 
-function matchIntent(text) {
+function matchIntentLocal(text) {
   const normalized = text.toLowerCase().trim();
   const words = normalized.split(/\s+/);
   const wordSet = new Set(words);
@@ -77,7 +87,6 @@ function matchIntent(text) {
   for (const [action, def] of Object.entries(INTENT_DEFS)) {
     let score = 0;
 
-    // Check trigger words
     for (const trigger of def.triggers) {
       if (trigger.includes(" ")) {
         if (normalized.includes(trigger)) score += 2;
@@ -87,14 +96,12 @@ function matchIntent(text) {
       }
     }
 
-    // Boost phrases (exact substring match = strong signal)
     if (def.boostPhrases) {
       for (const phrase of def.boostPhrases) {
         if (normalized.includes(phrase)) score += 3;
       }
     }
 
-    // requireAny gate: at least one of these words must be present
     if (def.requireAny) {
       const hasRequired = def.requireAny.some(w =>
         w.includes(" ") ? normalized.includes(w) : wordSet.has(w) || normalized.includes(w)
@@ -106,15 +113,12 @@ function matchIntent(text) {
       bestScore = score;
       bestAction = action;
 
-      // Extract parameter for addTask: everything after trigger words
       if (def.needsParam) {
         let param = normalized;
-        // Remove common action verbs and noise words
         const removeWords = [
           "aggiungi", "nuova", "nuovo", "crea", "metti", "scrivi", "appunta",
-          "segna", "ricordami", "add", "create", "task", "compito", "attività",
-          "promemoria", "nota", "un", "una", "il", "la", "lo", "che", "di",
-          "devo", "dovrei", "bisogna", "alle", "alla", "al", "to do", "todo",
+          "segna", "ricordami", "task", "compito", "attività", "promemoria",
+          "nota", "un", "una", "il", "la", "lo", "che", "di", "devo",
         ];
         for (const w of removeWords) {
           param = param.replace(new RegExp(`\\b${w}\\b`, "gi"), "");
@@ -125,9 +129,7 @@ function matchIntent(text) {
     }
   }
 
-  // Minimum score threshold to avoid false positives
   if (bestScore < 1) return null;
-
   return { action: bestAction, param: bestParam };
 }
 
@@ -161,14 +163,27 @@ export default function VoiceAssistant({ actions }) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [processing, setProcessing] = useState(false);
   const recognitionRef = useRef(null);
+  const { isPro, promptUpgrade } = useSubscription();
 
-  const handleResult = useCallback((text) => {
-    const intent = matchIntent(text);
-    if (!intent) {
+  const handleResult = useCallback(async (text) => {
+    setProcessing(true);
+    setTranscript("");
+
+    let intent = null;
+    try {
+      intent = await classifyIntent(text);
+    } catch {
+      intent = matchIntentLocal(text);
+    }
+
+    setProcessing(false);
+
+    if (!intent?.action) {
       setFeedback("Non ho capito. Riprova.");
       speak("Non ho capito, puoi ripetere?");
-      setTimeout(() => setFeedback(""), 2500);
+      setTimeout(() => { setFeedback(""); }, 2500);
       return;
     }
 
@@ -181,7 +196,7 @@ export default function VoiceAssistant({ actions }) {
       } else {
         setFeedback("Non ho capito cosa aggiungere.");
         speak("Non ho capito cosa aggiungere.");
-        setTimeout(() => setFeedback(""), 2500);
+        setTimeout(() => { setFeedback(""); }, 2500);
         return;
       }
     } else if (handler) {
@@ -192,7 +207,7 @@ export default function VoiceAssistant({ actions }) {
     setFeedback(msg);
     speak(msg);
     toast.success(msg);
-    setTimeout(() => setFeedback(""), 3000);
+    setTimeout(() => { setFeedback(""); }, 3000);
   }, [actions]);
 
   const startListening = useCallback(() => {
@@ -214,10 +229,6 @@ export default function VoiceAssistant({ actions }) {
 
       if (result.isFinal) {
         handleResult(text);
-        setTimeout(() => {
-          setIsListening(false);
-          setTranscript("");
-        }, 1500);
       }
     };
 
@@ -227,6 +238,7 @@ export default function VoiceAssistant({ actions }) {
       }
       setIsListening(false);
       setTranscript("");
+      setProcessing(false);
     };
 
     recognition.onend = () => {
@@ -238,6 +250,7 @@ export default function VoiceAssistant({ actions }) {
     setIsListening(true);
     setTranscript("");
     setFeedback("");
+    setProcessing(false);
   }, [handleResult]);
 
   const stopListening = useCallback(() => {
@@ -247,34 +260,42 @@ export default function VoiceAssistant({ actions }) {
     }
     setIsListening(false);
     setTranscript("");
+    setProcessing(false);
   }, []);
 
   if (!SpeechRecognition) return null;
 
   return (
     <>
-      {/* Floating mic button */}
+      {/* Floating mic button — Pro feature (each command is an AI call).
+          bottom-20 clears the AdBanner for free users; Pro users get
+          bottom-6 since they have no banner. */}
       <motion.button
-        onClick={isListening ? stopListening : startListening}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
+        onClick={!isPro ? promptUpgrade : isListening ? stopListening : startListening}
+        className={`fixed ${isPro ? "bottom-6" : "bottom-20"} right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
           isListening
             ? "bg-red-500 hover:bg-red-400 shadow-red-500/30"
             : "bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 shadow-violet-500/20"
         }`}
         whileTap={{ scale: 0.9 }}
-        aria-label={isListening ? "Stop listening" : "Voice command"}
+        aria-label={!isPro ? "Voice assistant (Pro feature)" : isListening ? "Stop listening" : "Voice command"}
       >
         {isListening ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
+        {!isPro && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-slate-900 border border-violet-400/60 flex items-center justify-center">
+            <Sparkles className="w-2.5 h-2.5 text-violet-300" />
+          </span>
+        )}
       </motion.button>
 
       {/* Transcript overlay */}
       <AnimatePresence>
-        {(isListening || feedback) && (
+        {(isListening || feedback || processing) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 left-4 right-4 z-50 max-w-sm mx-auto"
+            className={`fixed ${isPro ? "bottom-24" : "bottom-36"} left-4 right-4 z-50 max-w-sm mx-auto`}
           >
             <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
               {isListening && (
@@ -288,14 +309,20 @@ export default function VoiceAssistant({ actions }) {
                   </button>
                 </div>
               )}
-              {transcript && (
+              {processing && (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                  <span className="text-cyan-400/70 text-xs">Sto elaborando...</span>
+                </div>
+              )}
+              {transcript && !processing && (
                 <p className="text-white text-sm">{transcript}</p>
               )}
-              {feedback && !transcript && (
+              {feedback && !transcript && !processing && (
                 <p className="text-cyan-400 text-sm font-medium">{feedback}</p>
               )}
-              {isListening && !transcript && !feedback && (
-                <p className="text-white/40 text-xs">Parla naturalmente — ad esempio "metti su la musica", "scrivi che devo chiamare Marco", "ho mangiato"...</p>
+              {isListening && !transcript && !feedback && !processing && (
+                <p className="text-white/40 text-xs">Parla naturalmente — ad esempio &quot;metti su la musica&quot;, &quot;scrivi che devo chiamare Marco&quot;, &quot;ho mangiato&quot;...</p>
               )}
             </div>
           </motion.div>
