@@ -39,27 +39,17 @@ function parseBlogData() {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Extract slug → component-file mapping from App.jsx routes
+// 2. Extract slug → component-file mapping from blogRoutes.js
+//    Format: "slug": lazy(() => import("./FileName")),
 // ---------------------------------------------------------------------------
 function buildSlugToFileMap() {
-  const appSrc = fs.readFileSync(path.join(SRC, "App.jsx"), "utf-8");
+  const routesSrc = fs.readFileSync(path.join(SRC, "pages/blog/blogRoutes.js"), "utf-8");
   const map = {};
 
-  const imports = {};
-  const importRe = /import\s+(\w+)\s+from\s+['"]@\/pages\/blog\/(\w+)['"]/g;
-  let im;
-  while ((im = importRe.exec(appSrc)) !== null) {
-    imports[im[1]] = im[2];
-  }
-
-  const routeRe = /path="\/blog\/([^"]+)"[^>]*element=\{<(\w+)/g;
-  let rm;
-  while ((rm = routeRe.exec(appSrc)) !== null) {
-    const slug = rm[1];
-    const comp = rm[2];
-    if (imports[comp]) {
-      map[slug] = path.join(SRC, "pages/blog", imports[comp] + ".jsx");
-    }
+  const re = /"([^"]+)":\s*lazy\(\(\)\s*=>\s*import\("\.\/(\w+)"\)\)/g;
+  let m;
+  while ((m = re.exec(routesSrc)) !== null) {
+    map[m[1]] = path.join(SRC, "pages/blog", m[2] + ".jsx");
   }
 
   return map;

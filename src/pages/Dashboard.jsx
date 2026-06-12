@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Users, MoreVertical, Settings as SettingsIcon, Wind, Coffee, Activity, BarChart3, LogOut } from "lucide-react";
+import { Users, MoreVertical, Settings as SettingsIcon, Wind, Coffee, Activity, BarChart3, LogOut, Sunset, Flame, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ import MeetingModeDialog from "../components/MeetingModeDialog";
 import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
 import BreakNotification from "../components/body/BreakNotification";
 import DeskStatusToggle from "../components/dashboard/DeskStatusToggle";
+import DayRecap from "../components/dashboard/DayRecap";
 import { useTimer } from "../components/lib/TimerContext";
 import { getDailyDefaults } from "../hooks/useDailyDefaults";
 
@@ -82,6 +83,7 @@ export default function Dashboard() {
   });
   const [activeBreakNotification, setActiveBreakNotification] = useState(null);
   const [overdueBreaks, setOverdueBreaks] = useState(null); // batch overdue breaks dialog
+  const [showDayRecap, setShowDayRecap] = useState(false);
   const breakCheckRef = React.useRef(null);
   const breakActionInProgress = React.useRef(false);
   const deskReturnedAt = React.useRef(null);
@@ -185,6 +187,29 @@ export default function Dashboard() {
   const deskStatus = hasDeskColumns ? session.desk_status : localDeskStatus;
   const awaySince = hasDeskColumns ? session.away_since : localAwaySince;
   const isAway = deskStatus === "away";
+
+  // All sessions (for the streak) — refreshed lazily, it only changes once a day
+  const { data: allSessions = [] } = useQuery({
+    queryKey: ["allSessions"],
+    queryFn: () => daySessionService.listAll(),
+    staleTime: 5 * ONE_MINUTE_MS,
+  });
+
+  // Current streak: consecutive days with a session, counting back from today
+  // (same logic as Reports — today itself is optional so an early-morning
+  // visit before the session exists doesn't show a broken streak)
+  const currentStreak = React.useMemo(() => {
+    if (!allSessions.length) return 0;
+    const dateSet = new Set(allSessions.map((s) => s.date));
+    let streak = 0;
+    const checkDate = new Date(today + "T00:00:00");
+    if (!dateSet.has(today)) checkDate.setDate(checkDate.getDate() - 1);
+    while (dateSet.has(getLocalDateString(checkDate))) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+    return streak;
+  }, [allSessions, today]);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", session?.id],
@@ -632,6 +657,25 @@ export default function Dashboard() {
     }
   };
 
+  // End-of-day: close the session (status → completed) after the recap
+  const handleEndDay = () => {
+    if (!session) return;
+    pauseTimer();
+    const now = new Date();
+    const endTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    updateSession.mutate({ status: "completed", work_end_today: session.work_end_today || endTime });
+    queryClient.invalidateQueries({ queryKey: ["allSessions"] });
+    setShowDayRecap(false);
+    toast.success("Day closed — see you tomorrow!", { icon: "🌅" });
+  };
+
+  // Mis-click escape hatch: reopen a closed day
+  const handleReopenDay = () => {
+    if (!session) return;
+    updateSession.mutate({ status: "active" });
+    toast.success("Day reopened");
+  };
+
   const handleMeetingConfirm = (breathingMinutes) => {
     setShowMeetingDialog(false);
     pauseTimer();
@@ -1016,6 +1060,26 @@ export default function Dashboard() {
                   </span>
                 </>
               )}
+              {currentStreak >= 2 && (
+                <span className="ml-auto flex items-center gap-1 rounded-full bg-orange-500/10 border border-orange-500/25 px-2 py-0.5">
+                  <Flame className="w-3 h-3 text-orange-400" />
+                  <span className="text-[10px] font-semibold text-orange-300">{currentStreak} days</span>
+                </span>
+              )}
+            </div>
+          )}
+
+          {session?.status === "completed" && (
+            <div className="flex items-center gap-2 mt-3 rounded-2xl bg-violet-500/10 border border-violet-500/25 px-3 py-2">
+              <Sunset className="w-4 h-4 text-amber-300" />
+              <span className="text-xs font-medium text-white/70">Day closed — enjoy your evening!</span>
+              <button
+                onClick={handleReopenDay}
+                className="ml-auto flex items-center gap-1 text-[10px] font-semibold text-violet-300 hover:text-violet-200 transition-colors"
+              >
+                <Sun className="w-3 h-3" />
+                Reopen
+              </button>
             </div>
           )}
         </motion.div>
@@ -1122,11 +1186,38 @@ export default function Dashboard() {
                     : "Meeting mode — all notifications and reminders are paused"}
                 </div>
               </div>
+              <div className="relative group/endday">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowDayRecap(true)}
+                  className="h-12 px-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 bg-white/10 border border-white/10 text-white/70 hover:bg-amber-500/15 hover:border-amber-500/25 hover:text-amber-300 transition-all"
+                  aria-label="End the day and see your recap"
+                >
+                  <Sunset className="w-4 h-4" />
+                </motion.button>
+                <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-44 rounded-xl bg-gray-900/95 border border-white/10 px-3 py-2 text-xs text-white/80 text-center opacity-0 group-hover/endday:opacity-100 transition-opacity duration-200 backdrop-blur-sm z-50">
+                  End the day — see your recap and close the session
+                </div>
+              </div>
             </motion.div>
           </>
         )}
 
       </div>
+
+      {/* End-of-day Recap */}
+      <AnimatePresence>
+        {showDayRecap && session && (
+          <DayRecap
+            session={session}
+            totalTasks={totalTasks}
+            completedTasks={completedTasks}
+            streak={currentStreak}
+            onConfirm={handleEndDay}
+            onDismiss={() => setShowDayRecap(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Breathing Overlay */}
       <AnimatePresence>
