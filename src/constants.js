@@ -28,10 +28,10 @@ export const DEFAULT_MAX_MEALS = 3;
 
 // Audio — files hosted in Supabase Storage bucket "audio"
 const AUDIO_FILES = {
-  "40hz-wind":           "40hz+wind.mp3",
-  "40hz-ocean":          "40hz+ocean.mp3",
-  "10hz-binaural-ocean": "10hz-binaural+ocean.mp3",
-  "10hz-binaural-wind":  "10hz-binaural+wind.mp3",
+  "40hz-wind":           "40hz-wind.ogg",
+  "40hz-ocean":          "40hz-ocean.ogg",
+  "10hz-binaural-ocean": "10hz-binaural-ocean.ogg",
+  "10hz-binaural-wind":  "10hz-binaural-wind.ogg",
 };
 
 // Legacy sound IDs from older sessions → map to current IDs
