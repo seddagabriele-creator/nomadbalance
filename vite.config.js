@@ -11,4 +11,18 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split the largest stable dependencies into their own chunks:
+        // better long-term caching (a UI tweak doesn't re-download React)
+        // and a smaller critical path on first load.
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-supabase': ['@supabase/supabase-js', '@tanstack/react-query'],
+        },
+      },
+    },
+  },
 });
