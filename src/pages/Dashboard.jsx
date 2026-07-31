@@ -190,10 +190,13 @@ export default function Dashboard() {
   const awaySince = hasDeskColumns ? session.away_since : localAwaySince;
   const isAway = deskStatus === "away";
 
-  // All sessions (for the streak) — refreshed lazily, it only changes once a day
+  // Session dates (for the streak) — lightweight `date`-only query, and it
+  // only changes once a day. NOTE: this used to share the "allSessions" key
+  // with the listRecent() query below (two different queryFns on one key →
+  // whichever mounted first won), and it fetched every full row ever.
   const { data: allSessions = [] } = useQuery({
-    queryKey: ["allSessions"],
-    queryFn: () => daySessionService.listAll(),
+    queryKey: ["sessionDates"],
+    queryFn: () => daySessionService.listDates(),
     staleTime: 5 * ONE_MINUTE_MS,
   });
 
@@ -226,10 +229,11 @@ export default function Dashboard() {
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.completed).length;
 
-  // Old uncompleted tasks from previous sessions
+  // Old uncompleted tasks from previous sessions — only fetch uncompleted
+  // ones (the completed history isn't needed here and grows forever)
   const { data: allTasks = [] } = useQuery({
     queryKey: ["allTasks"],
-    queryFn: () => taskService.listAll("-order"),
+    queryFn: () => taskService.listUncompleted(),
   });
 
   const oldUncompletedTasks = React.useMemo(() => {
@@ -243,7 +247,7 @@ export default function Dashboard() {
   });
 
   const { data: allPreviousSessions = [] } = useQuery({
-    queryKey: ["allSessions"],
+    queryKey: ["recentSessions"],
     queryFn: () => daySessionService.listRecent(),
   });
 
@@ -667,6 +671,8 @@ export default function Dashboard() {
     const endTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
     updateSession.mutate({ status: "completed", work_end_today: session.work_end_today || endTime });
     queryClient.invalidateQueries({ queryKey: ["allSessions"] });
+    queryClient.invalidateQueries({ queryKey: ["recentSessions"] });
+    queryClient.invalidateQueries({ queryKey: ["sessionDates"] });
     setShowDayRecap(false);
     toast.success("Day closed — see you tomorrow!", { icon: "🌅" });
   };
