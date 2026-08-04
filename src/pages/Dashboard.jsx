@@ -598,12 +598,13 @@ export default function Dashboard() {
   // Quick action: add a task from the dashboard
   const handleQuickAddTask = async (title) => {
     if (!session?.id || !title.trim()) return;
-    const maxOrder = tasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
+    // Newest first, matching the Journal
+    const minOrder = tasks.length > 0 ? Math.min(...tasks.map((t) => t.order || 0)) : 1;
     try {
       await taskService.create({
         session_id: session.id,
         title: title.trim(),
-        order: maxOrder + 1,
+        order: minOrder - 1,
         completed: false,
       });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });

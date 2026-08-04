@@ -120,6 +120,7 @@ export default function Journal() {
   const [showWorkDayTasks, setShowWorkDayTasks] = useState(true);
   const [editingAlarm, setEditingAlarm] = useState(null);
   const [alarmTime, setAlarmTime] = useState("");
+  const [alarmDate, setAlarmDate] = useState("");
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [editingNotes, setEditingNotes] = useState({});
@@ -287,11 +288,13 @@ export default function Journal() {
 
   const handleAddTask = () => {
     if (!newTaskTitle.trim()) return;
-    const maxOrder = todayTasks.length > 0 ? Math.max(...todayTasks.map((t) => t.order)) : 0;
+    // Newest first: sit above the lowest existing order. Drag-and-drop
+    // renumbers 1..N afterwards, so negative values never accumulate.
+    const minOrder = todayTasks.length > 0 ? Math.min(...todayTasks.map((t) => t.order)) : 1;
     createTask.mutate({
       session_id: session?.id || null,
       title: newTaskTitle,
-      order: maxOrder + 1,
+      order: minOrder - 1,
       is_work_day_task: isInWorkDay,
       // New tasks land in whichever list is currently selected
       list_id: activeListId,
@@ -372,9 +375,11 @@ export default function Journal() {
   };
 
   // ── Calendar sync (fire-and-forget — never blocks the UI) ──
-  const syncCalendar = (taskId, action) => {
+  // Always call this from a mutation's onSuccess: the server reads the task
+  // row to build the event, so the write has to have landed first.
+  const syncCalendar = (taskId, action, date) => {
     if (!calendarConnected) return;
-    syncTaskToCalendar(taskId, { date: today, action });
+    syncTaskToCalendar(taskId, { date: date || today, action });
   };
 
   const handleDeleteTask = (task) => {
@@ -387,42 +392,64 @@ export default function Journal() {
   };
 
   const handleToggleComplete = (task) => {
-    updateTask.mutate({
-      id: task.id,
-      data: {
-        completed: !task.completed,
-        completed_at: !task.completed ? new Date().toISOString() : null,
+    updateTask.mutate(
+      {
+        id: task.id,
+        data: {
+          completed: !task.completed,
+          completed_at: !task.completed ? new Date().toISOString() : null,
+        },
       },
-    });
-    // Reflect the tick in the calendar event's title
-    if (task.alarm_time) syncCalendar(task.id, "upsert");
+      {
+        // Reflect the tick in the calendar event's title
+        onSuccess: () => {
+          if (task.alarm_time) syncCalendar(task.id, "upsert", task.due_date);
+        },
+      }
+    );
   };
 
   const handleSetAlarm = (task) => {
     if (alarmTime) {
-      updateTask.mutate({
-        id: task.id,
-        data: { alarm_time: alarmTime },
-      });
-      toast.success("Alarm set");
+      const dueDate = alarmDate || null;
+      updateTask.mutate(
+        {
+          id: task.id,
+          data: { alarm_time: alarmTime, due_date: dueDate },
+        },
+        {
+          onSuccess: () => {
+            if (calendarConnected) syncCalendar(task.id, "upsert", dueDate);
+          },
+        }
+      );
+      toast.success(dueDate ? `Scheduled for ${dueDate} at ${alarmTime}` : "Alarm set");
 
-      if (calendarConnected) {
-        syncCalendar(task.id, "upsert");
-      } else if (calendarFeatureAvailable && !userSettings.google_calendar_prompt_dismissed) {
+      if (!calendarConnected && calendarFeatureAvailable && !userSettings.google_calendar_prompt_dismissed) {
         // First time the user schedules something: offer calendar sync once.
         setCalendarPromptTask(task);
       }
     }
     setEditingAlarm(null);
     setAlarmTime("");
+    setAlarmDate("");
   };
 
   const handleRemoveAlarm = (task) => {
-    updateTask.mutate({
-      id: task.id,
-      data: { alarm_time: null },
-    });
-    if (task.google_event_id) syncCalendar(task.id, "delete");
+    const eventId = task.google_event_id;
+    updateTask.mutate(
+      {
+        id: task.id,
+        data: { alarm_time: null, due_date: null },
+      },
+      {
+        onSuccess: () => {
+          if (eventId && calendarConnected) {
+            syncTaskToCalendar(task.id, { action: "delete", eventId });
+          }
+        },
+      }
+    );
     toast.success("Alarm removed");
   };
 
@@ -886,7 +913,11 @@ export default function Journal() {
                                         {task.alarm_time && (
                                           <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs">
                                             <Clock className="w-3 h-3" />
-                                            <span>{task.alarm_time}</span>
+                                            <span>
+                                              {task.due_date && task.due_date !== today
+                                                ? `${new Date(task.due_date + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" })} · ${task.alarm_time}`
+                                                : task.alarm_time}
+                                            </span>
                                           </div>
                                         )}
                                         {task.notes && editingNotes[task.id] === undefined && (
@@ -897,7 +928,7 @@ export default function Journal() {
                                         )}
                                         <div className="flex-1" />
                                         <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
-                                          if (!open) { setEditingAlarm(null); setAlarmTime(""); }
+                                          if (!open) { setEditingAlarm(null); setAlarmTime(""); setAlarmDate(""); }
                                         }}>
                                           <PopoverTrigger asChild>
                                             <Button
@@ -907,6 +938,7 @@ export default function Journal() {
                                                 e.stopPropagation();
                                                 setEditingAlarm(task.id);
                                                 setAlarmTime(task.alarm_time || "");
+                                                setAlarmDate(task.due_date || "");
                                               }}
                                               className={`h-7 w-7 ${task.alarm_time ? 'text-cyan-400' : 'text-white/40'} hover:text-cyan-300 hover:bg-cyan-500/10`}
                                             >
@@ -915,12 +947,26 @@ export default function Journal() {
                                           </PopoverTrigger>
                                           <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
                                             <div className="space-y-2">
-                                              <Input
-                                                type="time"
-                                                value={alarmTime}
-                                                onChange={(e) => setAlarmTime(e.target.value)}
-                                                className="bg-white/5 border-white/10 text-white"
-                                              />
+                                              <div>
+                                                <label className="text-[10px] uppercase tracking-wider text-white/40">Day</label>
+                                                <Input
+                                                  type="date"
+                                                  value={alarmDate}
+                                                  min={today}
+                                                  onChange={(e) => setAlarmDate(e.target.value)}
+                                                  className="bg-white/5 border-white/10 text-white mt-1"
+                                                />
+                                                <p className="text-[10px] text-white/30 mt-1">Leave empty for today</p>
+                                              </div>
+                                              <div>
+                                                <label className="text-[10px] uppercase tracking-wider text-white/40">Time</label>
+                                                <Input
+                                                  type="time"
+                                                  value={alarmTime}
+                                                  onChange={(e) => setAlarmTime(e.target.value)}
+                                                  className="bg-white/5 border-white/10 text-white mt-1"
+                                                />
+                                              </div>
                                               <div className="flex gap-2">
                                                 {task.alarm_time && (
                                                   <Button size="sm" variant="ghost" onClick={() => handleRemoveAlarm(task)} className="flex-1 text-red-400 hover:text-red-300">Remove</Button>
@@ -1219,7 +1265,11 @@ export default function Journal() {
                                         {task.alarm_time && (
                                           <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs">
                                             <Clock className="w-3 h-3" />
-                                            <span>{task.alarm_time}</span>
+                                            <span>
+                                              {task.due_date && task.due_date !== today
+                                                ? `${new Date(task.due_date + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" })} · ${task.alarm_time}`
+                                                : task.alarm_time}
+                                            </span>
                                           </div>
                                         )}
                                         {task.notes && editingNotes[task.id] === undefined && (
@@ -1239,7 +1289,7 @@ export default function Journal() {
                                           Move to today
                                         </Button>
                                         <Popover open={editingAlarm === task.id} onOpenChange={(open) => {
-                                          if (!open) { setEditingAlarm(null); setAlarmTime(""); }
+                                          if (!open) { setEditingAlarm(null); setAlarmTime(""); setAlarmDate(""); }
                                         }}>
                                           <PopoverTrigger asChild>
                                             <Button
@@ -1249,6 +1299,7 @@ export default function Journal() {
                                                 e.stopPropagation();
                                                 setEditingAlarm(task.id);
                                                 setAlarmTime(task.alarm_time || "");
+                                                setAlarmDate(task.due_date || "");
                                               }}
                                               className={`h-7 w-7 ${task.alarm_time ? 'text-amber-400' : 'text-white/40'} hover:text-amber-300 hover:bg-amber-500/10`}
                                             >
@@ -1257,12 +1308,26 @@ export default function Journal() {
                                           </PopoverTrigger>
                                           <PopoverContent className="w-auto p-3 bg-slate-900 border-white/10">
                                             <div className="space-y-2">
-                                              <Input
-                                                type="time"
-                                                value={alarmTime}
-                                                onChange={(e) => setAlarmTime(e.target.value)}
-                                                className="bg-white/5 border-white/10 text-white"
-                                              />
+                                              <div>
+                                                <label className="text-[10px] uppercase tracking-wider text-white/40">Day</label>
+                                                <Input
+                                                  type="date"
+                                                  value={alarmDate}
+                                                  min={today}
+                                                  onChange={(e) => setAlarmDate(e.target.value)}
+                                                  className="bg-white/5 border-white/10 text-white mt-1"
+                                                />
+                                                <p className="text-[10px] text-white/30 mt-1">Leave empty for today</p>
+                                              </div>
+                                              <div>
+                                                <label className="text-[10px] uppercase tracking-wider text-white/40">Time</label>
+                                                <Input
+                                                  type="time"
+                                                  value={alarmTime}
+                                                  onChange={(e) => setAlarmTime(e.target.value)}
+                                                  className="bg-white/5 border-white/10 text-white mt-1"
+                                                />
+                                              </div>
                                               <div className="flex gap-2">
                                                 {task.alarm_time && (
                                                   <Button size="sm" variant="ghost" onClick={() => handleRemoveAlarm(task)} className="flex-1 text-red-400 hover:text-red-300">Remove</Button>
