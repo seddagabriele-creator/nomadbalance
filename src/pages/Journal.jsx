@@ -74,6 +74,44 @@ function ListPickerButton({ task, lists, onMove }) {
   );
 }
 
+// Bulk action for a multi-selection: file every selected task into one
+// list in a single go. Shown in the selection toolbars.
+function BulkMoveToListMenu({ count, lists, onMove, disabled }) {
+  if (!lists.length) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="sm"
+          disabled={disabled}
+          className="h-7 px-2.5 text-xs bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 disabled:opacity-50"
+        >
+          <List className="w-3 h-3 mr-1" />
+          Move {count} to list
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="bg-slate-900 border-white/10 min-w-[11rem]">
+        {lists.map((l) => (
+          <DropdownMenuItem
+            key={l.id}
+            onClick={() => onMove(l.id)}
+            className="cursor-pointer text-white hover:bg-white/10"
+          >
+            <span className="truncate">{l.name}</span>
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator className="bg-white/10" />
+        <DropdownMenuItem
+          onClick={() => onMove(null)}
+          className="cursor-pointer text-white/60 hover:bg-white/10"
+        >
+          Remove from list
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function Journal() {
   const queryClient = useQueryClient();
   const today = getLocalDateString();
@@ -89,6 +127,8 @@ export default function Journal() {
   const [editTitleValue, setEditTitleValue] = useState("");
   const [selectedPrevTasks, setSelectedPrevTasks] = useState(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedTodayTasks, setSelectedTodayTasks] = useState(new Set());
+  const [todaySelectionMode, setTodaySelectionMode] = useState(false);
   const [showPreviousTasks, setShowPreviousTasks] = useState(false);
   // Selected list filter — null means "All tasks". Persisted so the user
   // lands back on the list they were working in.
@@ -298,6 +338,37 @@ export default function Journal() {
     updateTask.mutate({ id: task.id, data: { list_id: listId } });
     const target = taskLists.find((l) => l.id === listId);
     toast.success(target ? `Moved to ${target.name}` : "Removed from list");
+  };
+
+  // Bulk file a selection of tasks into a list (or out of every list)
+  const moveTasksToList = useMutation({
+    mutationFn: async ({ tasks, listId }) => {
+      await Promise.all(tasks.map((t) => taskService.update(t.id, { list_id: listId })));
+    },
+    onSuccess: (_r, { tasks, listId }) => {
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+      const target = taskLists.find((l) => l.id === listId);
+      const n = tasks.length;
+      toast.success(
+        target
+          ? `${n} task${n > 1 ? "s" : ""} moved to ${target.name}`
+          : `${n} task${n > 1 ? "s" : ""} removed from their list`
+      );
+      setSelectedTodayTasks(new Set());
+      setSelectedPrevTasks(new Set());
+      setTodaySelectionMode(false);
+      setSelectionMode(false);
+    },
+    onError: () => toast.error("Could not move the tasks"),
+  });
+
+  const handleToggleSelectToday = (taskId) => {
+    setSelectedTodayTasks((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
   };
 
   // ── Calendar sync (fire-and-forget — never blocks the UI) ──
@@ -653,7 +724,62 @@ export default function Journal() {
           <DragDropContext onDragEnd={handleDragEnd}>
           {(sortedTodayTasks.length > 0 || sortedPreviousTasks.length > 0) && (
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-              <h2 className="text-lg font-semibold mb-3">Today's Tasks</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold">Today's Tasks</h2>
+                {sortedTodayTasks.length > 0 && taskLists.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    {todaySelectionMode ? (
+                      <>
+                        {selectedTodayTasks.size > 0 && (
+                          <BulkMoveToListMenu
+                            count={selectedTodayTasks.size}
+                            lists={taskLists}
+                            disabled={moveTasksToList.isPending}
+                            onMove={(listId) =>
+                              moveTasksToList.mutate({
+                                tasks: sortedTodayTasks.filter((t) => selectedTodayTasks.has(t.id)),
+                                listId,
+                              })
+                            }
+                          />
+                        )}
+                        <Button
+                          onClick={() => {
+                            if (selectedTodayTasks.size === sortedTodayTasks.length) {
+                              setSelectedTodayTasks(new Set());
+                            } else {
+                              setSelectedTodayTasks(new Set(sortedTodayTasks.map((t) => t.id)));
+                            }
+                          }}
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-cyan-400 hover:text-cyan-300"
+                        >
+                          {selectedTodayTasks.size === sortedTodayTasks.length ? "Deselect all" : "Select all"}
+                        </Button>
+                        <Button
+                          onClick={() => { setTodaySelectionMode(false); setSelectedTodayTasks(new Set()); }}
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 text-white/40 hover:text-white"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        onClick={() => setTodaySelectionMode(true)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs text-white/50 hover:text-white"
+                      >
+                        <CheckSquare className="w-3.5 h-3.5 mr-1" />
+                        Select
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
                 <Droppable droppableId="today">
                   {(provided, dropSnapshot) => (
                     <div
@@ -685,9 +811,28 @@ export default function Journal() {
                                 className={`flex items-start gap-1.5 px-2 py-1.5 rounded-xl border transition-colors ${
                                   snapshot.isDragging
                                     ? "bg-slate-900 border-cyan-500/50 shadow-lg shadow-cyan-500/10"
+                                    : selectedTodayTasks.has(task.id)
+                                    ? "bg-cyan-500/10 border-cyan-500/30"
                                     : "bg-white/5 border-white/10"
                                 }`}
                               >
+                                {todaySelectionMode && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleToggleSelectToday(task.id); }}
+                                    className={`shrink-0 mt-0.5 w-4 h-4 rounded border-2 transition-all flex items-center justify-center ${
+                                      selectedTodayTasks.has(task.id)
+                                        ? "bg-cyan-500 border-cyan-500 scale-110"
+                                        : "border-white/30 hover:border-cyan-400"
+                                    }`}
+                                    aria-label={selectedTodayTasks.has(task.id) ? "Deselect task" : "Select task"}
+                                  >
+                                    {selectedTodayTasks.has(task.id) && (
+                                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                )}
                                 <div {...provided.dragHandleProps} className="text-white/40 hover:text-white/60 shrink-0 pt-0.5">
                                   <GripVertical className="w-3.5 h-3.5" />
                                 </div>
@@ -706,7 +851,14 @@ export default function Journal() {
                                 </button>
                                 <div
                                   className="flex-1 min-w-0 cursor-pointer"
-                                  onClick={() => { if (editingTitle !== task.id) setExpandedTaskId(prev => prev === task.id ? null : task.id); }}
+                                  onClick={() => {
+                                    if (editingTitle === task.id) return;
+                                    if (todaySelectionMode) {
+                                      handleToggleSelectToday(task.id);
+                                    } else {
+                                      setExpandedTaskId(prev => prev === task.id ? null : task.id);
+                                    }
+                                  }}
                                 >
                                   {editingTitle === task.id ? (
                                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -728,7 +880,7 @@ export default function Journal() {
                                       {task.title}
                                     </span>
                                   )}
-                                  {isExpanded && editingTitle !== task.id && (
+                                  {isExpanded && !todaySelectionMode && editingTitle !== task.id && (
                                     <div className="mt-1.5 pt-1.5 border-t border-white/10 space-y-2">
                                       <div className="flex items-center gap-1">
                                         {task.alarm_time && (
@@ -918,6 +1070,19 @@ export default function Journal() {
                           <ArrowUp className="w-3 h-3 mr-1" />
                           Move {selectedPrevTasks.size} to today
                         </Button>
+                      )}
+                      {selectedPrevTasks.size > 0 && (
+                        <BulkMoveToListMenu
+                          count={selectedPrevTasks.size}
+                          lists={taskLists}
+                          disabled={moveTasksToList.isPending}
+                          onMove={(listId) =>
+                            moveTasksToList.mutate({
+                              tasks: sortedPreviousTasks.filter((t) => selectedPrevTasks.has(t.id)),
+                              listId,
+                            })
+                          }
+                        />
                       )}
                       <Button
                         onClick={() => {
