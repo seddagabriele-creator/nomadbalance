@@ -27,6 +27,53 @@ import {
 import TaskHistoryCalendar from "../components/journal/TaskHistoryCalendar";
 import ProGate from "@/components/ProGate";
 
+// Per-task list picker. Lets an existing task be filed into a list (or
+// pulled out of one) without recreating it. Hidden until the user has
+// created at least one list, so it adds no clutter by default.
+function ListPickerButton({ task, lists, onMove }) {
+  if (!lists.length) return null;
+  const current = lists.find((l) => l.id === task.list_id) || null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => e.stopPropagation()}
+          className={`h-7 w-7 ${current ? "text-cyan-400" : "text-white/40"} hover:text-cyan-300 hover:bg-cyan-500/10`}
+          aria-label={current ? `In list ${current.name}. Move to another list` : "Add to a list"}
+          title={current ? current.name : "Add to a list"}
+        >
+          <List className="w-3.5 h-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="bg-slate-900 border-white/10 min-w-[11rem]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DropdownMenuItem
+          onClick={(e) => { e.stopPropagation(); onMove(task, null); }}
+          className={`cursor-pointer ${!task.list_id ? "text-cyan-400" : "text-white"} hover:bg-white/10`}
+        >
+          No list
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-white/10" />
+        {lists.map((l) => (
+          <DropdownMenuItem
+            key={l.id}
+            onClick={(e) => { e.stopPropagation(); onMove(task, l.id); }}
+            className={`cursor-pointer ${task.list_id === l.id ? "text-cyan-400" : "text-white"} hover:bg-white/10`}
+          >
+            <span className="truncate">{l.name}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function Journal() {
   const queryClient = useQueryClient();
   const today = getLocalDateString();
@@ -753,6 +800,7 @@ export default function Journal() {
                                         >
                                           <Pencil className="w-3.5 h-3.5" />
                                         </Button>
+                                        <ListPickerButton task={task} lists={taskLists} onMove={handleMoveToList} />
                                         <Button
                                           variant="ghost"
                                           size="icon"
@@ -1081,6 +1129,7 @@ export default function Journal() {
                                         >
                                           <Pencil className="w-3.5 h-3.5" />
                                         </Button>
+                                        <ListPickerButton task={task} lists={taskLists} onMove={handleMoveToList} />
                                         <Button
                                           variant="ghost"
                                           size="icon"
