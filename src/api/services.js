@@ -296,3 +296,42 @@ export const userSettingsService = {
     );
   },
 };
+
+// Named task lists ("Work", "Home", …). Tasks with list_id = null are
+// uncategorised and appear only under "All tasks".
+export const taskListService = {
+  list: async () => {
+    const userId = await getUserId();
+    return unwrap(
+      await supabase
+        .from("task_lists")
+        .select("*")
+        .eq("user_id", userId)
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true })
+    );
+  },
+
+  create: async ({ name, color = "cyan", position = 0 }) => {
+    const userId = await getUserId();
+    return unwrap(
+      await supabase
+        .from("task_lists")
+        .insert({ user_id: userId, name, color, position })
+        .select()
+        .single()
+    );
+  },
+
+  update: async (id, data) => {
+    return unwrap(
+      await supabase.from("task_lists").update(data).eq("id", id).select().single()
+    );
+  },
+
+  // Tasks keep existing: tasks.list_id is ON DELETE SET NULL, so they fall
+  // back to "All tasks" instead of disappearing with the list.
+  delete: async (id) => {
+    return unwrap(await supabase.from("task_lists").delete().eq("id", id));
+  },
+};

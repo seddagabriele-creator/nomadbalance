@@ -11,6 +11,15 @@ export const AuthProvider = ({ children }) => {
   const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
+    // Safety net: if Supabase is unreachable (e.g. the project is paused
+    // and DNS fails), supabase-js retries the token refresh with backoff
+    // and getSession() can stay pending indefinitely — leaving the app
+    // stuck on the loading spinner forever. Force out of the loading state
+    // after 6s so the app renders (login/landing) instead of hanging.
+    const loadingSafety = setTimeout(() => {
+      setIsLoadingAuth(false);
+    }, 6000);
+
     // Listen for auth state changes FIRST (before getSession)
     // This prevents a race condition where getSession returns null
     // while the SDK is still processing auth tokens from the URL
@@ -32,11 +41,13 @@ export const AuthProvider = ({ children }) => {
         // some cases re-mounting downstream providers that hold the
         // active focus session state).
         if (event === "TOKEN_REFRESHED" && session?.user) {
+          clearTimeout(loadingSafety);
           setIsLoadingAuth(false);
           return;
         }
         setUser(session?.user ?? null);
         setIsAuthenticated(hasUser);
+        clearTimeout(loadingSafety);
         setIsLoadingAuth(false);
         if (event === "PASSWORD_RECOVERY") {
           setIsRecovery(true);
@@ -54,6 +65,12 @@ export const AuthProvider = ({ children }) => {
       });
       setUser(session?.user ?? null);
       setIsAuthenticated(!!session?.user);
+      clearTimeout(loadingSafety);
+      setIsLoadingAuth(false);
+    }).catch((err) => {
+      // Backend unreachable — don't hang, let the app render the login page
+      debugLog("auth", "getSession failed", { error: err?.message || String(err) });
+      clearTimeout(loadingSafety);
       setIsLoadingAuth(false);
     });
 
@@ -89,6 +106,7 @@ export const AuthProvider = ({ children }) => {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      clearTimeout(loadingSafety);
       subscription.unsubscribe();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
