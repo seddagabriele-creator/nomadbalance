@@ -1,29 +1,47 @@
-// Global audio manager: gapless looping via dual-element crossfade.
+// Global audio manager: sample-accurate gapless looping via Web Audio.
 //
-// Two streaming <audio> elements of the same track alternate: as the
-// active one nears the end, the other starts from 0 and they crossfade
-// via smooth linearRamps on per-voice GainNodes. There is never a moment
-// of silence, and for ambient noise the blend is inaudible.
-// Memory stays at streaming levels (~2-5 MB per element).
+// HISTORY / WHY THIS DESIGN:
+//   v1 decoded 30-minute MP3s into AudioBuffers → hundreds of MB → Chrome
+//      renderer OOM ("Aw, Snap! error 5").
+//   v2 streamed two <audio> elements and crossfaded at the loop seam.
+//      That fixed memory but introduced new failure modes: the crossfade
+//      depends on `timeupdate` events + setTimeout (throttled in background
+//      tabs), the incoming element may not have buffered in time on slow
+//      networks (audible gap), and crossfading phase-correlated material
+//      (the 10 Hz binaural tracks) causes audible comb-filtering/wobble.
+//
+// v3 (this file): the tracks are now SHORT loop-ready files (~36 s, ~0.6 MB).
+// Decoded, one track is ~14 MB of PCM — far below any memory concern. So we
+// decode once and loop with AudioBufferSourceNode.loop = true:
+//   • sample-accurate, truly gapless (handled by the audio thread, no JS)
+//   • keeps playing in background tabs with zero JS involvement
+//   • no timers, no crossfade, no seams — nothing to drift or misfire
+//   • decoded buffers are cached per URL (LRU, max 2 ≈ 28 MB)
+//
+// If decoding is impossible (e.g. Safari can't decode Ogg Vorbis), we fall
+// back to a single streaming <audio> element with native looping.
 
-const FADE_IN_SEC = 1.5;
-const FADE_OUT_SEC = 0.5;
-const XFADE_SEC = 3;
+const FADE_IN_SEC = 1.5;   // play() fade-in
+const FADE_OUT_SEC = 0.5;  // pause() fade-out
 const TARGET_VOLUME = 0.7;
+const BUFFER_CACHE_MAX = 2;
 
 class AudioManager {
   constructor() {
     this.audioContext = null;
     this.masterGain = null;
-    this.voices = [];
-    this.activeIndex = 0;
     this.isPlaying = false;
     this.currentUrl = null;
-    this._fadeTimeout = null;
-    this._cleanupTimeout = null;
-    this._crossfading = false;
-    this._onTimeUpdate = this._onTimeUpdate.bind(this);
-    this._onEnded = this._onEnded.bind(this);
+    this._source = null;          // active AudioBufferSourceNode
+    this._pausedAt = 0;           // offset (sec) into the loop when paused
+    this._startedAt = 0;          // ctx.currentTime when the source started
+    this._buffers = new Map();    // url → AudioBuffer (LRU)
+    this._decoding = new Map();   // url → Promise<AudioBuffer|null>
+    this._playToken = 0;          // invalidates stale async play() calls
+    this._stopTimeout = null;
+    // Streaming fallback (browsers that can't decode the file)
+    this._fallbackEl = null;
+    this._fallbackSource = null;
   }
 
   _ensureContext() {
@@ -35,158 +53,151 @@ class AudioManager {
     }
   }
 
-  _makeVoice(url) {
-    const el = new Audio();
-    el.crossOrigin = "anonymous";
-    el.loop = false;
-    el.preload = "auto";
-    el.src = url;
-    const source = this.audioContext.createMediaElementSource(el);
-    const gain = this.audioContext.createGain();
-    gain.gain.value = 0;
-    source.connect(gain);
-    gain.connect(this.masterGain);
-    return { el, source, gain };
+  async _getBuffer(url) {
+    if (this._buffers.has(url)) {
+      // refresh LRU position
+      const buf = this._buffers.get(url);
+      this._buffers.delete(url);
+      this._buffers.set(url, buf);
+      return buf;
+    }
+    if (this._decoding.has(url)) return this._decoding.get(url);
+
+    const promise = (async () => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const encoded = await res.arrayBuffer();
+        const buffer = await this.audioContext.decodeAudioData(encoded);
+        this._buffers.set(url, buffer);
+        while (this._buffers.size > BUFFER_CACHE_MAX) {
+          const oldest = this._buffers.keys().next().value;
+          this._buffers.delete(oldest);
+        }
+        return buffer;
+      } catch (err) {
+        console.warn("[AudioManager] decode failed, using streaming fallback:", err?.message);
+        return null; // caller falls back to streaming <audio>
+      } finally {
+        this._decoding.delete(url);
+      }
+    })();
+    this._decoding.set(url, promise);
+    return promise;
   }
 
-  // Smoothly ramp a GainNode from its current value to `target` over `dur`
-  // seconds. Never jumps — always starts from wherever the gain currently is.
-  _ramp(gainNode, target, dur) {
+  _stopSource() {
+    if (this._source) {
+      try { this._source.stop(); } catch {}
+      try { this._source.disconnect(); } catch {}
+      this._source = null;
+    }
+    if (this._fallbackEl) {
+      this._fallbackEl.pause();
+    }
+  }
+
+  _rampMasterTo(value, seconds) {
     const now = this.audioContext.currentTime;
-    gainNode.gain.cancelScheduledValues(now);
-    gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-    gainNode.gain.linearRampToValueAtTime(target, now + dur);
+    this.masterGain.gain.cancelScheduledValues(now);
+    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+    this.masterGain.gain.linearRampToValueAtTime(value, now + seconds);
   }
 
   async play(url) {
     try {
       if (this.currentUrl === url && this.isPlaying) return;
-
-      if (this.currentUrl !== url) {
-        this._teardownVoices();
-        this.currentUrl = url;
-      }
+      const token = ++this._playToken;
 
       this._ensureContext();
       if (this.audioContext.state === "suspended") {
         await this.audioContext.resume();
       }
+      if (token !== this._playToken) return;
 
-      if (this.voices.length === 0) {
-        this.voices = [this._makeVoice(url), this._makeVoice(url)];
-        this.activeIndex = 0;
-        this.voices[0].gain.gain.value = 1;
-        this.voices[0].el.addEventListener("timeupdate", this._onTimeUpdate);
-        this.voices[0].el.addEventListener("ended", this._onEnded);
-        await this.voices[0].el.play();
-      } else {
-        await this.voices[this.activeIndex].el.play();
+      const isNewTrack = this.currentUrl !== url;
+      if (isNewTrack) {
+        this._stopSource();
+        this._teardownFallback();
+        this._pausedAt = 0;
+        this.currentUrl = url;
       }
 
-      clearTimeout(this._fadeTimeout);
-      this._ramp(this.masterGain, TARGET_VOLUME, FADE_IN_SEC);
+      clearTimeout(this._stopTimeout);
+      const buffer = await this._getBuffer(url);
+      if (token !== this._playToken) return;
+
+      if (buffer) {
+        // ── Gapless path: looping AudioBufferSourceNode ──
+        this._stopSource();
+        const source = this.audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(this.masterGain);
+        const offset = this._pausedAt % buffer.duration;
+        source.start(0, offset);
+        this._source = source;
+        this._startedAt = this.audioContext.currentTime - offset;
+      } else {
+        // ── Fallback: streaming element with native loop ──
+        if (!this._fallbackEl || this._fallbackEl.dataset.url !== url) {
+          this._teardownFallback();
+          const el = new Audio();
+          el.crossOrigin = "anonymous";
+          el.loop = true;
+          el.preload = "auto";
+          el.src = url;
+          el.dataset.url = url;
+          const source = this.audioContext.createMediaElementSource(el);
+          source.connect(this.masterGain);
+          this._fallbackEl = el;
+          this._fallbackSource = source;
+        }
+        await this._fallbackEl.play();
+        if (token !== this._playToken) return;
+      }
+
+      this._rampMasterTo(TARGET_VOLUME, FADE_IN_SEC);
       this.isPlaying = true;
     } catch (err) {
-      if (err.name !== "NotAllowedError") {
+      if (err?.name !== "NotAllowedError") {
         console.error("[AudioManager] play error:", err);
       }
     }
   }
 
-  _onTimeUpdate(e) {
-    if (this._crossfading || !this.isPlaying) return;
-    const active = this.voices[this.activeIndex];
-    if (!active || e.target !== active.el) return;
-    const remaining = active.el.duration - active.el.currentTime;
-    if (isFinite(remaining) && remaining <= XFADE_SEC + 0.5) {
-      this._startCrossfade();
-    }
-  }
-
-  _onEnded(e) {
-    if (!this.isPlaying) return;
-    const active = this.voices[this.activeIndex];
-    if (!active || e.target !== active.el || this._crossfading) return;
-    this._startCrossfade();
-  }
-
-  async _startCrossfade() {
-    if (this._crossfading) return;
-    this._crossfading = true;
-
-    const current = this.voices[this.activeIndex];
-    const nextIndex = this.activeIndex === 0 ? 1 : 0;
-    const next = this.voices[nextIndex];
-
-    current.el.removeEventListener("timeupdate", this._onTimeUpdate);
-    current.el.removeEventListener("ended", this._onEnded);
-    next.el.addEventListener("timeupdate", this._onTimeUpdate);
-    next.el.addEventListener("ended", this._onEnded);
-
-    try { next.el.currentTime = 0; } catch {}
-
-    this._ramp(current.gain, 0, XFADE_SEC);
-    this._ramp(next.gain, 1, XFADE_SEC);
-
-    try { await next.el.play(); } catch {}
-
-    this.activeIndex = nextIndex;
-
-    clearTimeout(this._cleanupTimeout);
-    this._cleanupTimeout = setTimeout(() => {
-      current.el.pause();
-      try { current.el.currentTime = 0; } catch {}
-      current.gain.gain.cancelScheduledValues(this.audioContext.currentTime);
-      current.gain.gain.value = 0;
-      this._crossfading = false;
-    }, (XFADE_SEC + 0.3) * 1000);
-  }
-
   pause() {
     if (!this.isPlaying) return;
-
-    clearTimeout(this._fadeTimeout);
-    this._ramp(this.masterGain, 0, FADE_OUT_SEC);
-
-    this._fadeTimeout = setTimeout(() => {
-      clearTimeout(this._cleanupTimeout);
-      this._crossfading = false;
-      this.voices.forEach((v, i) => {
-        v.gain.gain.cancelScheduledValues(this.audioContext.currentTime);
-        v.el.pause();
-        if (i === this.activeIndex) {
-          v.gain.gain.value = 1;
-        } else {
-          try { v.el.currentTime = 0; } catch {}
-          v.gain.gain.value = 0;
-        }
-      });
-    }, (FADE_OUT_SEC + 0.05) * 1000);
-
     this.isPlaying = false;
+    this._playToken++; // cancel any in-flight play()
+
+    this._rampMasterTo(0, FADE_OUT_SEC);
+
+    // Remember position so resume continues where we left off
+    if (this._source && this._source.buffer) {
+      const elapsed = this.audioContext.currentTime - this._startedAt;
+      this._pausedAt = elapsed % this._source.buffer.duration;
+    }
+
+    clearTimeout(this._stopTimeout);
+    this._stopTimeout = setTimeout(() => {
+      this._stopSource();
+    }, (FADE_OUT_SEC + 0.05) * 1000);
   }
 
   stop() {
     this.pause();
   }
 
-  _teardownVoices() {
-    clearTimeout(this._fadeTimeout);
-    clearTimeout(this._cleanupTimeout);
-    this._crossfading = false;
-    for (const v of this.voices) {
-      v.el.removeEventListener("timeupdate", this._onTimeUpdate);
-      v.el.removeEventListener("ended", this._onEnded);
-      try { v.source.disconnect(); } catch {}
-      try { v.gain.disconnect(); } catch {}
-      v.el.pause();
-      v.el.src = "";
-      v.el.load();
+  _teardownFallback() {
+    if (this._fallbackEl) {
+      this._fallbackEl.pause();
+      try { this._fallbackSource.disconnect(); } catch {}
+      this._fallbackEl.src = "";
+      try { this._fallbackEl.load(); } catch {}
+      this._fallbackEl = null;
+      this._fallbackSource = null;
     }
-    this.voices = [];
-    this.activeIndex = 0;
-    this.isPlaying = false;
-    this.currentUrl = null;
   }
 
   getIsPlaying() {

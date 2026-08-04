@@ -47,15 +47,20 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Body from './pages/Body';
+import { lazy } from 'react';
 import Dashboard from './pages/Dashboard';
-import Flow from './pages/Flow';
-import Fuel from './pages/Fuel';
-import Journal from './pages/Journal';
-import Reports from './pages/Reports';
-import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
+// Dashboard is the main page → eager (no loading flash on the daily entry
+// point). Every other page is lazy-loaded so the initial bundle stays small
+// (Reports alone pulls in the whole recharts library). App.jsx already
+// wraps routes in <Suspense>, so lazy pages work with no further changes.
+const Body = lazy(() => import('./pages/Body'));
+const Flow = lazy(() => import('./pages/Flow'));
+const Fuel = lazy(() => import('./pages/Fuel'));
+const Journal = lazy(() => import('./pages/Journal'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 export const PAGES = {
     "Body": Body,

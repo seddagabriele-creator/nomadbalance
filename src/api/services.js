@@ -1,10 +1,26 @@
 import { supabase } from "./supabaseClient";
 
-// Helper: get current user id
+// Helper: get current user id.
+//
+// PERFORMANCE: this used to call supabase.auth.getUser(), which is a network
+// round-trip to the Auth server (~300-800 ms) — and it ran before EVERY data
+// query, roughly doubling the latency of every read and write in the app.
+// getSession() reads the locally persisted session instead (no network), and
+// we additionally cache the id in memory. onAuthStateChange keeps the cache
+// honest across login/logout/user switches.
+let cachedUserId = null;
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  cachedUserId = session?.user?.id ?? null;
+});
+
 const getUserId = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return user.id;
+  if (cachedUserId) return cachedUserId;
+  const { data: { session } } = await supabase.auth.getSession();
+  const id = session?.user?.id;
+  if (!id) throw new Error("Not authenticated");
+  cachedUserId = id;
+  return id;
 };
 
 // Helper: unwrap Supabase response — throws on error, returns data
@@ -80,6 +96,21 @@ export const daySessionService = {
         .limit(limit)
     );
   },
+
+  // Lightweight: only the `date` column, for streak computation.
+  // Avoids shipping the full row payload (schedules, meals, JSON blobs)
+  // just to know which days have a session.
+  listDates: async (limit = 400) => {
+    const userId = await getUserId();
+    return unwrap(
+      await supabase
+        .from("day_sessions")
+        .select("date")
+        .eq("user_id", userId)
+        .order("date", { ascending: false })
+        .limit(limit)
+    );
+  },
 };
 
 // Task service
@@ -116,6 +147,19 @@ export const taskService = {
         .select("*")
         .eq("user_id", userId)
         .order(column, { ascending })
+    );
+  },
+
+  // Only uncompleted tasks — small payload that doesn't grow with history.
+  listUncompleted: async () => {
+    const userId = await getUserId();
+    return unwrap(
+      await supabase
+        .from("tasks")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("completed", false)
+        .order("order", { ascending: false })
     );
   },
 

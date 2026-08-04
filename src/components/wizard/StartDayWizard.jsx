@@ -110,7 +110,7 @@ export default function StartDayWizard({ onComplete, onCancel, userSettings, use
   });
 
   const { data: allPreviousSessions = [] } = useQuery({
-    queryKey: ["allSessions"],
+    queryKey: ["recentSessions"],
     queryFn: () => daySessionService.listRecent(),
   });
 
