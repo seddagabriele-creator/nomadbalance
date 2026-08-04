@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { daySessionService, taskService } from "../api/services";
+import { useSearchParams } from "react-router-dom";
+import { daySessionService, taskService, taskListService, userSettingsService } from "../api/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock, ArrowUp, MessageSquare, Save, CheckSquare, X, Pencil } from "lucide-react";
+import { ArrowLeft, Target, Plus, GripVertical, Trash2, CheckCircle2, Circle, Eye, EyeOff, Clock, ArrowUp, MessageSquare, Save, CheckSquare, X, Pencil, ChevronDown, List, CalendarDays } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { calendarFeatureAvailable, connectGoogleCalendar, syncTaskToCalendar } from "@/lib/googleCalendar";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import { createPageUrl, getLocalDateString } from "../utils";
@@ -21,6 +30,7 @@ import ProGate from "@/components/ProGate";
 export default function Journal() {
   const queryClient = useQueryClient();
   const today = getLocalDateString();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showWorkDayTasks, setShowWorkDayTasks] = useState(true);
   const [editingAlarm, setEditingAlarm] = useState(null);
@@ -33,11 +43,30 @@ export default function Journal() {
   const [selectedPrevTasks, setSelectedPrevTasks] = useState(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
   const [showPreviousTasks, setShowPreviousTasks] = useState(false);
+  // Selected list filter — null means "All tasks". Persisted so the user
+  // lands back on the list they were working in.
+  const [activeListId, setActiveListId] = useState(() => localStorage.getItem("nomadbalance:active-list") || null);
+  const [creatingList, setCreatingList] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [calendarPromptTask, setCalendarPromptTask] = useState(null);
 
   const { data: sessions = [] } = useQuery({
     queryKey: ["daySession", today],
     queryFn: () => daySessionService.getByDate(today),
   });
+
+  const { data: taskLists = [] } = useQuery({
+    queryKey: ["taskLists"],
+    queryFn: () => taskListService.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: settingsRows = [] } = useQuery({
+    queryKey: ["userSettings"],
+    queryFn: () => userSettingsService.list(),
+  });
+  const userSettings = settingsRows[0] || {};
+  const calendarConnected = !!userSettings.google_calendar_connected;
 
   const session = sessions[0] || null;
   const isInWorkDay = session?.status === "active";
@@ -49,8 +78,15 @@ export default function Journal() {
     enabled: true,
   });
 
+  // A selected list narrows every section below it; "All tasks" (null)
+  // also covers tasks that were never assigned to a list.
+  const activeList = taskLists.find((l) => l.id === activeListId) || null;
+  const scopedTasks = activeList
+    ? allTasks.filter((t) => t.list_id === activeList.id)
+    : allTasks;
+
   // Get previous day's uncompleted tasks
-  const previousUncompletedTasks = allTasks.filter(
+  const previousUncompletedTasks = scopedTasks.filter(
     t => t.session_id && t.session_id !== session?.id && !t.completed
   );
 
@@ -58,12 +94,12 @@ export default function Journal() {
   // Without a session: todayTasks is empty, previousTasks shows uncompleted from past sessions
   // With a session: todayTasks shows session tasks, previousTasks shows uncompleted from other sessions
   const todayTasks = isInWorkDay
-    ? allTasks.filter(t => t.session_id === session?.id)
+    ? scopedTasks.filter(t => t.session_id === session?.id)
     : [];
 
   const previousTasks = isInWorkDay
     ? previousUncompletedTasks
-    : allTasks.filter(t => t.session_id && !t.completed);
+    : scopedTasks.filter(t => t.session_id && !t.completed);
 
   const sortedTodayTasks = [...todayTasks].sort((a, b) => a.order - b.order);
   const sortedPreviousTasks = [...previousTasks].sort((a, b) => a.order - b.order);
@@ -170,7 +206,66 @@ export default function Journal() {
       title: newTaskTitle,
       order: maxOrder + 1,
       is_work_day_task: isInWorkDay,
+      // New tasks land in whichever list is currently selected
+      list_id: activeListId,
     });
+  };
+
+  // ── Lists ──
+  const createList = useMutation({
+    mutationFn: (name) => taskListService.create({ name, position: taskLists.length }),
+    onSuccess: (list) => {
+      queryClient.invalidateQueries({ queryKey: ["taskLists"] });
+      selectList(list.id);
+      setCreatingList(false);
+      setNewListName("");
+      toast.success(`List "${list.name}" created`);
+    },
+    onError: () => toast.error("Could not create the list"),
+  });
+
+  const deleteList = useMutation({
+    mutationFn: (id) => taskListService.delete(id),
+    onSuccess: (_r, id) => {
+      queryClient.invalidateQueries({ queryKey: ["taskLists"] });
+      queryClient.invalidateQueries({ queryKey: ["allTasks"] });
+      if (activeListId === id) selectList(null);
+      toast.success("List deleted — its tasks moved to All tasks");
+    },
+    onError: () => toast.error("Could not delete the list"),
+  });
+
+  function selectList(id) {
+    setActiveListId(id);
+    if (id) localStorage.setItem("nomadbalance:active-list", id);
+    else localStorage.removeItem("nomadbalance:active-list");
+  }
+
+  const handleCreateList = () => {
+    const name = newListName.trim();
+    if (!name) return;
+    createList.mutate(name);
+  };
+
+  const handleMoveToList = (task, listId) => {
+    updateTask.mutate({ id: task.id, data: { list_id: listId } });
+    const target = taskLists.find((l) => l.id === listId);
+    toast.success(target ? `Moved to ${target.name}` : "Removed from list");
+  };
+
+  // ── Calendar sync (fire-and-forget — never blocks the UI) ──
+  const syncCalendar = (taskId, action) => {
+    if (!calendarConnected) return;
+    syncTaskToCalendar(taskId, { date: today, action });
+  };
+
+  const handleDeleteTask = (task) => {
+    // Pass the event id explicitly: the task row is about to disappear, so
+    // the server can't look it up to find what to remove from the calendar.
+    if (calendarConnected && task.google_event_id) {
+      syncTaskToCalendar(task.id, { action: "delete", eventId: task.google_event_id });
+    }
+    deleteTask.mutate(task.id);
   };
 
   const handleToggleComplete = (task) => {
@@ -181,6 +276,8 @@ export default function Journal() {
         completed_at: !task.completed ? new Date().toISOString() : null,
       },
     });
+    // Reflect the tick in the calendar event's title
+    if (task.alarm_time) syncCalendar(task.id, "upsert");
   };
 
   const handleSetAlarm = (task) => {
@@ -190,6 +287,13 @@ export default function Journal() {
         data: { alarm_time: alarmTime },
       });
       toast.success("Alarm set");
+
+      if (calendarConnected) {
+        syncCalendar(task.id, "upsert");
+      } else if (calendarFeatureAvailable && !userSettings.google_calendar_prompt_dismissed) {
+        // First time the user schedules something: offer calendar sync once.
+        setCalendarPromptTask(task);
+      }
     }
     setEditingAlarm(null);
     setAlarmTime("");
@@ -200,8 +304,59 @@ export default function Journal() {
       id: task.id,
       data: { alarm_time: null },
     });
+    if (task.google_event_id) syncCalendar(task.id, "delete");
     toast.success("Alarm removed");
   };
+
+  const dismissCalendarPrompt = async () => {
+    setCalendarPromptTask(null);
+    try {
+      await userSettingsService.save(
+        { ...userSettings, google_calendar_prompt_dismissed: true },
+        userSettings.id
+      );
+      queryClient.invalidateQueries({ queryKey: ["userSettings"] });
+    } catch {
+      // Not critical — worst case the prompt shows again next time
+    }
+  };
+
+  const acceptCalendarPrompt = async () => {
+    try {
+      sessionStorage.setItem("nomadbalance:calendar-pending-task", calendarPromptTask?.id || "");
+      await connectGoogleCalendar(); // navigates to Google
+    } catch (err) {
+      toast.error(err.message || "Could not connect Google Calendar");
+      setCalendarPromptTask(null);
+    }
+  };
+
+  // Returning from the Google consent screen (/journal?calendar=…)
+  useEffect(() => {
+    const status = searchParams.get("calendar");
+    if (!status) return;
+
+    if (status === "connected") {
+      toast.success("Google Calendar connected");
+      queryClient.invalidateQueries({ queryKey: ["userSettings"] });
+      // Push the task that triggered the connection, now that we can
+      const pending = sessionStorage.getItem("nomadbalance:calendar-pending-task");
+      if (pending) {
+        syncTaskToCalendar(pending, { date: today, action: "upsert" });
+        sessionStorage.removeItem("nomadbalance:calendar-pending-task");
+      }
+    } else if (status === "denied") {
+      toast("Calendar access was not granted");
+    } else {
+      toast.error("Could not connect Google Calendar");
+    }
+
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("calendar");
+      return next;
+    }, { replace: true });
+  }, [searchParams, setSearchParams, queryClient, today]);
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
@@ -317,6 +472,59 @@ export default function Journal() {
               <Target className="w-6 h-6 text-cyan-400" />
               <h1 className="text-2xl font-bold">Journal</h1>
             </div>
+
+            {/* List switcher */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="h-8 px-2.5 gap-1.5 rounded-xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
+                  aria-label="Switch task list"
+                >
+                  <List className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="text-sm font-medium max-w-[9rem] truncate">
+                    {activeList ? activeList.name : "All tasks"}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-white/40" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-slate-900 border-white/10 min-w-[13rem]">
+                <DropdownMenuItem
+                  onClick={() => selectList(null)}
+                  className={`cursor-pointer ${!activeListId ? "text-cyan-400" : "text-white"} hover:bg-white/10`}
+                >
+                  All tasks
+                </DropdownMenuItem>
+                {taskLists.length > 0 && <DropdownMenuSeparator className="bg-white/10" />}
+                {taskLists.map((list) => (
+                  <DropdownMenuItem
+                    key={list.id}
+                    onClick={() => selectList(list.id)}
+                    className={`cursor-pointer group ${activeListId === list.id ? "text-cyan-400" : "text-white"} hover:bg-white/10`}
+                  >
+                    <span className="truncate flex-1">{list.name}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteList.mutate(list.id);
+                      }}
+                      className="ml-2 opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 transition-opacity"
+                      aria-label={`Delete list ${list.name}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem
+                  onClick={() => setCreatingList(true)}
+                  className="cursor-pointer text-white/70 hover:bg-white/10"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-2" />
+                  New list
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="flex items-center gap-2">
@@ -344,13 +552,45 @@ export default function Journal() {
         </div>
 
         <div className="space-y-6">
+          {creatingList && (
+            <div className="bg-white/5 backdrop-blur-xl border border-cyan-500/25 rounded-2xl p-4">
+              <div className="flex gap-2">
+                <Input
+                  autoFocus
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateList();
+                    if (e.key === "Escape") { setCreatingList(false); setNewListName(""); }
+                  }}
+                  placeholder="List name — e.g. Work, Home…"
+                  className="bg-white/5 border-white/10 text-white flex-1"
+                />
+                <Button
+                  onClick={handleCreateList}
+                  disabled={!newListName.trim() || createList.isPending}
+                  className="bg-gradient-to-r from-cyan-600 to-blue-500"
+                >
+                  Create
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => { setCreatingList(false); setNewListName(""); }}
+                  className="text-white/50 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
             <div className="flex gap-2">
               <Input
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
-                placeholder="Add a new task..."
+                placeholder={activeList ? `Add a task to ${activeList.name}…` : "Add a new task..."}
                 className="bg-white/5 border-white/10 text-white flex-1"
               />
               <Button
@@ -516,7 +756,7 @@ export default function Journal() {
                                         <Button
                                           variant="ghost"
                                           size="icon"
-                                          onClick={(e) => { e.stopPropagation(); deleteTask.mutate(task.id); }}
+                                          onClick={(e) => { e.stopPropagation(); handleDeleteTask(task); }}
                                           className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
@@ -844,7 +1084,7 @@ export default function Journal() {
                                         <Button
                                           variant="ghost"
                                           size="icon"
-                                          onClick={(e) => { e.stopPropagation(); deleteTask.mutate(task.id); }}
+                                          onClick={(e) => { e.stopPropagation(); handleDeleteTask(task); }}
                                           className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
@@ -962,6 +1202,44 @@ export default function Journal() {
           </ProGate>
         </div>
       </div>
+
+      {/* One-time offer to mirror scheduled tasks into Google Calendar */}
+      {calendarPromptTask && createPortal(
+        <div className="fixed inset-0 z-[95] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-gradient-to-br from-slate-900/98 to-cyan-950/40 backdrop-blur-xl rounded-3xl border border-cyan-500/25 p-6">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-cyan-500/20 flex items-center justify-center shrink-0">
+                <CalendarDays className="w-5 h-5 text-cyan-300" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Sync with Google Calendar?</h2>
+                <p className="text-xs text-white/40">You just scheduled a task</p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-sm text-white/60 leading-relaxed">
+              Connect your calendar and NomadBalance will create an event whenever you
+              set a time on a task, and tick it off there when you complete it.
+            </p>
+
+            <div className="mt-5 space-y-2">
+              <Button
+                onClick={acceptCalendarPrompt}
+                className="w-full h-12 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 font-semibold"
+              >
+                Connect Google Calendar
+              </Button>
+              <button
+                onClick={dismissCalendarPrompt}
+                className="w-full h-10 rounded-2xl text-white/40 hover:text-white/70 text-sm transition-colors"
+              >
+                Not now
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Confirmation dialog for completing all old tasks */}
       {showCompleteConfirm && (

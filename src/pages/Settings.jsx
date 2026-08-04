@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, BookOpen, Bell, BellOff, Trash2, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Wind, Droplets, Timer, Activity, AlertTriangle, BookOpen, Bell, BellOff, Trash2, Sparkles, CalendarDays } from "lucide-react";
 import { useSubscription } from "@/lib/SubscriptionContext";
+import { calendarFeatureAvailable, connectGoogleCalendar, disconnectGoogleCalendar } from "@/lib/googleCalendar";
 // breakFeasibility no longer needed — interval-based scheduling
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -165,6 +166,55 @@ export default function Settings() {
                     className="shrink-0 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 font-semibold text-sm"
                   >
                     Upgrade
+                  </Button>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Google Calendar */}
+          {calendarFeatureAvailable && (
+            <section className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6" aria-label="Google Calendar">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4 text-cyan-400" />
+                    Google Calendar
+                  </h2>
+                  <p className="text-white/40 text-xs mt-1">
+                    {userSettings.google_calendar_connected
+                      ? `Connected${userSettings.google_calendar_email ? ` as ${userSettings.google_calendar_email}` : ""} — scheduled tasks appear in your calendar`
+                      : "Connect to turn tasks with a time into calendar events automatically"}
+                  </p>
+                </div>
+                {userSettings.google_calendar_connected ? (
+                  <Button
+                    variant="ghost"
+                    onClick={async () => {
+                      try {
+                        await disconnectGoogleCalendar();
+                        queryClient.invalidateQueries({ queryKey: ["userSettings"] });
+                        toast.success("Google Calendar disconnected");
+                      } catch {
+                        toast.error("Could not disconnect");
+                      }
+                    }}
+                    className="shrink-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                  >
+                    Disconnect
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await connectGoogleCalendar();
+                      } catch (err) {
+                        toast.error(err.message || "Could not connect");
+                      }
+                    }}
+                    className="shrink-0 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 font-semibold text-sm"
+                  >
+                    Connect
                   </Button>
                 )}
               </div>
