@@ -76,7 +76,7 @@ export default async function handler(req, res) {
     const { data: task } = taskId
       ? await db
           .from("tasks")
-          .select("id, title, alarm_time, completed, google_event_id, user_id")
+          .select("id, title, alarm_time, due_date, completed, google_event_id, user_id")
           .eq("id", taskId)
           .eq("user_id", user.id)
           .maybeSingle()
@@ -95,7 +95,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ removed: true });
     }
 
-    const day = date || new Date().toISOString().slice(0, 10);
+    // The task's own due date wins: it's the authoritative value the user
+    // picked. `date` is the client's fallback for a task with no due date.
+    const day = task.due_date || date || new Date().toISOString().slice(0, 10);
     const { start, end } = eventWindow(day, task.alarm_time);
     const tz = timeZone || "UTC";
 
