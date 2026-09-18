@@ -16,6 +16,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  articleJsonLd,
+  breadcrumbJsonLd,
+  organizationJsonLd,
+  websiteJsonLd,
+} from "../src/lib/jsonLd.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -32,7 +38,10 @@ function parseBlogData() {
   const re = /\{[^}]*slug:\s*"([^"]+)"[^}]*title:\s*"([^"]+)"[^}]*description:\s*"([^"]+)"[^}]*category:\s*"([^"]+)"[^}]*/g;
   let m;
   while ((m = re.exec(src)) !== null) {
-    posts.push({ slug: m[1], title: m[2], description: m[3], category: m[4] });
+    const block = m[0];
+    const readTime = (block.match(/readTime:\s*"([^"]+)"/) || [])[1] || "";
+    const date = (block.match(/date:\s*"([^"]+)"/) || [])[1] || "";
+    posts.push({ slug: m[1], title: m[2], description: m[3], category: m[4], readTime, date });
   }
   console.log(`  Parsed ${posts.length} blog posts`);
   return posts;
@@ -147,9 +156,31 @@ function generateBlogIndexContent(blogPosts) {
 // 5. Generate related articles HTML for a blog post
 // ---------------------------------------------------------------------------
 function generateRelatedArticles(currentSlug, currentCategory, blogPosts) {
-  const sameCat = blogPosts.filter(p => p.category === currentCategory && p.slug !== currentSlug);
-  const otherCat = blogPosts.filter(p => p.category !== currentCategory && p.slug !== currentSlug);
-  const related = [...sameCat.slice(0, 3), ...otherCat.slice(0, 1)].slice(0, 4);
+  // Pick the related set by ROTATING through the list starting just past the
+  // current article, rather than always taking the first few.
+  //
+  // With the old fixed slice every article in a category pointed at the same
+  // three neighbours, so a handful of posts collected ~50 inbound internal
+  // links while the median article had exactly one (from the blog index).
+  // Rotating spreads inbound links evenly across all 47 articles.
+  const globalIndex = Math.max(0, blogPosts.findIndex(p => p.slug === currentSlug));
+
+  const rotate = (pool, count, offset) => {
+    const candidates = pool.filter(p => p.slug !== currentSlug);
+    if (!candidates.length) return [];
+    const out = [];
+    for (let i = 0; i < candidates.length && out.length < count; i++) {
+      out.push(candidates[(offset + i) % candidates.length]);
+    }
+    return out;
+  };
+
+  const sameCat = blogPosts.filter(p => p.category === currentCategory);
+  const otherCat = blogPosts.filter(p => p.category !== currentCategory);
+  const related = [
+    ...rotate(sameCat, 4, globalIndex + 1),
+    ...rotate(otherCat, 2, globalIndex + 1),
+  ];
 
   if (!related.length) return "";
 
@@ -204,7 +235,10 @@ function generateGuideFooterLinks(guideCategory, blogPosts) {
     "desk-exercises-remote-workers": "Movement",
   };
   const category = catMap[guideCategory] || "Focus";
-  const related = blogPosts.filter(p => p.category === category).slice(0, 5);
+  // Link EVERY article in the category, not the first five. The three guides
+  // are among the pages Google actually indexes, so using them as category
+  // hubs gives each article an inbound link from an indexed page.
+  const related = blogPosts.filter(p => p.category === category);
 
   let html = `\n<hr>\n<h2>Related Blog Articles</h2>\n<ul>`;
   for (const post of related) {
@@ -297,7 +331,7 @@ function escapeHtml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function generateHtml(template, { title, description, canonicalUrl, ogType, contentHtml }) {
+function generateHtml(template, { title, description, canonicalUrl, ogType, contentHtml, jsonLd, preloads }) {
   let html = template;
 
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)}</title>`);
@@ -308,10 +342,143 @@ function generateHtml(template, { title, description, canonicalUrl, ogType, cont
   html = html.replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/?>/, `<meta property="og:url" content="${escapeHtml(canonicalUrl)}" />`);
   html = html.replace(/<meta\s+property="og:type"\s+content="[^"]*"\s*\/?>/, `<meta property="og:type" content="${escapeHtml(ogType)}" />`);
 
+  if (preloads && preloads.length) {
+    const links = preloads
+      .map(href => `<link rel="modulepreload" crossorigin href="${escapeHtml(href)}">`)
+      .join("\n    ");
+    html = html.replace("</head>", `    ${links}\n  </head>`);
+  }
+
+  // Structured data straight into the served HTML. react-helmet-async already
+  // injects the same blocks once React mounts, but that only exists after the
+  // page renders; emitting it here means it is there without running any JS.
+  if (jsonLd && jsonLd.length) {
+    const blocks = jsonLd
+      .map(o => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, "\\u003c")}</script>`)
+      .join("\n    ");
+    html = html.replace("</head>", `    ${blocks}\n  </head>`);
+  }
+
   const wrappedContent = `<div id="root"><article>${contentHtml}</article></div>`;
   html = html.replace('<div id="root"></div>', wrappedContent);
 
   return html;
+}
+
+// ---------------------------------------------------------------------------
+// 9a. Module preloads
+//
+// Every content route is lazy-loaded, so React mounts, empties #root (throwing
+// away the prerendered article) and then shows the Suspense fallback until the
+// route's chunk arrives. Measured, that leaves the page blank for a moment.
+// Telling the browser up front which chunk this page needs lets it fetch it in
+// parallel with the main bundle, so the first React render already has the
+// article instead of a spinner.
+// ---------------------------------------------------------------------------
+function loadManifest() {
+  const manifestPath = path.join(DIST, ".vite", "manifest.json");
+  if (!fs.existsSync(manifestPath)) {
+    console.warn("  (no vite manifest — skipping module preloads)");
+    return null;
+  }
+  return JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+}
+
+function modulePreloadsFor(manifest, absSrcFile, alreadyInTemplate) {
+  if (!manifest || !absSrcFile) return [];
+  const key = path.relative(ROOT, absSrcFile).split(path.sep).join("/");
+  const entry = manifest[key];
+  if (!entry || !entry.isDynamicEntry) return [];
+
+  const files = [entry.file];
+  for (const imp of entry.imports || []) {
+    const dep = manifest[imp];
+    if (dep?.file) files.push(dep.file);
+  }
+  return [...new Set(files)]
+    .map(f => `/${f}`)
+    .filter(href => !alreadyInTemplate.has(href));
+}
+
+function templatePreloads(template) {
+  const set = new Set();
+  const re = /<link[^>]+rel="modulepreload"[^>]+href="([^"]+)"/g;
+  let m;
+  while ((m = re.exec(template)) !== null) set.add(m[1]);
+  // The entry bundle is already loaded by the template's module script.
+  const entry = template.match(/<script[^>]+type="module"[^>]+src="([^"]+)"/);
+  if (entry) set.add(entry[1]);
+  return set;
+}
+
+// ---------------------------------------------------------------------------
+// 9b. Structured data per page type
+// ---------------------------------------------------------------------------
+function jsonLdForStaticPage(page, canonicalUrl, blogPosts) {
+  const crumbs = [{ name: "Home", url: SITE_URL }];
+
+  if (page.route === "/") {
+    return [organizationJsonLd(), websiteJsonLd()];
+  }
+
+  if (page.route === "/blog") {
+    crumbs.push({ name: "Blog", url: `${SITE_URL}/blog` });
+    return [
+      organizationJsonLd(),
+      websiteJsonLd(),
+      {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "@id": `${SITE_URL}/blog`,
+        name: "NomadBalance Blog",
+        description: page.description,
+        url: `${SITE_URL}/blog`,
+        blogPost: blogPosts.map(post => ({
+          "@type": "BlogPosting",
+          headline: post.title,
+          description: post.description,
+          url: `${SITE_URL}/blog/${post.slug}`,
+          ...(post.date && { datePublished: post.date }),
+          articleSection: post.category,
+        })),
+      },
+      breadcrumbJsonLd(crumbs),
+    ];
+  }
+
+  if (page.route.startsWith("/guide/")) {
+    const slug = page.route.split("/").pop();
+    const base = articleJsonLd({
+      title: page.title.replace(/ \| NomadBalance$/, ""),
+      description: page.description,
+      slug,
+    });
+    crumbs.push({ name: "Guides", url: `${SITE_URL}/blog` });
+    return [
+      { ...base, url: canonicalUrl, mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl } },
+      breadcrumbJsonLd([...crumbs, { name: page.title.replace(/ \| NomadBalance$/, ""), url: canonicalUrl }]),
+    ];
+  }
+
+  return [breadcrumbJsonLd([...crumbs, { name: page.title.replace(/ \| NomadBalance$/, ""), url: canonicalUrl }])];
+}
+
+function jsonLdForPost(post, canonicalUrl) {
+  return [
+    articleJsonLd({
+      title: post.title,
+      description: post.description,
+      slug: post.slug,
+      datePublished: post.date || undefined,
+      readTime: post.readTime || undefined,
+      category: post.category,
+    }),
+    breadcrumbJsonLd([
+      { name: "Home", url: SITE_URL },
+      { name: "Blog", url: `${SITE_URL}/blog` },
+      { name: post.title, url: canonicalUrl },
+    ]),
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -327,6 +494,8 @@ function main() {
   }
 
   const template = fs.readFileSync(templatePath, "utf-8");
+  const manifest = loadManifest();
+  const basePreloads = templatePreloads(template);
   const slugToFile = buildSlugToFileMap();
   const blogPosts = parseBlogData();
   let totalContentChars = 0;
@@ -363,6 +532,12 @@ function main() {
       canonicalUrl,
       ogType: page.ogType || "website",
       contentHtml,
+      jsonLd: jsonLdForStaticPage(page, canonicalUrl, blogPosts),
+      preloads: modulePreloadsFor(
+        manifest,
+        page.route === "/blog" ? path.join(SRC, "pages/blog/BlogIndex.jsx") : page.srcFile,
+        basePreloads,
+      ),
     });
 
     if (page.route === "/") {
@@ -406,6 +581,8 @@ function main() {
       canonicalUrl,
       ogType: "article",
       contentHtml,
+      jsonLd: jsonLdForPost(post, canonicalUrl),
+      preloads: modulePreloadsFor(manifest, jsxFile, basePreloads),
     });
 
     const outDir = path.join(DIST, "blog", post.slug);

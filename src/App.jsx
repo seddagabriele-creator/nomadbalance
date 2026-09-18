@@ -69,10 +69,21 @@ const AdsenseController = () => {
   return null;
 };
 
+// Public content lives at these paths. What they render does not depend on
+// who is logged in, so they must not wait for the auth session to resolve:
+// until it does, AppRoutes would return a spinner, and mounting that spinner
+// is what wipes the prerendered HTML out of #root. A crawler that snapshots
+// during that window sees an empty page instead of the article.
+const PUBLIC_CONTENT_PATH = /^\/(privacy|cookies|terms|about|contact|blog|guide)(\/|$)/;
+
 const AppRoutes = () => {
   const { isLoadingAuth, isAuthenticated, isRecovery } = useAuth();
+  const { pathname } = useLocation();
 
   if (isLoadingAuth) {
+    if (PUBLIC_CONTENT_PATH.test(pathname)) {
+      return <Routes>{contentRoutes}</Routes>;
+    }
     return <PageLoader />;
   }
 
