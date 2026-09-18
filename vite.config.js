@@ -12,6 +12,9 @@ export default defineConfig({
     },
   },
   build: {
+    // The generator reads this to emit <link rel="modulepreload"> for the exact
+    // chunk a prerendered page will need.
+    manifest: true,
     rollupOptions: {
       output: {
         // Split the largest stable dependencies into their own chunks:
