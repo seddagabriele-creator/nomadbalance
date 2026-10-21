@@ -35,17 +35,12 @@ export default function ExerciseDetail({ exercise, onClose }) {
 
         <div className="p-6 space-y-6">
           {exercise.image_url && (
-            <div className="rounded-2xl overflow-hidden border border-white/10 relative">
+            <div className="rounded-2xl overflow-hidden border border-white/10">
               <img
                 src={exercise.image_url}
                 alt={exercise.name}
                 className="w-full h-auto"
-                                style={{
-                                                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 92%)',
-                                                    maskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 92%)',
-                                }}
               />
-              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/70 to-transparent" />
             </div>
           )}
 
